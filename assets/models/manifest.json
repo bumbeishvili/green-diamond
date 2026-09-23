@@ -1,0 +1,2962 @@
+[
+  {
+    "file": "assets/models/zombies/zombie_city_male.glb",
+    "category": "zombie",
+    "name": "Male City Zombie (infected city man)",
+    "source_url": "https://opengameart.org/content/male-city-zombie-ready-for-use-in-game-engines",
+    "author": "Rikindle3D",
+    "license": "CC0 1.0",
+    "size_bytes": 3692328,
+    "triangles": 24046,
+    "skinned": true,
+    "animations": [
+      {
+        "name": "Attack",
+        "duration": 4.667
+      },
+      {
+        "name": "Attack2",
+        "duration": 4.667
+      },
+      {
+        "name": "Attack3",
+        "duration": 4.367
+      },
+      {
+        "name": "Death",
+        "duration": 4.367
+      },
+      {
+        "name": "HitReact",
+        "duration": 4.067
+      },
+      {
+        "name": "Idle",
+        "duration": 4.367
+      },
+      {
+        "name": "Idle2",
+        "duration": 4.367
+      },
+      {
+        "name": "Run",
+        "duration": 4.067
+      },
+      {
+        "name": "Scream",
+        "duration": 4.067
+      },
+      {
+        "name": "Walk",
+        "duration": 4
+      },
+      {
+        "name": "Walk2",
+        "duration": 1.567
+      }
+    ],
+    "bbox_height": 1.7949,
+    "notes": "Realistic PBR zombie (1.79 m, 24k tris, 66-bone Mixamo-style rig). Converted by me from FBX: base mesh + 11 separate animation FBXs, retargeted in Blender 4.1 (world-space rotation copy, baked) because the animation files have a different rest pose; PBR textures (BaseColor/Normal/ORM, 1024 px) embedded as JPEG. Root node 'ZombieCityMale' has scale 0.01 + 90deg X rotation (standard Mixamo/FBX); leave it as-is. Eyes/teeth had no texture in the source, so they got a flat dull-yellow material ('ZombieEyesTeeth'). Walk/Run/Idle/Attack/HitReact are in-place (hips move <0.35 m); Death moves the hips about 1.3 m (falling). three.js hips track: 'CityDeadOutfitHips.position'. The animations look like Mixamo clips redistributed by the uploader, who licensed the pack CC0 on OpenGameArt.",
+    "meshes": 1,
+    "primitives": 3,
+    "bbox_size_xyz": [
+      1.8793,
+      1.7949,
+      0.3024
+    ],
+    "joints": 66,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "InfectedCityMan_City_Man_Infected_Outfit1_Normal",
+        "mime": "image/jpeg",
+        "dims": [
+          1024,
+          1024
+        ]
+      },
+      {
+        "name": "InfectedCityMan_City_Man_Infected_Outfit1_OcclusionRoughnessMetallic",
+        "mime": "image/jpeg",
+        "dims": [
+          1024,
+          1024
+        ]
+      },
+      {
+        "name": "InfectedCityMan_City_Man_Infected_Outfit1_BaseColor",
+        "mime": "image/jpeg",
+        "dims": [
+          1024,
+          1024
+        ]
+      },
+      {
+        "name": "InfectedCityMan_City_Infected_Man_Body1_Normal",
+        "mime": "image/jpeg",
+        "dims": [
+          1024,
+          1024
+        ]
+      },
+      {
+        "name": "InfectedCityMan_City_Infected_Man_Body1_OcclusionRoughnessMetallic",
+        "mime": "image/jpeg",
+        "dims": [
+          1024,
+          1024
+        ]
+      },
+      {
+        "name": "InfectedCityMan_City_Infected_Man_Body1_BaseColor",
+        "mime": "image/jpeg",
+        "dims": [
+          1024,
+          1024
+        ]
+      }
+    ],
+    "extensions_used": [
+      "KHR_materials_specular"
+    ],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 3,
+      "codes": [
+        "W:MESH_PRIMITIVE_GENERATED_TANGENT_SPACE",
+        "W:NODE_SKINNED_MESH_NON_ROOT"
+      ]
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/zombie_city_male.png",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/zombies/zombie_thin.glb",
+    "category": "zombie",
+    "name": "Thin Zombie (Awake Zombie asset)",
+    "source_url": "https://opengameart.org/content/thin-zombie-awake-zombie-asset",
+    "author": "dogchicken (Rosswet Mobile)",
+    "license": "CC-BY 3.0",
+    "size_bytes": 1468700,
+    "triangles": 3340,
+    "skinned": true,
+    "animations": [
+      {
+        "name": "attack1_l",
+        "duration": 1.667
+      },
+      {
+        "name": "attack1_r",
+        "duration": 1.667
+      },
+      {
+        "name": "attack2",
+        "duration": 1.667
+      },
+      {
+        "name": "attack3",
+        "duration": 1.667
+      },
+      {
+        "name": "dead1",
+        "duration": 1.625
+      },
+      {
+        "name": "dead2",
+        "duration": 0.958
+      },
+      {
+        "name": "dead3",
+        "duration": 1.292
+      },
+      {
+        "name": "enter_side",
+        "duration": 2.542
+      },
+      {
+        "name": "hurt",
+        "duration": 1.667
+      },
+      {
+        "name": "hurt_b",
+        "duration": 1.667
+      },
+      {
+        "name": "hurt_head",
+        "duration": 1.667
+      },
+      {
+        "name": "hurt_l",
+        "duration": 1.667
+      },
+      {
+        "name": "hurt_r",
+        "duration": 1.667
+      },
+      {
+        "name": "idle",
+        "duration": 1.667
+      },
+      {
+        "name": "run",
+        "duration": 1.667
+      },
+      {
+        "name": "walk",
+        "duration": 1.25
+      },
+      {
+        "name": "walk2",
+        "duration": 1.708
+      }
+    ],
+    "bbox_height": 1.8,
+    "notes": "Gaunt, hunched realistic zombie (3.3k tris, 41 bones). Converted by me from .blend (Blender 2.6-era): rebuilt the material with the original 1024 px texture (JPEG, embedded), scaled the armature so the rest pose is 1.8 m, feet at the origin. 24 fps clips. All clips are in-place except enter_side (moves about 1.8 m) and the small drift in dead1/2. Several hurt variants: hurt (front), hurt_b (back), hurt_head, hurt_l, hurt_r.",
+    "meshes": 1,
+    "primitives": 1,
+    "bbox_size_xyz": [
+      0.8864,
+      1.8,
+      0.427
+    ],
+    "joints": 41,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "new_thin_zombie",
+        "mime": "image/jpeg",
+        "dims": [
+          1024,
+          1024
+        ]
+      }
+    ],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 1,
+      "codes": [
+        "W:NODE_SKINNED_MESH_NON_ROOT"
+      ]
+    },
+    "license_url": "https://creativecommons.org/licenses/by/3.0/",
+    "preview": "assets/previews/models/zombie_thin.png",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/zombies/zombie_office.glb",
+    "category": "zombie",
+    "name": "Zombie (office worker, Mixamo-compatible)",
+    "source_url": "https://poly.pizza/m/xqEzosAVYX",
+    "author": "bachosoftdesign",
+    "license": "CC-BY 3.0",
+    "size_bytes": 2162724,
+    "triangles": 2157,
+    "skinned": true,
+    "animations": [
+      {
+        "name": "Armature|Attack",
+        "duration": 2.625
+      },
+      {
+        "name": "Armature|Bite_ground",
+        "duration": 6.917
+      },
+      {
+        "name": "Armature|Crawl",
+        "duration": 5.125
+      },
+      {
+        "name": "Armature|Die",
+        "duration": 2.958
+      },
+      {
+        "name": "Armature|Die2",
+        "duration": 3.333
+      },
+      {
+        "name": "Armature|Headbutt",
+        "duration": 2.583
+      },
+      {
+        "name": "Armature|Hit_reaction",
+        "duration": 2.0
+      },
+      {
+        "name": "Armature|Idle",
+        "duration": 6.083
+      },
+      {
+        "name": "Armature|Running_Crawl",
+        "duration": 0.667
+      },
+      {
+        "name": "Armature|Scream",
+        "duration": 2.792
+      },
+      {
+        "name": "Armature|T-Pose",
+        "duration": 0.0
+      },
+      {
+        "name": "Armature|Walk",
+        "duration": 4.0
+      },
+      {
+        "name": "Armature|Walk2",
+        "duration": 1.5
+      }
+    ],
+    "bbox_height": 4.529,
+    "notes": "Low-poly zombie in a shirt and tie (2.2k tris, 49 bones, 1024 px palette texture). Unmodified poly.pizza GLB. Scale x0.4 (4.5 units tall, so 1.8 m). ROOT MOTION: Armature|Walk (3.3 units = about 1.34 m over 4.0 s), Walk2 (2.0 units = about 0.81 m over 1.5 s), Die, Die2, Crawl and Running_Crawl translate forward on the hips. If you move the zombie in code, strip X/Z of track 'mixamorigHips.position' (three.js strips ':' from 'mixamorig:Hips') for walk/crawl clips and keep Y. For Die/Die2 you can keep it, or strip it so the corpse stays on the object origin. Idle/Attack/Headbutt/Hit_reaction/Scream are in place. Ignore 'Armature|T-Pose' (0 s). No run clip: play Walk2 with timeScale 1.3-1.6 as a fast walk. metallicFactor is 0.4 (poly.pizza conversion default). All/most materials have metallicFactor 0.4 (a poly.pizza FBX-conversion default): without an envMap they render darker, so set material.metalness = 0 on load unless you want the sheen.",
+    "meshes": 1,
+    "primitives": 1,
+    "bbox_size_xyz": [
+      3.0584,
+      4.529,
+      1.9331
+    ],
+    "joints": 49,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "ColorPalette.jpg",
+        "mime": "image/jpeg",
+        "dims": [
+          1024,
+          1024
+        ]
+      }
+    ],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 2,
+      "codes": [
+        "W:NODE_SKINNED_MESH_NON_ROOT",
+        "W:NODE_SKINNED_MESH_LOCAL_TRANSFORMS"
+      ]
+    },
+    "license_url": "https://creativecommons.org/licenses/by/3.0/",
+    "preview": "assets/previews/models/zombie_office.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/zombies/zombie_hazmat.glb",
+    "category": "zombie",
+    "name": "Hazmat zombie",
+    "source_url": "https://opengameart.org/content/hazmat-zombie",
+    "author": "sandsound (based on 'Lowpoly Zombie' by tigertowel, BlendSwap)",
+    "license": "CC0 1.0",
+    "size_bytes": 381556,
+    "triangles": 1074,
+    "skinned": true,
+    "animations": [
+      {
+        "name": "zombie_death",
+        "duration": 0.167
+      },
+      {
+        "name": "zombie_fight",
+        "duration": 1.25
+      },
+      {
+        "name": "zombie_forward",
+        "duration": 2.833
+      },
+      {
+        "name": "zombie_idle",
+        "duration": 3.333
+      },
+      {
+        "name": "zombie_pain",
+        "duration": 1.042
+      },
+      {
+        "name": "zombie_waddle",
+        "duration": 2.5
+      }
+    ],
+    "bbox_height": 1.9085,
+    "notes": "Visually distinct zombie in an orange hazmat suit and gas mask (1.1k tris, 29 bones, 1.9 m). Converted by me from .blend. I dropped 3 single-frame edit/logo poses and made the textures JPEG. 24 fps. WEAK ANIMATION SET: there is no run (use zombie_forward at timeScale 1.5-2) and zombie_death is only 0.17 s, a snap into a falling-back pose, so crossfade into it over about 0.4 s and/or tilt the body in code. The OGA page credits tigertowel's BlendSwap model as the base, so crediting both is courteous.",
+    "meshes": 1,
+    "primitives": 1,
+    "bbox_size_xyz": [
+      1.0957,
+      1.9085,
+      0.5017
+    ],
+    "joints": 29,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "Plastic009_1K_NormalGL",
+        "mime": "image/jpeg",
+        "dims": [
+          1024,
+          1024
+        ]
+      },
+      {
+        "name": "gasmask_zombie",
+        "mime": "image/jpeg",
+        "dims": [
+          1024,
+          1024
+        ]
+      }
+    ],
+    "extensions_used": [
+      "KHR_materials_specular",
+      "KHR_materials_ior"
+    ],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 2,
+      "codes": [
+        "W:MESH_PRIMITIVE_GENERATED_TANGENT_SPACE",
+        "W:NODE_SKINNED_MESH_NON_ROOT"
+      ]
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/zombie_hazmat.png",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/weapons/pistol.glb",
+    "category": "weapon",
+    "name": "Pistol (Ultimate Guns Pack)",
+    "source_url": "https://poly.pizza/m/Jyn9qex4ba",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 60144,
+    "triangles": 1040,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 1.1616,
+    "notes": "Low-poly flat-coloured pistol (1k tris). Model units are arbitrary: 1.82 units long, so x0.105 gives 0.19 m. All/most materials have metallicFactor 0.4 (a poly.pizza FBX-conversion default): without an envMap they render darker, so set material.metalness = 0 on load unless you want the sheen.",
+    "meshes": 1,
+    "primitives": 5,
+    "bbox_size_xyz": [
+      1.8194,
+      1.1616,
+      0.3232
+    ],
+    "joints": 0,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/pistol.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)",
+    "forward_axis": "+X (muzzle)",
+    "up_axis": "+Y",
+    "scale_to_m": 0.105,
+    "origin": "at the grip, just behind and below the trigger"
+  },
+  {
+    "file": "assets/models/weapons/rifle_ak.glb",
+    "category": "weapon",
+    "name": "Assault Rifle, AK-style (Ultimate Guns Pack)",
+    "source_url": "https://poly.pizza/m/K2lXTYFSLC",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 74028,
+    "triangles": 1304,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 1.6014,
+    "notes": "AK-47 style with wooden furniture and curved magazine (1.3k tris). 5.42 units long, so x0.162 gives 0.88 m. All/most materials have metallicFactor 0.4 (a poly.pizza FBX-conversion default): without an envMap they render darker, so set material.metalness = 0 on load unless you want the sheen.",
+    "meshes": 1,
+    "primitives": 5,
+    "bbox_size_xyz": [
+      5.4217,
+      1.6014,
+      0.196
+    ],
+    "joints": 0,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/rifle_ak.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)",
+    "forward_axis": "+X (muzzle)",
+    "up_axis": "+Y",
+    "scale_to_m": 0.162,
+    "origin": "at the pistol grip / trigger, under the receiver"
+  },
+  {
+    "file": "assets/models/weapons/shotgun.glb",
+    "category": "weapon",
+    "name": "Pump shotgun (Ultimate Guns Pack)",
+    "source_url": "https://poly.pizza/m/DcNE0HVdW8",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 43684,
+    "triangles": 746,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 0.9495,
+    "notes": "Wood-stock pump shotgun (750 tris). 5.78 units long, so x0.173 gives 1.0 m. All/most materials have metallicFactor 0.4 (a poly.pizza FBX-conversion default): without an envMap they render darker, so set material.metalness = 0 on load unless you want the sheen.",
+    "meshes": 1,
+    "primitives": 5,
+    "bbox_size_xyz": [
+      5.7849,
+      0.9495,
+      0.2465
+    ],
+    "joints": 0,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/shotgun.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)",
+    "forward_axis": "+X (muzzle)",
+    "up_axis": "+Y",
+    "scale_to_m": 0.173,
+    "origin": "at the grip/wrist of the stock, rear of the receiver"
+  },
+  {
+    "file": "assets/models/weapons/shotgun_mossberg.glb",
+    "category": "weapon",
+    "name": "Mossberg 590A1",
+    "source_url": "https://poly.pizza/m/eAh1oHY32T",
+    "author": "J-Toastie",
+    "license": "CC-BY 3.0",
+    "size_bytes": 249336,
+    "triangles": 2138,
+    "skinned": true,
+    "animations": [],
+    "bbox_height": 1.2255,
+    "notes": "More realistic pump shotgun (2.1k tris). Skinned with a small 3-joint rig (Root/Trigger/FR, pump) and no clips. 6.02 units long, so x0.166 gives 1.0 m. This is the realistic first-person shotgun; pair it with the arms from fps_arms_pistol if you want hands on it. All/most materials have metallicFactor 0.4 (a poly.pizza FBX-conversion default): without an envMap they render darker, so set material.metalness = 0 on load unless you want the sheen.",
+    "meshes": 1,
+    "primitives": 2,
+    "bbox_size_xyz": [
+      6.0246,
+      1.2255,
+      0.2715
+    ],
+    "joints": 3,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 2,
+      "codes": [
+        "W:NODE_SKINNED_MESH_NON_ROOT",
+        "W:NODE_SKINNED_MESH_LOCAL_TRANSFORMS"
+      ]
+    },
+    "license_url": "https://creativecommons.org/licenses/by/3.0/",
+    "preview": "assets/previews/models/shotgun_mossberg.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)",
+    "forward_axis": "+X (muzzle)",
+    "up_axis": "+Y",
+    "scale_to_m": 0.166,
+    "origin": "slightly below the receiver, above the trigger guard"
+  },
+  {
+    "file": "assets/models/weapons/fps_arms_akm.glb",
+    "category": "weapon",
+    "name": "FPS rig: arms + AKM",
+    "source_url": "https://poly.pizza/m/U6l6wjxFhC",
+    "author": "J-Toastie",
+    "license": "CC-BY 3.0",
+    "size_bytes": 870400,
+    "triangles": 7679,
+    "skinned": true,
+    "animations": [
+      {
+        "name": "Armature|Idle",
+        "duration": 2.625
+      },
+      {
+        "name": "Armature|Reload",
+        "duration": 2.583
+      },
+      {
+        "name": "Armature|Shoot",
+        "duration": 0.167
+      }
+    ],
+    "bbox_height": 13.778,
+    "notes": "First-person arms (green sleeves, fingerless gloves) holding an AKM. 2 skinned meshes share one 28-joint armature. Clips: Idle, Reload, Shoot (Shoot is 0.17 s: play once per shot). Internal node scales are large (Armature x336, ArmModel x100), which is normal for this FBX-to-glTF conversion. Byte-identical to the poly.pizza file. The Khronos validator reports 2 errors (SKIN_SKELETON_INVALID: the optional skins[].skeleton is not a common root of the joints). three.js GLTFLoader never reads skins[].skeleton, and the model renders and animates correctly. I tested deleting the field and it broke Blender's import, so the original was kept. The in-rig AKM is 22.6 units long, so x0.039 gives 0.88 m. three.js: rig.scale.setScalar(0.039); rig.rotation.y = Math.PI/2; rig.position.set(0.16,-0.20,-0.42); camera.add(rig). Use a small camera near plane (0.01). All/most materials have metallicFactor 0.4 (a poly.pizza FBX-conversion default): without an envMap they render darker, so set material.metalness = 0 on load unless you want the sheen.",
+    "meshes": 2,
+    "primitives": 12,
+    "bbox_size_xyz": [
+      23.425,
+      13.778,
+      10.8616
+    ],
+    "joints": 28,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 2,
+      "warnings": 4,
+      "codes": [
+        "E:SKIN_SKELETON_INVALID",
+        "W:NODE_SKINNED_MESH_NON_ROOT",
+        "W:NODE_SKINNED_MESH_LOCAL_TRANSFORMS"
+      ]
+    },
+    "license_url": "https://creativecommons.org/licenses/by/3.0/",
+    "preview": "assets/previews/models/fps_arms_akm.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)",
+    "forward_axis": "+X (muzzle)",
+    "up_axis": "+Y",
+    "scale_to_m": 0.039,
+    "origin": "rig root (not tied to the gun); gun receiver is near the origin, arms extend toward -X",
+    "camera_offset": {
+      "parent": "camera",
+      "scale": 0.039,
+      "rotation_y_rad": 1.5708,
+      "position": [
+        0.16,
+        -0.2,
+        -0.42
+      ],
+      "fov_deg": 70,
+      "note": "Verified by rendering from a simulated three.js camera (origin, looking -Z, vertical FOV 70, 16:9): AK at lower right, both hands visible, sleeves leave the frame. Going further forward than z=-0.5 exposes the open sleeve ends."
+    }
+  },
+  {
+    "file": "assets/models/weapons/fps_arms_pistol.glb",
+    "category": "weapon",
+    "name": "FPS rig: arms + Glock",
+    "source_url": "https://poly.pizza/m/uxko5LkGia",
+    "author": "J-Toastie",
+    "license": "CC-BY 3.0",
+    "size_bytes": 723396,
+    "triangles": 6837,
+    "skinned": true,
+    "animations": [
+      {
+        "name": "Armature|Grip",
+        "duration": 0.042
+      },
+      {
+        "name": "Armature|Idle",
+        "duration": 2.083
+      },
+      {
+        "name": "Armature|Reload",
+        "duration": 2.042
+      },
+      {
+        "name": "Armature|Shoot",
+        "duration": 0.5
+      }
+    ],
+    "bbox_height": 10.5205,
+    "notes": "First-person arms with a Glock 19. 41-joint armature. Clips: Grip (0.04 s, a two-handed grip pose), Idle, Reload (magazine drops and left hand reloads), Shoot. The Glock is 4.64 units long, so x0.040 gives 0.187 m. Byte-identical to poly.pizza. Same benign validator error as fps_arms_akm (SKIN_SKELETON_INVALID, ignored by three.js). three.js: rig.scale.setScalar(0.04); rig.rotation.y = Math.PI/2; rig.position.set(0.02,-0.52,-0.08); camera.add(rig). All/most materials have metallicFactor 0.4 (a poly.pizza FBX-conversion default): without an envMap they render darker, so set material.metalness = 0 on load unless you want the sheen.",
+    "meshes": 2,
+    "primitives": 12,
+    "bbox_size_xyz": [
+      14.8542,
+      10.5205,
+      10.0462
+    ],
+    "joints": 41,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 2,
+      "warnings": 4,
+      "codes": [
+        "E:SKIN_SKELETON_INVALID",
+        "W:NODE_SKINNED_MESH_NON_ROOT",
+        "W:NODE_SKINNED_MESH_LOCAL_TRANSFORMS"
+      ]
+    },
+    "license_url": "https://creativecommons.org/licenses/by/3.0/",
+    "preview": "assets/previews/models/fps_arms_pistol.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)",
+    "forward_axis": "+X (muzzle)",
+    "up_axis": "+Y",
+    "scale_to_m": 0.04,
+    "origin": "rig root; the pistol sits about 9 units above and 7 units in front of the origin",
+    "camera_offset": {
+      "parent": "camera",
+      "scale": 0.04,
+      "rotation_y_rad": 1.5708,
+      "position": [
+        0.02,
+        -0.52,
+        -0.08
+      ],
+      "fov_deg": 70,
+      "note": "Verified the same way: pistol at lower right, right hand on the grip; in Idle the left arm hangs out of view (one-handed hold)."
+    }
+  },
+  {
+    "file": "assets/models/nature/tree_young_1.glb",
+    "category": "nature",
+    "name": "Young broadleaf tree 1 (NormalTree_1)",
+    "source_url": "https://poly.pizza/m/etFGNvsiFv",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 455748,
+    "triangles": 8520,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 6.8666,
+    "notes": "Slender young deciduous tree (lime/linden-like), 6.9 m, metres. Split by me from the 5-tree 'Trees' model (Ultimate Stylized Nature Pack). FOLIAGE CHANGES: bark textures 1024 to 512 JPEG, leaf atlas to 8-bit PNG, leaves BLEND to MASK (alphaCutoff 0.5, doubleSided), metallic 0.4 to 0, roughness 0.9. Origin at the base of the trunk.",
+    "meshes": 1,
+    "primitives": 2,
+    "bbox_size_xyz": [
+      4.0511,
+      6.8666,
+      2.744
+    ],
+    "joints": 0,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "NormalTree_Bark_Normal.png",
+        "mime": "image/jpeg",
+        "dims": [
+          512,
+          512
+        ]
+      },
+      {
+        "name": "NormalTree_Bark.png",
+        "mime": "image/jpeg",
+        "dims": [
+          512,
+          512
+        ]
+      },
+      {
+        "name": "NormalTree_Leaves.png",
+        "mime": "image/png",
+        "dims": [
+          1024,
+          1024
+        ]
+      }
+    ],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 2,
+      "codes": [
+        "W:MESH_PRIMITIVE_GENERATED_TANGENT_SPACE",
+        "W:IMAGE_FEATURES_UNSUPPORTED"
+      ]
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/tree_young_1.jpg",
+    "preview_kind": "local Blender render of the delivered file (source page shows a multi-model set or none)"
+  },
+  {
+    "file": "assets/models/nature/tree_young_2.glb",
+    "category": "nature",
+    "name": "Young broadleaf tree 2 (NormalTree_2)",
+    "source_url": "https://poly.pizza/m/etFGNvsiFv",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 400804,
+    "triangles": 8084,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 6.5553,
+    "notes": "6.6 m young deciduous tree. Split from the 'Trees' set; same foliage/material changes as tree_young_1.",
+    "meshes": 1,
+    "primitives": 2,
+    "bbox_size_xyz": [
+      4.5542,
+      6.5553,
+      2.7859
+    ],
+    "joints": 0,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "NormalTree_Bark_Normal.png",
+        "mime": "image/jpeg",
+        "dims": [
+          512,
+          512
+        ]
+      },
+      {
+        "name": "NormalTree_Bark.png",
+        "mime": "image/jpeg",
+        "dims": [
+          512,
+          512
+        ]
+      },
+      {
+        "name": "NormalTree_Leaves.png",
+        "mime": "image/png",
+        "dims": [
+          1024,
+          1024
+        ]
+      }
+    ],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 2,
+      "codes": [
+        "W:MESH_PRIMITIVE_GENERATED_TANGENT_SPACE",
+        "W:IMAGE_FEATURES_UNSUPPORTED"
+      ]
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/tree_young_2.jpg",
+    "preview_kind": "local Blender render of the delivered file (source page shows a multi-model set or none)"
+  },
+  {
+    "file": "assets/models/nature/tree_young_3.glb",
+    "category": "nature",
+    "name": "Young broadleaf tree 3 (NormalTree_3)",
+    "source_url": "https://poly.pizza/m/etFGNvsiFv",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 349952,
+    "triangles": 7096,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 5.281,
+    "notes": "5.3 m, wider crown. Split from the 'Trees' set; same changes as tree_young_1.",
+    "meshes": 1,
+    "primitives": 2,
+    "bbox_size_xyz": [
+      5.0391,
+      5.281,
+      2.8796
+    ],
+    "joints": 0,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "NormalTree_Bark_Normal.png",
+        "mime": "image/jpeg",
+        "dims": [
+          512,
+          512
+        ]
+      },
+      {
+        "name": "NormalTree_Bark.png",
+        "mime": "image/jpeg",
+        "dims": [
+          512,
+          512
+        ]
+      },
+      {
+        "name": "NormalTree_Leaves.png",
+        "mime": "image/png",
+        "dims": [
+          1024,
+          1024
+        ]
+      }
+    ],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 2,
+      "codes": [
+        "W:MESH_PRIMITIVE_GENERATED_TANGENT_SPACE",
+        "W:IMAGE_FEATURES_UNSUPPORTED"
+      ]
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/tree_young_3.jpg",
+    "preview_kind": "local Blender render of the delivered file (source page shows a multi-model set or none)"
+  },
+  {
+    "file": "assets/models/nature/tree_young_4.glb",
+    "category": "nature",
+    "name": "Young broadleaf tree 4 (NormalTree_4)",
+    "source_url": "https://poly.pizza/m/etFGNvsiFv",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 359036,
+    "triangles": 6338,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 5.0962,
+    "notes": "5.1 m, leaning two-lobed crown. Split from the 'Trees' set; same changes as tree_young_1.",
+    "meshes": 1,
+    "primitives": 2,
+    "bbox_size_xyz": [
+      5.6729,
+      5.0962,
+      2.4011
+    ],
+    "joints": 0,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "NormalTree_Bark_Normal.png",
+        "mime": "image/jpeg",
+        "dims": [
+          512,
+          512
+        ]
+      },
+      {
+        "name": "NormalTree_Bark.png",
+        "mime": "image/jpeg",
+        "dims": [
+          512,
+          512
+        ]
+      },
+      {
+        "name": "NormalTree_Leaves.png",
+        "mime": "image/png",
+        "dims": [
+          1024,
+          1024
+        ]
+      }
+    ],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 2,
+      "codes": [
+        "W:MESH_PRIMITIVE_GENERATED_TANGENT_SPACE",
+        "W:IMAGE_FEATURES_UNSUPPORTED"
+      ]
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/tree_young_4.jpg",
+    "preview_kind": "local Blender render of the delivered file (source page shows a multi-model set or none)"
+  },
+  {
+    "file": "assets/models/nature/tree_maple_red.glb",
+    "category": "nature",
+    "name": "Red maple (MapleTree_2)",
+    "source_url": "https://poly.pizza/m/iGFtQd0PJO",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 282928,
+    "triangles": 4800,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 6.7138,
+    "notes": "6.7 m maple with red/pink foliage (Japanese-maple look), for colour variety. Split from the 'Maple Trees' set; same foliage changes as tree_young_1.",
+    "meshes": 1,
+    "primitives": 2,
+    "bbox_size_xyz": [
+      6.7008,
+      6.7138,
+      6.2439
+    ],
+    "joints": 0,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "MapleTree_Bark_Normal.png",
+        "mime": "image/jpeg",
+        "dims": [
+          512,
+          512
+        ]
+      },
+      {
+        "name": "MapleTree_Bark.png",
+        "mime": "image/jpeg",
+        "dims": [
+          512,
+          512
+        ]
+      },
+      {
+        "name": "MapleTree_Leaves.png",
+        "mime": "image/png",
+        "dims": [
+          1024,
+          1024
+        ]
+      }
+    ],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 2,
+      "codes": [
+        "W:MESH_PRIMITIVE_GENERATED_TANGENT_SPACE",
+        "W:IMAGE_FEATURES_UNSUPPORTED"
+      ]
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/tree_maple_red.jpg",
+    "preview_kind": "local Blender render of the delivered file (source page shows a multi-model set or none)"
+  },
+  {
+    "file": "assets/models/nature/pine_1.glb",
+    "category": "nature",
+    "name": "Pine (Stylized Nature MegaKit)",
+    "source_url": "https://poly.pizza/m/699sFuLCN2",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 264716,
+    "triangles": 4964,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 7.3922,
+    "notes": "7.4 m conifer, dark green. Changes: bark textures to 512 JPEG, needles to 8-bit PNG, leaves BLEND to MASK, metallic 0.4 to 0. The file shrank from 2.2 MB to 0.26 MB.",
+    "meshes": 1,
+    "primitives": 2,
+    "bbox_size_xyz": [
+      3.6114,
+      7.3922,
+      3.9958
+    ],
+    "joints": 0,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "Bark_NormalTree_Normal.png",
+        "mime": "image/jpeg",
+        "dims": [
+          512,
+          512
+        ]
+      },
+      {
+        "name": "Bark_NormalTree.png",
+        "mime": "image/jpeg",
+        "dims": [
+          512,
+          512
+        ]
+      },
+      {
+        "name": "Leaf_Pine_C.png",
+        "mime": "image/png",
+        "dims": [
+          1024,
+          1024
+        ]
+      }
+    ],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 1,
+      "codes": [
+        "W:MESH_PRIMITIVE_GENERATED_TANGENT_SPACE"
+      ]
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/pine_1.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/nature/pine_2.glb",
+    "category": "nature",
+    "name": "Pine 2 (Stylized Nature MegaKit)",
+    "source_url": "https://poly.pizza/m/rfnxJv0Rqa",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 231696,
+    "triangles": 3947,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 7.3169,
+    "notes": "7.3 m conifer with fuller branches. Same changes as pine_1.",
+    "meshes": 1,
+    "primitives": 2,
+    "bbox_size_xyz": [
+      4.9447,
+      7.3169,
+      4.5384
+    ],
+    "joints": 0,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "Bark_NormalTree_Normal.png",
+        "mime": "image/jpeg",
+        "dims": [
+          512,
+          512
+        ]
+      },
+      {
+        "name": "Bark_NormalTree.png",
+        "mime": "image/jpeg",
+        "dims": [
+          512,
+          512
+        ]
+      },
+      {
+        "name": "Leaf_Pine_C.png",
+        "mime": "image/png",
+        "dims": [
+          1024,
+          1024
+        ]
+      }
+    ],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 1,
+      "codes": [
+        "W:MESH_PRIMITIVE_GENERATED_TANGENT_SPACE"
+      ]
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/pine_2.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/nature/hedge.glb",
+    "category": "nature",
+    "name": "Hedge block",
+    "source_url": "https://poly.pizza/m/df8uCl1YpK",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 59500,
+    "triangles": 956,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 1.6297,
+    "notes": "Box hedge, 1.8 x 1.63 x 1.19 m. Tile it for hedge rows. Leaves changed BLEND to MASK and metallic to 0.",
+    "meshes": 1,
+    "primitives": 1,
+    "bbox_size_xyz": [
+      1.8038,
+      1.6297,
+      1.1881
+    ],
+    "joints": 0,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "Leaf_Texture.png",
+        "mime": "image/png",
+        "dims": [
+          512,
+          512
+        ]
+      }
+    ],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/hedge.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/nature/bush_flowering.glb",
+    "category": "nature",
+    "name": "Bush with flowers (Stylized Nature MegaKit)",
+    "source_url": "https://poly.pizza/m/U1ymDy8tbY",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 222780,
+    "triangles": 1368,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 1.5818,
+    "notes": "1.6 m round green shrub with purple flowers. Alpha fixed to MASK, metallic 0, textures to 8-bit PNG.",
+    "meshes": 1,
+    "primitives": 2,
+    "bbox_size_xyz": [
+      1.9148,
+      1.5818,
+      1.9651
+    ],
+    "joints": 0,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "Leaves_NormalTree_C.png",
+        "mime": "image/png",
+        "dims": [
+          1024,
+          1024
+        ]
+      },
+      {
+        "name": "Flowers.png",
+        "mime": "image/png",
+        "dims": [
+          1024,
+          997
+        ]
+      }
+    ],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/bush_flowering.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/nature/bush_red.glb",
+    "category": "nature",
+    "name": "Red-leaf bush (Stylized Nature MegaKit)",
+    "source_url": "https://poly.pizza/m/EoTERLq3z2",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 113424,
+    "triangles": 900,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 1.5818,
+    "notes": "1.6 m shrub with red foliage (barberry-like). Same material fixes as the other bushes.",
+    "meshes": 1,
+    "primitives": 1,
+    "bbox_size_xyz": [
+      1.9148,
+      1.5818,
+      1.9651
+    ],
+    "joints": 0,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "Leaves_TwistedTree_C.png",
+        "mime": "image/png",
+        "dims": [
+          1024,
+          1024
+        ]
+      }
+    ],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/bush_red.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/nature/grass_clump.glb",
+    "category": "nature",
+    "name": "Grass clump (large)",
+    "source_url": "https://poly.pizza/m/UGTOzcO3P2",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 39220,
+    "triangles": 516,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 0.5089,
+    "notes": "0.5 m grass tuft, metres. Split from the 'Grass' model (Ultimate Stylized Nature Pack); texture to JPEG, metallic 0.",
+    "meshes": 1,
+    "primitives": 1,
+    "bbox_size_xyz": [
+      0.7447,
+      0.5089,
+      0.4973
+    ],
+    "joints": 0,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "Grass.png",
+        "mime": "image/jpeg",
+        "dims": [
+          1024,
+          1024
+        ]
+      }
+    ],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/grass_clump.jpg",
+    "preview_kind": "local Blender render of the delivered file (source page shows a multi-model set or none)"
+  },
+  {
+    "file": "assets/models/nature/grass_small.glb",
+    "category": "nature",
+    "name": "Grass clump (small)",
+    "source_url": "https://poly.pizza/m/UGTOzcO3P2",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 15572,
+    "triangles": 58,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 0.3941,
+    "notes": "0.4 m sparse grass blades. Split from the same 'Grass' model.",
+    "meshes": 1,
+    "primitives": 1,
+    "bbox_size_xyz": [
+      0.47,
+      0.3941,
+      0.2775
+    ],
+    "joints": 0,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "Grass.png",
+        "mime": "image/jpeg",
+        "dims": [
+          1024,
+          1024
+        ]
+      }
+    ],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/grass_small.jpg",
+    "preview_kind": "local Blender render of the delivered file (source page shows a multi-model set or none)"
+  },
+  {
+    "file": "assets/models/nature/grass_tall.glb",
+    "category": "nature",
+    "name": "Tall grass (Stylized Nature MegaKit)",
+    "source_url": "https://poly.pizza/m/JSIYtscPmP",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 34020,
+    "triangles": 326,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 1.8727,
+    "notes": "1.87 units tall. The MegaKit grass is oversized, so scale x0.35-0.5 for ornamental grass.",
+    "meshes": 1,
+    "primitives": 1,
+    "bbox_size_xyz": [
+      0.8951,
+      1.8727,
+      0.9931
+    ],
+    "joints": 0,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "Grass.png",
+        "mime": "image/jpeg",
+        "dims": [
+          1024,
+          1024
+        ]
+      }
+    ],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/grass_tall.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/nature/flowers_blue.glb",
+    "category": "nature",
+    "name": "Flower clump, blue",
+    "source_url": "https://poly.pizza/m/NBUxHir6FJ",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 71840,
+    "triangles": 620,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 0.6713,
+    "notes": "0.67 m flower clump, metres. Split from the 'Flowers' model (Ultimate Stylized Nature Pack); alpha to MASK.",
+    "meshes": 1,
+    "primitives": 1,
+    "bbox_size_xyz": [
+      0.4711,
+      0.6713,
+      0.4352
+    ],
+    "joints": 0,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "Flowers.png",
+        "mime": "image/png",
+        "dims": [
+          1024,
+          1024
+        ]
+      }
+    ],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 1,
+      "codes": [
+        "W:IMAGE_FEATURES_UNSUPPORTED"
+      ]
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/flowers_blue.jpg",
+    "preview_kind": "local Blender render of the delivered file (source page shows a multi-model set or none)"
+  },
+  {
+    "file": "assets/models/nature/flowers_purple.glb",
+    "category": "nature",
+    "name": "Flower clump, purple",
+    "source_url": "https://poly.pizza/m/NBUxHir6FJ",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 52248,
+    "triangles": 136,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 0.4508,
+    "notes": "0.45 m flower clump. Split from the same 'Flowers' model.",
+    "meshes": 1,
+    "primitives": 1,
+    "bbox_size_xyz": [
+      0.426,
+      0.4508,
+      0.3735
+    ],
+    "joints": 0,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "Flowers.png",
+        "mime": "image/png",
+        "dims": [
+          1024,
+          1024
+        ]
+      }
+    ],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 1,
+      "codes": [
+        "W:IMAGE_FEATURES_UNSUPPORTED"
+      ]
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/flowers_purple.jpg",
+    "preview_kind": "local Blender render of the delivered file (source page shows a multi-model set or none)"
+  },
+  {
+    "file": "assets/models/cars/car_sedan.glb",
+    "category": "car",
+    "name": "Sedan",
+    "source_url": "https://poly.pizza/m/Cz6yDaUcM9",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 164752,
+    "triangles": 2954,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 1.1766,
+    "notes": "Generic 4-door sedan (Camry/Prius-like), 4.22 x 1.81 x 1.18 m. Recolour it through the body material. Wheels are separate meshes (static).",
+    "meshes": 4,
+    "primitives": 12,
+    "bbox_size_xyz": [
+      1.8074,
+      1.1766,
+      4.2207
+    ],
+    "joints": 0,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/car_sedan.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)",
+    "forward_axis": "+Z (front bumper)",
+    "up_axis": "+Y",
+    "scale_to_m": 1.0,
+    "origin": "ground centre"
+  },
+  {
+    "file": "assets/models/cars/car_hatchback.glb",
+    "category": "car",
+    "name": "Hatchback",
+    "source_url": "https://poly.pizza/m/unqqkULtRU",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 174320,
+    "triangles": 3124,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 1.1456,
+    "notes": "Small 5-door hatchback, 3.31 x 1.64 x 1.15 m. Scale x1.2 for an Opel Astra-size compact.",
+    "meshes": 4,
+    "primitives": 13,
+    "bbox_size_xyz": [
+      1.6384,
+      1.1456,
+      3.3096
+    ],
+    "joints": 0,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/car_hatchback.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)",
+    "forward_axis": "+Z",
+    "up_axis": "+Y",
+    "scale_to_m": 1.0,
+    "origin": "ground centre"
+  },
+  {
+    "file": "assets/models/cars/car_suv.glb",
+    "category": "car",
+    "name": "SUV / crossover",
+    "source_url": "https://poly.pizza/m/xsMtZhBkxL",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 181608,
+    "triangles": 3294,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 1.5279,
+    "notes": "White crossover with roof rails, 4.21 x 2.11 x 1.53 m.",
+    "meshes": 4,
+    "primitives": 12,
+    "bbox_size_xyz": [
+      2.1111,
+      1.5279,
+      4.2093
+    ],
+    "joints": 0,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/car_suv.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)",
+    "forward_axis": "+Z",
+    "up_axis": "+Y",
+    "scale_to_m": 1.0,
+    "origin": "ground centre"
+  },
+  {
+    "file": "assets/models/cars/car_taxi.glb",
+    "category": "car",
+    "name": "Taxi",
+    "source_url": "https://poly.pizza/m/x43lOScTpN",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 181084,
+    "triangles": 3278,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 1.3105,
+    "notes": "Yellow sedan taxi with a roof sign, 4.22 x 1.81 x 1.31 m. Tbilisi taxis are often white; recolour the body material.",
+    "meshes": 4,
+    "primitives": 12,
+    "bbox_size_xyz": [
+      1.8074,
+      1.3105,
+      4.2207
+    ],
+    "joints": 0,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/car_taxi.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)",
+    "forward_axis": "+Z",
+    "up_axis": "+Y",
+    "scale_to_m": 1.0,
+    "origin": "ground centre"
+  },
+  {
+    "file": "assets/models/cars/car_pickup.glb",
+    "category": "car",
+    "name": "Pickup truck",
+    "source_url": "https://poly.pizza/m/qn4grQgHm8",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 273012,
+    "triangles": 6432,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 1.8484,
+    "notes": "Older two-tone pickup (Hilux-era), 5.18 x 2.31 x 1.85 m. All/most materials have metallicFactor 0.4 (a poly.pizza FBX-conversion default): without an envMap they render darker, so set material.metalness = 0 on load unless you want the sheen.",
+    "meshes": 4,
+    "primitives": 6,
+    "bbox_size_xyz": [
+      2.3122,
+      1.8484,
+      5.1804
+    ],
+    "joints": 0,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "Zombie_Atlas.png",
+        "mime": "image/png",
+        "dims": [
+          512,
+          512
+        ]
+      }
+    ],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/car_pickup.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)",
+    "forward_axis": "+Z",
+    "up_axis": "+Y",
+    "scale_to_m": 1.0,
+    "origin": "ground centre"
+  },
+  {
+    "file": "assets/models/cars/car_wrecked.glb",
+    "category": "car",
+    "name": "Wrecked / burnt car",
+    "source_url": "https://poly.pizza/m/Y67erogmR9",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 211012,
+    "triangles": 5432,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 1.7603,
+    "notes": "Rusted, windowless wreck for zombie-apocalypse dressing (Toon Shooter kit). Chunky proportions, 5.49 x 2.64 x 1.76 units, so x0.8 gives a normal car size. All/most materials have metallicFactor 0.4 (a poly.pizza FBX-conversion default): without an envMap they render darker, so set material.metalness = 0 on load unless you want the sheen.",
+    "meshes": 1,
+    "primitives": 4,
+    "bbox_size_xyz": [
+      2.6413,
+      1.7603,
+      5.4938
+    ],
+    "joints": 0,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/car_wrecked.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)",
+    "forward_axis": "+Z",
+    "up_axis": "+Y",
+    "scale_to_m": 0.8,
+    "origin": "ground centre"
+  },
+  {
+    "file": "assets/models/cars/car_van.glb",
+    "category": "car",
+    "name": "Panel van",
+    "source_url": "https://poly.pizza/m/BbRojf2v3H",
+    "author": "PuKkBuMXDD",
+    "license": "CC-BY 3.0",
+    "size_bytes": 192168,
+    "triangles": 3225,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 3.1803,
+    "notes": "White panel van, stylized/boxy: 5.68 (L, along X) x 3.18 (H) x 3.47 (W) units. x0.62 gives about 3.5 x 2.0 x 2.15 m. ROTATE: this van points along -X, unlike the other cars; rotation.y = -Math.PI/2 aligns it to +Z. All/most materials have metallicFactor 0.4 (a poly.pizza FBX-conversion default): without an envMap they render darker, so set material.metalness = 0 on load unless you want the sheen.",
+    "meshes": 5,
+    "primitives": 16,
+    "bbox_size_xyz": [
+      5.6819,
+      3.1803,
+      3.4745
+    ],
+    "joints": 0,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/licenses/by/3.0/",
+    "preview": "assets/previews/models/car_van.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)",
+    "forward_axis": "-X (cab/front faces -X)",
+    "up_axis": "+Y",
+    "scale_to_m": 0.62,
+    "origin": "centre of the footprint, about 0.16 units above the lowest wheel point (raise by 0.157 units)"
+  },
+  {
+    "file": "assets/models/cars/car_suv_terrano.glb",
+    "category": "car",
+    "name": "Nissan Terrano (90s SUV)",
+    "source_url": "https://poly.pizza/m/fWGNi96ckzn",
+    "author": "Muhammad Reyhan",
+    "license": "CC-BY 3.0",
+    "size_bytes": 179840,
+    "triangles": 2950,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 0.7438,
+    "notes": "Blue 90s SUV, a common sight in Georgia. 2.16 x 0.74 x 0.89 units, so x2.0 gives 4.3 x 1.5 x 1.8 m. ROTATE: faces +X; rotation.y = Math.PI/2 aligns it to +Z. metallic 0 (no conversion default).",
+    "meshes": 5,
+    "primitives": 24,
+    "bbox_size_xyz": [
+      2.1579,
+      0.7438,
+      0.885
+    ],
+    "joints": 0,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/licenses/by/3.0/",
+    "preview": "assets/previews/models/car_suv_terrano.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)",
+    "forward_axis": "+X (front faces +X)",
+    "up_axis": "+Y",
+    "scale_to_m": 2.0,
+    "origin": "centre of the footprint, about 0.17 units above the wheel bottoms (raise by 0.168 units before scaling)"
+  },
+  {
+    "file": "assets/models/cars/car_wagon.glb",
+    "category": "car",
+    "name": "Station wagon (90s)",
+    "source_url": "https://poly.pizza/m/75h3mi6uHuC",
+    "author": "Poly by Google",
+    "license": "CC-BY 3.0",
+    "size_bytes": 40460,
+    "triangles": 2050,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 32.3273,
+    "notes": "Blue 90s estate car (Opel/VW Passat era), from Google Poly. Units about cm: 89 units long, so x0.047 gives 4.2 m. Single mesh with a small palette texture and no NORMAL attribute, so three.js renders it flat-shaded.",
+    "meshes": 1,
+    "primitives": 1,
+    "bbox_size_xyz": [
+      45.5041,
+      32.3273,
+      89.1128
+    ],
+    "joints": 0,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "1377 Car",
+        "mime": "image/png",
+        "dims": [
+          256,
+          256
+        ]
+      }
+    ],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/licenses/by/3.0/",
+    "preview": "assets/previews/models/car_wagon.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)",
+    "forward_axis": "+Z",
+    "up_axis": "+Y",
+    "scale_to_m": 0.047,
+    "origin": "ground centre"
+  },
+  {
+    "file": "assets/models/props/bench.glb",
+    "category": "prop",
+    "name": "Park bench",
+    "source_url": "https://poly.pizza/m/jLxjFxFRpw",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 21952,
+    "triangles": 376,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 0.3158,
+    "notes": "Wooden bench with backrest. 0.67 units long, so x2.5 gives 1.65 m (seat height about 0.45 m). All/most materials have metallicFactor 0.4 (a poly.pizza FBX-conversion default): without an envMap they render darker, so set material.metalness = 0 on load unless you want the sheen.",
+    "meshes": 1,
+    "primitives": 1,
+    "bbox_size_xyz": [
+      0.665,
+      0.3158,
+      0.2424
+    ],
+    "joints": 0,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/bench.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/props/street_light.glb",
+    "category": "prop",
+    "name": "Street light (pole)",
+    "source_url": "https://poly.pizza/m/0lxF8Dl1jU",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 23324,
+    "triangles": 426,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 6.6428,
+    "notes": "Curved single-arm pole light, 6.6 m, metres (Post Apocalypse pack). The lamp head reaches about 2.9 m along +Z. Add a PointLight/SpotLight at the head in code. All/most materials have metallicFactor 0.4 (a poly.pizza FBX-conversion default): without an envMap they render darker, so set material.metalness = 0 on load unless you want the sheen.",
+    "meshes": 1,
+    "primitives": 2,
+    "bbox_size_xyz": [
+      0.3643,
+      6.6428,
+      2.9253
+    ],
+    "joints": 0,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "Zombie_Atlas.png",
+        "mime": "image/png",
+        "dims": [
+          512,
+          512
+        ]
+      }
+    ],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 1,
+      "codes": [
+        "W:IMAGE_FEATURES_UNSUPPORTED"
+      ]
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/street_light.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/props/trash_bin_wheelie.glb",
+    "category": "prop",
+    "name": "Wheelie bin",
+    "source_url": "https://poly.pizza/m/XSwahu252t",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 24452,
+    "triangles": 739,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 2.2112,
+    "notes": "Green wheelie bin, 2.21 units tall, so x0.5 gives 1.1 m. All/most materials have metallicFactor 0.4 (a poly.pizza FBX-conversion default): without an envMap they render darker, so set material.metalness = 0 on load unless you want the sheen.",
+    "meshes": 1,
+    "primitives": 2,
+    "bbox_size_xyz": [
+      1.2173,
+      2.2112,
+      1.5913
+    ],
+    "joints": 0,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/trash_bin_wheelie.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/props/trash_bin_park.glb",
+    "category": "prop",
+    "name": "Park litter bin",
+    "source_url": "https://poly.pizza/m/2UXIdGYkg9",
+    "author": "Isa Lousberg",
+    "license": "CC0 1.0",
+    "size_bytes": 42480,
+    "triangles": 504,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 1.1429,
+    "notes": "Green slatted park bin, 1.14 units tall, so x0.8 gives 0.9 m. All/most materials have metallicFactor 0.4 (a poly.pizza FBX-conversion default): without an envMap they render darker, so set material.metalness = 0 on load unless you want the sheen.",
+    "meshes": 1,
+    "primitives": 1,
+    "bbox_size_xyz": [
+      1.0,
+      1.1429,
+      1.0
+    ],
+    "joints": 0,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "tiny_treats_texture_1.png",
+        "mime": "image/png",
+        "dims": [
+          1024,
+          1024
+        ]
+      }
+    ],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/trash_bin_park.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/props/bollard.glb",
+    "category": "prop",
+    "name": "Bollard",
+    "source_url": "https://poly.pizza/m/JSQJ07PFj2",
+    "author": "J-Toastie",
+    "license": "CC-BY 3.0",
+    "size_bytes": 115384,
+    "triangles": 276,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 1.6676,
+    "notes": "Dark steel bollard with a yellow band. Its 2302x2048 texture was downscaled to 1024 px JPEG (351 KB to 102 KB). 1.67 units tall, so x0.55 gives 0.9 m. All/most materials have metallicFactor 0.4 (a poly.pizza FBX-conversion default): without an envMap they render darker, so set material.metalness = 0 on load unless you want the sheen.",
+    "meshes": 1,
+    "primitives": 1,
+    "bbox_size_xyz": [
+      0.6801,
+      1.6676,
+      0.6976
+    ],
+    "joints": 0,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "texture_atlas.png",
+        "mime": "image/jpeg",
+        "dims": [
+          1024,
+          911
+        ]
+      }
+    ],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/licenses/by/3.0/",
+    "preview": "assets/previews/models/bollard.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/props/playground_swings.glb",
+    "category": "prop",
+    "name": "Swing set (2 seats)",
+    "source_url": "https://poly.pizza/m/e-IJdcqZH4p",
+    "author": "Poly by Google",
+    "license": "CC-BY 3.0",
+    "size_bytes": 12436,
+    "triangles": 588,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 114.492,
+    "notes": "Wooden A-frame double swing. Units about cm: 114.5 tall, so x0.02 gives 2.3 m. Seats are static.",
+    "meshes": 1,
+    "primitives": 1,
+    "bbox_size_xyz": [
+      86.1143,
+      114.492,
+      151.5
+    ],
+    "joints": 0,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "1231 Swing",
+        "mime": "image/png",
+        "dims": [
+          256,
+          256
+        ]
+      }
+    ],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/licenses/by/3.0/",
+    "preview": "assets/previews/models/playground_swings.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/props/playground_slide.glb",
+    "category": "prop",
+    "name": "Slide",
+    "source_url": "https://opengameart.org/content/playground",
+    "author": "leonkin",
+    "license": "CC0 1.0",
+    "size_bytes": 37632,
+    "triangles": 576,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 2.7,
+    "notes": "Blue slide with a yellow ladder, metres (2.7 m tall, 5.05 m long). From the OGA 'Playground' pack (GLTF/slide.glb, unmodified).",
+    "meshes": 1,
+    "primitives": 2,
+    "bbox_size_xyz": [
+      1.4,
+      2.7,
+      5.05
+    ],
+    "joints": 0,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/playground_slide.jpg",
+    "preview_kind": "local Blender render of the delivered file (source page shows a multi-model set or none)"
+  },
+  {
+    "file": "assets/models/props/playground_climbing_frame.glb",
+    "category": "prop",
+    "name": "Climbing frame (jungle gym)",
+    "source_url": "https://poly.pizza/m/0-7U_RTHzKT",
+    "author": "Poly by Google",
+    "license": "CC-BY 3.0",
+    "size_bytes": 429596,
+    "triangles": 5376,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 11.5806,
+    "notes": "Blue/yellow bar climbing frame. Texture downscaled 2048 to 512 JPEG (2.3 MB to 0.42 MB). 11.6 units tall, so x0.2 gives 2.3 m.",
+    "meshes": 1,
+    "primitives": 1,
+    "bbox_size_xyz": [
+      9.5,
+      11.5806,
+      9.3767
+    ],
+    "joints": 0,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "JungleGym_BaseColor",
+        "mime": "image/jpeg",
+        "dims": [
+          512,
+          512
+        ]
+      }
+    ],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/licenses/by/3.0/",
+    "preview": "assets/previews/models/playground_climbing_frame.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/props/playground_spring_rider.glb",
+    "category": "prop",
+    "name": "Spring rider (placeholder)",
+    "source_url": "(authored for this project)",
+    "author": "Original placeholder, procedurally modelled in Blender 4.1 for this project",
+    "license": "CC0 1.0 (original, no third-party content)",
+    "size_bytes": 123032,
+    "triangles": 4440,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 1.0,
+    "notes": "AUTHORED PLACEHOLDER, not downloaded: no free spring rider existed on the allowed sources. Base plate, yellow coil spring, red rounded body with seat, handlebar and foot pegs. 1.0 m tall, metres.",
+    "meshes": 1,
+    "primitives": 4,
+    "bbox_size_xyz": [
+      0.93,
+      1.0,
+      0.6
+    ],
+    "joints": 0,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/playground_spring_rider.jpg",
+    "preview_kind": "local Blender render of the delivered file (source page shows a multi-model set or none)"
+  },
+  {
+    "file": "assets/models/props/basketball_hoop.glb",
+    "category": "prop",
+    "name": "Basketball hoop stand",
+    "source_url": "https://poly.pizza/m/85FpUr2fHkH",
+    "author": "Poly by Google",
+    "license": "CC-BY 3.0",
+    "size_bytes": 54556,
+    "triangles": 378,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 4.0185,
+    "notes": "Extracted by me from the 'Basketball court' model: separated one hoop stand (pole, arm, backboard, rim) by loose parts, recentred it at the base, texture 2048 to 512 JPEG. Metres, 4.0 m tall. The backboard and rim face -Z (pole on the +Z side).",
+    "meshes": 1,
+    "primitives": 1,
+    "bbox_size_xyz": [
+      1.8,
+      4.0185,
+      2.4813
+    ],
+    "joints": 0,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "BasketBallCourt_BaseColor",
+        "mime": "image/jpeg",
+        "dims": [
+          512,
+          512
+        ]
+      }
+    ],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/licenses/by/3.0/",
+    "preview": "assets/previews/models/basketball_hoop.jpg",
+    "preview_kind": "local Blender render of the delivered file (source page shows a multi-model set or none)"
+  },
+  {
+    "file": "assets/models/props/gazebo.glb",
+    "category": "prop",
+    "name": "Gazebo (octagonal, wooden)",
+    "source_url": "https://poly.pizza/m/0cRW-BhHD16",
+    "author": "Poly by Google",
+    "license": "CC-BY 3.0",
+    "size_bytes": 125136,
+    "triangles": 1736,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 8.7737,
+    "notes": "10.4 units wide x 8.8 tall, so x0.45 gives about 4.7 m across and 3.9 m tall.",
+    "meshes": 1,
+    "primitives": 3,
+    "bbox_size_xyz": [
+      10.4,
+      8.7737,
+      10.3135
+    ],
+    "joints": 0,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/licenses/by/3.0/",
+    "preview": "assets/previews/models/gazebo.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/props/pergola.glb",
+    "category": "prop",
+    "name": "Pergola (wooden shade cover)",
+    "source_url": "https://poly.pizza/m/akMzoP0qU7f",
+    "author": "Daniel Doran",
+    "license": "CC-BY 3.0",
+    "size_bytes": 89340,
+    "triangles": 1256,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 4.3,
+    "notes": "Its origin was at the top of the model; I wrapped it in node 'Pergola_recentered' so it sits on y=0 (geometry unchanged). 4.3 units tall, so x0.6 gives 2.6 m.",
+    "meshes": 1,
+    "primitives": 2,
+    "bbox_size_xyz": [
+      4.98,
+      4.3,
+      6.15
+    ],
+    "joints": 0,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/licenses/by/3.0/",
+    "preview": "assets/previews/models/pergola.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/props/fitness_pullup_bars.glb",
+    "category": "prop",
+    "name": "Outdoor fitness: pull-up bars (3 heights)",
+    "source_url": "(authored for this project)",
+    "author": "Original placeholder, procedurally modelled in Blender 4.1 for this project",
+    "license": "CC0 1.0 (original, no third-party content)",
+    "size_bytes": 28780,
+    "triangles": 660,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 2.7,
+    "notes": "AUTHORED PLACEHOLDER: no outdoor-gym equipment on the allowed sources. Green posts with steel bars at 2.0/2.3/2.6 m. Metres.",
+    "meshes": 1,
+    "primitives": 3,
+    "bbox_size_xyz": [
+      3.84,
+      2.7,
+      0.24
+    ],
+    "joints": 0,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/fitness_pullup_bars.jpg",
+    "preview_kind": "local Blender render of the delivered file (source page shows a multi-model set or none)"
+  },
+  {
+    "file": "assets/models/props/fitness_parallel_bars.glb",
+    "category": "prop",
+    "name": "Outdoor fitness: parallel (dip) bars",
+    "source_url": "(authored for this project)",
+    "author": "Original placeholder, procedurally modelled in Blender 4.1 for this project",
+    "license": "CC0 1.0 (original, no third-party content)",
+    "size_bytes": 26340,
+    "triangles": 600,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 1.225,
+    "notes": "AUTHORED PLACEHOLDER. 2.0 m long, 1.2 m high rails, 0.56 m apart. Metres.",
+    "meshes": 1,
+    "primitives": 3,
+    "bbox_size_xyz": [
+      2.02,
+      1.225,
+      0.78
+    ],
+    "joints": 0,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/fitness_parallel_bars.jpg",
+    "preview_kind": "local Blender render of the delivered file (source page shows a multi-model set or none)"
+  },
+  {
+    "file": "assets/models/props/boom_barrier.glb",
+    "category": "prop",
+    "name": "Boom barrier / lift gate",
+    "source_url": "(authored for this project)",
+    "author": "Original placeholder, procedurally modelled in Blender 4.1 for this project",
+    "license": "CC0 1.0 (original, no third-party content)",
+    "size_bytes": 140584,
+    "triangles": 1968,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 1.04,
+    "notes": "AUTHORED PLACEHOLDER (the level has 5 'lift_gate' entries). Yellow cabinet, 4 m red/white arm, rest post. Metres. PIVOT: node 'Arm' sits at the hinge (0.2, 0.9, 0) with the arm along its local +X. Rotate Arm about its local Z from 0 (closed) to +PI/2 (open, arm vertical). Nodes: BoomBarrier > {Housing, Arm > ArmMesh, RestPost}.",
+    "meshes": 3,
+    "primitives": 8,
+    "bbox_size_xyz": [
+      4.49,
+      1.04,
+      0.46
+    ],
+    "joints": 0,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/boom_barrier.jpg",
+    "preview_kind": "local Blender render of the delivered file (source page shows a multi-model set or none)"
+  },
+  {
+    "file": "assets/models/props/gate_iron.glb",
+    "category": "prop",
+    "name": "Iron gate with pillars",
+    "source_url": "https://poly.pizza/m/9LXddGLPnRF",
+    "author": "Poly by Google",
+    "license": "CC-BY 3.0",
+    "size_bytes": 67672,
+    "triangles": 880,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 4.6159,
+    "notes": "Bonus, for the level's 'gate' entries: wrought-iron double gate between stone pillars. 8.0 units wide x 4.6 tall (width along Z), so x0.45 gives 3.6 m x 2.1 m. The gate leaves are not separate nodes (static).",
+    "meshes": 1,
+    "primitives": 3,
+    "bbox_size_xyz": [
+      1.3778,
+      4.6159,
+      7.9976
+    ],
+    "joints": 0,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/licenses/by/3.0/",
+    "preview": "assets/previews/models/gate_iron.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/props/traffic_cone.glb",
+    "category": "prop",
+    "name": "Traffic cone",
+    "source_url": "https://poly.pizza/m/lAx8JytxGD",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 8280,
+    "triangles": 168,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 0.6367,
+    "notes": "0.64 m, about metres (Toon Shooter kit). All/most materials have metallicFactor 0.4 (a poly.pizza FBX-conversion default): without an envMap they render darker, so set material.metalness = 0 on load unless you want the sheen.",
+    "meshes": 1,
+    "primitives": 2,
+    "bbox_size_xyz": [
+      0.6746,
+      0.6367,
+      0.6746
+    ],
+    "joints": 0,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/traffic_cone.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/props/dumpster.glb",
+    "category": "prop",
+    "name": "Dumpster",
+    "source_url": "https://poly.pizza/m/PKsbolkZSr",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 19784,
+    "triangles": 302,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 2.0302,
+    "notes": "Green dumpster with black lids (Toon Shooter kit). 2.44 x 2.03 x 1.30 units, so x0.7 gives about 1.7 m wide. All/most materials have metallicFactor 0.4 (a poly.pizza FBX-conversion default): without an envMap they render darker, so set material.metalness = 0 on load unless you want the sheen.",
+    "meshes": 1,
+    "primitives": 3,
+    "bbox_size_xyz": [
+      2.4416,
+      2.0302,
+      1.2955
+    ],
+    "joints": 0,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/dumpster.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/props/fence_iron.glb",
+    "category": "prop",
+    "name": "Iron fence / railing segment",
+    "source_url": "https://poly.pizza/m/MDROOJeCSQ",
+    "author": "Kay Lousberg",
+    "license": "CC0 1.0",
+    "size_bytes": 39944,
+    "triangles": 312,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 2.0,
+    "notes": "Black spear-top railing, 4.0 x 2.0 units, tileable along X. Use x0.6 for a 1.2 m railing or x0.9 for a perimeter fence. All/most materials have metallicFactor 0.4 (a poly.pizza FBX-conversion default): without an envMap they render darker, so set material.metalness = 0 on load unless you want the sheen.",
+    "meshes": 1,
+    "primitives": 1,
+    "bbox_size_xyz": [
+      4.0,
+      2.0,
+      0.1696
+    ],
+    "joints": 0,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "halloweenbits_texture.png",
+        "mime": "image/png",
+        "dims": [
+          1024,
+          1024
+        ]
+      }
+    ],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/fence_iron.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/props/fence_chainlink.glb",
+    "category": "prop",
+    "name": "Chain-link fence panel",
+    "source_url": "https://poly.pizza/m/qWKhREFj7H",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 89140,
+    "triangles": 218,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 2.8753,
+    "notes": "Metal frame with an alpha-textured chain-link panel (Toon Shooter kit). 3.55 x 2.88 units, so x0.7 gives 2 m tall. I changed the panel material from BLEND to MASK (alphaCutoff 0.5, doubleSided) to avoid transparency sorting; nothing else changed. All/most materials have metallicFactor 0.4 (a poly.pizza FBX-conversion default): without an envMap they render darker, so set material.metalness = 0 on load unless you want the sheen.",
+    "meshes": 1,
+    "primitives": 2,
+    "bbox_size_xyz": [
+      3.5489,
+      2.8753,
+      0.1147
+    ],
+    "joints": 0,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "Fence.png",
+        "mime": "image/png",
+        "dims": [
+          894,
+          894
+        ]
+      }
+    ],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/fence_chainlink.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/props/planter.glb",
+    "category": "prop",
+    "name": "Planter box with bushes",
+    "source_url": "https://poly.pizza/m/wn85Xr9lM3",
+    "author": "J-Toastie",
+    "license": "CC-BY 3.0",
+    "size_bytes": 53232,
+    "triangles": 622,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 1.1217,
+    "notes": "Wooden slatted planter with 3 bushes, 2.37 x 1.12 units, so x0.6 gives 1.4 m long. The base sits 0.1 below the origin. All/most materials have metallicFactor 0.4 (a poly.pizza FBX-conversion default): without an envMap they render darker, so set material.metalness = 0 on load unless you want the sheen.",
+    "meshes": 1,
+    "primitives": 3,
+    "bbox_size_xyz": [
+      2.3721,
+      1.1217,
+      0.7672
+    ],
+    "joints": 0,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/licenses/by/3.0/",
+    "preview": "assets/previews/models/planter.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/props/pool_umbrella.glb",
+    "category": "prop",
+    "name": "Pool/beach umbrella (red/white)",
+    "source_url": "https://poly.pizza/m/2li3sdSkmCI",
+    "author": "S. Paul Michael",
+    "license": "CC-BY 3.0",
+    "size_bytes": 26100,
+    "triangles": 214,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 0.6732,
+    "notes": "0.67 units tall, so x3.4 gives 2.3 m. The origin is at the model centre (0.27 units above the base), so offset it upward.",
+    "meshes": 2,
+    "primitives": 5,
+    "bbox_size_xyz": [
+      0.5675,
+      0.6732,
+      0.5069
+    ],
+    "joints": 0,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/licenses/by/3.0/",
+    "preview": "assets/previews/models/pool_umbrella.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/props/pool_sun_lounger.glb",
+    "category": "prop",
+    "name": "Sun lounger / chaise (teal)",
+    "source_url": "https://poly.pizza/m/7DzApo8dST5",
+    "author": "S. Paul Michael",
+    "license": "CC-BY 3.0",
+    "size_bytes": 135708,
+    "triangles": 1630,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 0.2878,
+    "notes": "0.78 units long, so x2.5 gives 1.95 m. The origin is at the model centre (the base is 0.1 below).",
+    "meshes": 17,
+    "primitives": 17,
+    "bbox_size_xyz": [
+      0.7766,
+      0.2878,
+      0.4029
+    ],
+    "joints": 0,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/licenses/by/3.0/",
+    "preview": "assets/previews/models/pool_sun_lounger.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/props/construction_crane.glb",
+    "category": "prop",
+    "name": "Tower crane (backdrop)",
+    "source_url": "https://poly.pizza/m/gCcpjaxFdv",
+    "author": "J-Toastie",
+    "license": "CC-BY 3.0",
+    "size_bytes": 542664,
+    "triangles": 9918,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 14.6065,
+    "notes": "Yellow lattice tower crane, 14.6 units tall with a 21 m jib along Z. Scale x2.5-4 for a backdrop tower crane. 9.9k tris; hook is static.",
+    "meshes": 3,
+    "primitives": 8,
+    "bbox_size_xyz": [
+      1.6,
+      14.6065,
+      21.1289
+    ],
+    "joints": 0,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/licenses/by/3.0/",
+    "preview": "assets/previews/models/construction_crane.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/props/shopping_cart.glb",
+    "category": "prop",
+    "name": "Shopping cart",
+    "source_url": "https://poly.pizza/m/4lhRcMbl1pw",
+    "author": "Poly by Google",
+    "license": "CC-BY 3.0",
+    "size_bytes": 213028,
+    "triangles": 2868,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 1.0,
+    "notes": "Red shopping trolley. The source had absurd coordinates (about 400,000 units, offset about 1,000,000 from the origin), so I wrapped it in node 'ShoppingCart_normalized' (uniform scale 2.6e-6 + translation). It is now 1.0 m tall and 1.2 m long, sitting on y=0. Geometry is unchanged.",
+    "meshes": 46,
+    "primitives": 50,
+    "bbox_size_xyz": [
+      0.6604,
+      1.0,
+      1.2156
+    ],
+    "joints": 0,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/licenses/by/3.0/",
+    "preview": "assets/previews/models/shopping_cart.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/props/pickup_ammo_can.glb",
+    "category": "pickup",
+    "name": "Ammo can",
+    "source_url": "https://poly.pizza/m/9xeB2FkEYr",
+    "author": "Pichuliru",
+    "license": "CC0 1.0",
+    "size_bytes": 1012008,
+    "triangles": 10071,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 0.2654,
+    "notes": "Military ammo can with an embossed 'Ammo' label, real scale (0.32 m). 10k tris (bevelled text): fine for a few pickups; use the bullets model for mass drops. All/most materials have metallicFactor 0.4 (a poly.pizza FBX-conversion default): without an envMap they render darker, so set material.metalness = 0 on load unless you want the sheen.",
+    "meshes": 1,
+    "primitives": 1,
+    "bbox_size_xyz": [
+      0.3199,
+      0.2654,
+      0.1715
+    ],
+    "joints": 0,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "T_PCL_Palette_col.png",
+        "mime": "image/png",
+        "dims": [
+          64,
+          64
+        ]
+      }
+    ],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/pickup_ammo_can.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/props/pickup_ammo_bullets.glb",
+    "category": "pickup",
+    "name": "Bullets pickup",
+    "source_url": "https://poly.pizza/m/bTEYFxKHF9",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 32004,
+    "triangles": 624,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 0.8421,
+    "notes": "Three stylized rounds, a classic floating pickup icon. The origin is centred, so it suits spinning/bobbing. 0.84 units tall. All/most materials have metallicFactor 0.4 (a poly.pizza FBX-conversion default): without an envMap they render darker, so set material.metalness = 0 on load unless you want the sheen.",
+    "meshes": 1,
+    "primitives": 1,
+    "bbox_size_xyz": [
+      0.8284,
+      0.8421,
+      0.2761
+    ],
+    "joints": 0,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "Atlas.png",
+        "mime": "image/png",
+        "dims": [
+          512,
+          512
+        ]
+      }
+    ],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 1,
+      "codes": [
+        "W:IMAGE_FEATURES_UNSUPPORTED"
+      ]
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/pickup_ammo_bullets.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/props/pickup_medkit.glb",
+    "category": "pickup",
+    "name": "First aid kit",
+    "source_url": "https://poly.pizza/m/Hp80p6148W",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 18568,
+    "triangles": 268,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 1.2771,
+    "notes": "White case with a red cross (Survival Pack). 1.88 units wide, so x0.2 gives 0.38 m. The origin is centred. All/most materials have metallicFactor 0.4 (a poly.pizza FBX-conversion default): without an envMap they render darker, so set material.metalness = 0 on load unless you want the sheen.",
+    "meshes": 1,
+    "primitives": 4,
+    "bbox_size_xyz": [
+      1.8837,
+      1.2771,
+      0.677
+    ],
+    "joints": 0,
+    "textures_embedded": null,
+    "images": [],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 0,
+      "codes": []
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/pickup_medkit.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  },
+  {
+    "file": "assets/models/props/pickup_medkit_green.glb",
+    "category": "pickup",
+    "name": "Health pickup (green kit)",
+    "source_url": "https://poly.pizza/m/ijqVDSeIM5",
+    "author": "Quaternius",
+    "license": "CC0 1.0",
+    "size_bytes": 42508,
+    "triangles": 684,
+    "skinned": false,
+    "animations": [],
+    "bbox_height": 1.0036,
+    "notes": "Green medkit with a white band, as an alternate or large-heal pickup. The origin is centred. All/most materials have metallicFactor 0.4 (a poly.pizza FBX-conversion default): without an envMap they render darker, so set material.metalness = 0 on load unless you want the sheen.",
+    "meshes": 1,
+    "primitives": 1,
+    "bbox_size_xyz": [
+      0.9694,
+      1.0036,
+      0.4402
+    ],
+    "joints": 0,
+    "textures_embedded": true,
+    "images": [
+      {
+        "name": "Atlas.png",
+        "mime": "image/png",
+        "dims": [
+          512,
+          512
+        ]
+      }
+    ],
+    "extensions_used": [],
+    "flags": [],
+    "khronos_validator": {
+      "errors": 0,
+      "warnings": 1,
+      "codes": [
+        "W:IMAGE_FEATURES_UNSUPPORTED"
+      ]
+    },
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "preview": "assets/previews/models/pickup_medkit_green.jpg",
+    "preview_kind": "source site thumbnail (downscaled to max 512 px)"
+  }
+]

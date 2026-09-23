@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Green Diamond: Dighomi Outbreak</title>
+<link rel="stylesheet" href="src/style.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three/build/three.module.js",
+    "three/addons/": "./vendor/three/addons/"
+  }
+}
+</script>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud" class="hidden">
+  <div id="scope"><div class="lens"><i class="h"></i><i class="v"></i><i class="chev"></i><i class="chev c2"></i><i class="chev c3"></i><b class="range"></b></div></div>
+  <div id="crosshair"><i class="t"></i><i class="b"></i><i class="l"></i><i class="r"></i></div>
+  <div id="hitmarker"></div>
+  <div id="damage"></div>
+  <div id="lowhp"></div>
+  <div id="wave"><span id="wave-num">1</span></div>
+  <div id="points"><span id="points-num">500</span></div>
+  <div id="feed"></div>
+  <div id="health"><div id="health-bar"></div></div>
+  <div id="slots"></div>
+  <div id="notice"></div>
+  <div id="ammo"><span id="ammo-name">Makarov</span><span id="ammo-mag">8</span><span id="ammo-res">/ 64</span></div>
+  <div id="prompt"></div>
+  <div id="banner"></div>
+  <canvas id="minimap" width="220" height="220"></canvas>
+  <div id="keys">
+    <span><b>WASD</b> move</span><span><b>Shift</b> sprint</span><span><b>Space</b> jump</span><span><b>C</b> crouch</span>
+    <span><b>Click</b> shoot</span><span><b>E</b> aim</span><span><b>R</b> reload</span><span><b>Q</b>/<b>1–4</b> weapon</span><span><b>Shift</b> steady scope</span>
+    <span><b>V</b> knife</span><span><b>F</b> buy</span><span><b>G</b> light</span><span><b>M</b> map</span><span><b>H</b> hide keys</span>
+  </div>
+  <div id="stats"></div>
+</div>
+
+<div id="loading" class="screen">
+  <div class="brand">
+    <div class="kicker">მწვანე ალმასი · Dighomi, Tbilisi</div>
+    <h1>GREEN DIAMOND</h1>
+    <div class="sub">Outbreak</div>
+  </div>
+  <div id="load-bar"><div id="load-fill"></div></div>
+  <div id="load-text">Loading…</div>
+</div>
+
+<div id="menu" class="screen hidden">
+  <div class="brand">
+    <div class="kicker">მწვანე ალმასი · 32 Bob Walsh St · Dighomi, Tbilisi</div>
+    <h1>GREEN DIAMOND</h1>
+    <div class="sub">Outbreak</div>
+  </div>
+  <p class="lede">Something got into the complex after dark. The gates on Bob Walsh Street won't hold.
+    Survive as many waves as you can.</p>
+  <button id="play" class="btn">Play</button>
+  <div class="settings">
+    <label>Mouse sensitivity <input id="sens" type="range" min="0.2" max="3" step="0.05" value="1"></label>
+    <label>Volume <input id="vol" type="range" min="0" max="1" step="0.05" value="0.8"></label>
+    <label>Graphics
+      <select id="quality">
+        <option value="low">Low (fastest)</option>
+        <option value="medium">Medium</option>
+        <option value="high" selected>High</option>
+      </select>
+    </label>
+  </div>
+  <div class="controls">
+    <span><b>WASD</b> move</span><span><b>Shift</b> sprint</span><span><b>Space</b> jump</span><span><b>C</b> crouch</span>
+    <span><b>Click</b> shoot</span><span><b>E</b> aim (or hold right-click)</span><span><b>R</b> reload</span>
+    <span><b>Q</b> or <b>1–4</b> switch weapon</span><span><b>Shift</b> (scoped) hold breath</span><span><b>F</b> buy at the shops</span><span><b>V</b> knife</span>
+    <span><b>G</b> flashlight</span><span><b>M</b> map</span><span><b>Esc</b> pause</span>
+  </div>
+  <div class="credits" id="credits"></div>
+</div>
+
+<div id="pause" class="screen hidden">
+  <h2>Paused</h2>
+  <button id="resume" class="btn">Resume</button>
+  <button id="quit" class="btn ghost">Quit to menu</button>
+</div>
+
+<div id="gameover" class="screen hidden">
+  <h2>You died</h2>
+  <div id="go-stats"></div>
+  <button id="retry" class="btn">Play again</button>
+  <button id="go-menu" class="btn ghost">Menu</button>
+</div>
+
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

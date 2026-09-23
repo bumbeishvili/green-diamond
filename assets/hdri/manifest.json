@@ -1,0 +1,137 @@
+{
+  "generated": "2026-09-23",
+  "description": "Poly Haven \"pure sky\" HDRIs (ground replaced by a neutral lower hemisphere), 2K equirectangular .hdr, for scene.environment and scene.background.",
+  "total_bytes": 15182087,
+  "files": [
+    {
+      "file": "assets/hdri/kloofendal_48d_partly_cloudy_puresky_2k.hdr",
+      "source_url": "https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky",
+      "download_url": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/kloofendal_48d_partly_cloudy_puresky_2k.hdr",
+      "author": "Greg Zaal (Original), Jarod Guest (Sky edits)",
+      "license": "CC0 1.0",
+      "notes": "Sky-only version of Kloofendal 48d Partly Cloudy (ground replaced). Crisp cumulus, strong unclipped sun (the \"48d\" in the name is its elevation, which matches the measurement). Best default daytime sky.",
+      "role": "afternoon: clear to partly cloudy, high sun",
+      "resolution": [
+        2048,
+        1024
+      ],
+      "bytes": 5451493,
+      "header": "#?RADIANCE",
+      "format": "Radiance RGBE (32-bit_rle_rgbe). Load with THREE.RGBELoader (or HDRLoader in newer three.js) and set mapping = THREE.EquirectangularReflectionMapping.",
+      "polyhaven_attributes": {
+        "time_of_day": "midday",
+        "weather": "partly_cloudy",
+        "light_type": "natural",
+        "contrast": "high",
+        "environment": "outdoor",
+        "sky_view": "open"
+      },
+      "sun": {
+        "method": "Estimated from the HDR pixel data (centroid of the brightest region). Poly Haven does not publish sun angles.",
+        "is_diffuse_overcast": false,
+        "elevation_deg": 47.88,
+        "azimuth_deg_from_image_center": 34.25,
+        "equirect_u": 0.5951,
+        "equirect_pixel_xy_2k": [
+          1218.4,
+          239.1
+        ],
+        "threejs_direction": [
+          0.5544,
+          0.7417,
+          0.3775
+        ],
+        "threejs_direction_note": "Unit vector toward the sun in three.js world space, with this HDR as scene.environment/background under the default equirect mapping and no environmentRotation/backgroundRotation. u = 0.5 (image centre) faces +X and u = 0.75 faces +Z. Put the DirectionalLight at direction * distance. If you rotate the sky about Y (scene.environmentRotation.y / backgroundRotation.y, r162+), rotate this vector by the same angle.",
+        "peak_luminance": 72558.8,
+        "sun_region_energy_fraction": 0.537
+      }
+    },
+    {
+      "file": "assets/hdri/table_mountain_2_puresky_2k.hdr",
+      "source_url": "https://polyhaven.com/a/table_mountain_2_puresky",
+      "download_url": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/table_mountain_2_puresky_2k.hdr",
+      "author": "Greg Zaal (Original), Jarod Guest (Sky Edits)",
+      "license": "CC0 1.0",
+      "notes": "Low, warm (orange-white) unclipped sun with scattered clouds; high contrast (EV range 21). For golden-hour lighting with long shadows. Sky-only version.",
+      "role": "golden hour: low warm sun, partly cloudy",
+      "resolution": [
+        2048,
+        1024
+      ],
+      "bytes": 5162594,
+      "header": "#?RADIANCE",
+      "format": "Radiance RGBE (32-bit_rle_rgbe). Load with THREE.RGBELoader (or HDRLoader in newer three.js) and set mapping = THREE.EquirectangularReflectionMapping.",
+      "polyhaven_attributes": {
+        "time_of_day": "sunset",
+        "weather": "partly_cloudy",
+        "light_type": "natural",
+        "contrast": "high",
+        "environment": "outdoor",
+        "sky_view": "open"
+      },
+      "sun": {
+        "method": "Estimated from the HDR pixel data (centroid of the brightest region). Poly Haven does not publish sun angles.",
+        "is_diffuse_overcast": false,
+        "elevation_deg": 7.26,
+        "azimuth_deg_from_image_center": 49.8,
+        "equirect_u": 0.6383,
+        "equirect_pixel_xy_2k": [
+          1306.8,
+          470.2
+        ],
+        "threejs_direction": [
+          0.6403,
+          0.1264,
+          0.7577
+        ],
+        "threejs_direction_note": "Unit vector toward the sun in three.js world space, with this HDR as scene.environment/background under the default equirect mapping and no environmentRotation/backgroundRotation. u = 0.5 (image centre) faces +X and u = 0.75 faces +Z. Put the DirectionalLight at direction * distance. If you rotate the sky about Y (scene.environmentRotation.y / backgroundRotation.y, r162+), rotate this vector by the same angle.",
+        "peak_luminance": 65458.1,
+        "sun_region_energy_fraction": 0.551
+      }
+    },
+    {
+      "file": "assets/hdri/overcast_soil_puresky_2k.hdr",
+      "source_url": "https://polyhaven.com/a/overcast_soil_puresky",
+      "download_url": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/overcast_soil_puresky_2k.hdr",
+      "author": "Jarod Guest (Sky Edits), Sergej Majboroda (Original)",
+      "license": "CC0 1.0",
+      "notes": "Dense grey overcast with dramatic cloud texture, neutral colour, very soft light, and no visible sun disc. Moody zombie-apocalypse sky. Sky-only version.",
+      "role": "overcast: grey storm clouds",
+      "resolution": [
+        2048,
+        1024
+      ],
+      "bytes": 4568000,
+      "header": "#?RADIANCE",
+      "format": "Radiance RGBE (32-bit_rle_rgbe). Load with THREE.RGBELoader (or HDRLoader in newer three.js) and set mapping = THREE.EquirectangularReflectionMapping.",
+      "polyhaven_attributes": {
+        "time_of_day": "afternoon",
+        "weather": "overcast",
+        "light_type": "natural",
+        "contrast": "low",
+        "environment": "outdoor",
+        "sky_view": "open"
+      },
+      "sun": {
+        "method": "Estimated from the HDR pixel data (centroid of the brightest region). Poly Haven does not publish sun angles.",
+        "is_diffuse_overcast": true,
+        "elevation_deg": 35.42,
+        "azimuth_deg_from_image_center": -10.91,
+        "equirect_u": 0.4697,
+        "equirect_pixel_xy_2k": [
+          961.4,
+          310.0
+        ],
+        "threejs_direction": [
+          0.8002,
+          0.5796,
+          -0.1542
+        ],
+        "threejs_direction_note": "Unit vector toward the sun in three.js world space, with this HDR as scene.environment/background under the default equirect mapping and no environmentRotation/backgroundRotation. u = 0.5 (image centre) faces +X and u = 0.75 faces +Z. Put the DirectionalLight at direction * distance. If you rotate the sky about Y (scene.environmentRotation.y / backgroundRotation.y, r162+), rotate this vector by the same angle.",
+        "peak_luminance": 5.3,
+        "sun_region_energy_fraction": 0.011,
+        "note": "There is no sun disc; this is only the brightest part of the cloud layer. Use a weak, soft DirectionalLight or none."
+      }
+    }
+  ]
+}

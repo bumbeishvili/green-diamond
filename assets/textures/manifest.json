@@ -1,0 +1,1221 @@
+{
+  "generated": "2026-09-23",
+  "description": "PBR textures for the Tbilisi residential-complex zombie shooter. Each set is assets/textures/<set>/{color,normal,roughness,ao}.jpg. All maps tile seamlessly; normal maps are OpenGL (+Y), which three.js expects.",
+  "threejs_usage": "Set colorSpace = THREE.SRGBColorSpace on color maps only; the other maps are linear. Use wrapS = wrapT = THREE.RepeatWrapping and set repeat from tile_size_m (world metres per texture repeat). Since r151 aoMap uses the primary UVs.",
+  "total_bytes": 27672763,
+  "contact_sheet": "assets/previews/textures/_contact_sheet.jpg",
+  "sets": {
+    "asphalt": {
+      "description": "Worn, fine-grained grey road asphalt with faint hairline cracks (city road).",
+      "source": "ambientCG",
+      "asset_id": "Asphalt031",
+      "source_url": "https://ambientcg.com/view?id=Asphalt031",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "resolution": "2K",
+      "maps": [
+        "ao",
+        "color",
+        "normal",
+        "roughness"
+      ],
+      "missing_maps": [],
+      "tile_size_m": null,
+      "suggested_tile_size_m": 2.5,
+      "normal_convention": "OpenGL (+Y up, green = up), the three.js default",
+      "normal_convention_verified": "G channel correlates 0.938 with the source height-map gradient (positive = OpenGL)",
+      "seamless_tiling_check": {
+        "color_seam_rank_xy": [
+          1.0,
+          1.0
+        ],
+        "color_seam_over_p99_xy": [
+          1.053,
+          1.09
+        ],
+        "visual_2x2_check": "pass"
+      },
+      "notes": "ambientCG gives no physical size; judging by the aggregate grain, about 2.5 m per repeat looks right."
+    },
+    "concrete": {
+      "description": "Smooth light-grey concrete for sidewalks, curbs and plinths.",
+      "source": "ambientCG",
+      "asset_id": "Concrete034",
+      "source_url": "https://ambientcg.com/view?id=Concrete034",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "resolution": "1K",
+      "maps": [
+        "color",
+        "normal",
+        "roughness"
+      ],
+      "missing_maps": [
+        "ao"
+      ],
+      "tile_size_m": [
+        1.1,
+        0.55
+      ],
+      "suggested_tile_size_m": null,
+      "normal_convention": "OpenGL (+Y up, green = up), the three.js default",
+      "normal_convention_verified": "G channel correlates 0.927 with the source height-map gradient (positive = OpenGL)",
+      "seamless_tiling_check": {
+        "color_seam_rank_xy": [
+          0.991,
+          0.861
+        ],
+        "color_seam_over_p99_xy": [
+          1.018,
+          0.794
+        ],
+        "visual_2x2_check": "pass"
+      },
+      "notes": "Non-square 1024x512 texture covering 1.10 m x 0.55 m; repeat about 0.91 x 1.82 times per metre."
+    },
+    "pavers": {
+      "description": "Grey interlocking concrete pavers (zig-zag or \"dogbone\" uni-stones), typical of modern Tbilisi courtyards.",
+      "source": "ambientCG",
+      "asset_id": "PavingStones099",
+      "source_url": "https://ambientcg.com/view?id=PavingStones099",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "resolution": "2K",
+      "maps": [
+        "color",
+        "normal",
+        "roughness"
+      ],
+      "missing_maps": [
+        "ao"
+      ],
+      "tile_size_m": [
+        2.0,
+        2.0
+      ],
+      "suggested_tile_size_m": null,
+      "normal_convention": "OpenGL (+Y up, green = up), the three.js default",
+      "normal_convention_verified": "G channel correlates 0.789 with the source height-map gradient (positive = OpenGL)",
+      "seamless_tiling_check": {
+        "color_seam_rank_xy": [
+          0.998,
+          0.998
+        ],
+        "color_seam_over_p99_xy": [
+          1.179,
+          1.121
+        ],
+        "visual_2x2_check": "pass"
+      },
+      "notes": "The source has no AO map (ambientCG PavingStones099 ships color, normal, roughness and displacement only)."
+    },
+    "pavers_alt": {
+      "description": "Warm red or salmon interlocking concrete pavers of the same dogbone family as \"pavers\", with some moss in the joints. Use for paths, borders or accents.",
+      "source": "ambientCG",
+      "asset_id": "PavingStones135",
+      "source_url": "https://ambientcg.com/view?id=PavingStones135",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "resolution": "2K",
+      "maps": [
+        "ao",
+        "color",
+        "normal",
+        "roughness"
+      ],
+      "missing_maps": [],
+      "tile_size_m": [
+        1.9,
+        1.9
+      ],
+      "suggested_tile_size_m": null,
+      "normal_convention": "OpenGL (+Y up, green = up), the three.js default",
+      "normal_convention_verified": "G channel correlates 0.751 with the source height-map gradient (positive = OpenGL)",
+      "seamless_tiling_check": {
+        "color_seam_rank_xy": [
+          0.95,
+          0.925
+        ],
+        "color_seam_over_p99_xy": [
+          0.812,
+          0.747
+        ],
+        "visual_2x2_check": "pass"
+      },
+      "notes": ""
+    },
+    "grass": {
+      "description": "Short, dense lawn grass with natural colour variation.",
+      "source": "ambientCG",
+      "asset_id": "Grass004",
+      "source_url": "https://ambientcg.com/view?id=Grass004",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "resolution": "1K",
+      "maps": [
+        "ao",
+        "color",
+        "normal",
+        "roughness"
+      ],
+      "missing_maps": [],
+      "tile_size_m": [
+        1.4,
+        1.4
+      ],
+      "suggested_tile_size_m": null,
+      "normal_convention": "OpenGL (+Y up, green = up), the three.js default",
+      "normal_convention_verified": "G channel correlates 0.556 with the source height-map gradient (positive = OpenGL)",
+      "seamless_tiling_check": {
+        "color_seam_rank_xy": [
+          0.999,
+          1.0
+        ],
+        "color_seam_over_p99_xy": [
+          1.038,
+          1.055
+        ],
+        "visual_2x2_check": "pass"
+      },
+      "notes": ""
+    },
+    "soil": {
+      "description": "Dry brown dirt with clods and small stones, for tree pits and the wasteland edge.",
+      "source": "Poly Haven",
+      "asset_id": "brown_mud_dry",
+      "source_url": "https://polyhaven.com/a/brown_mud_dry",
+      "author": "Rob Tuytel",
+      "license": "CC0 1.0",
+      "resolution": "1K",
+      "maps": [
+        "ao",
+        "color",
+        "normal",
+        "roughness"
+      ],
+      "missing_maps": [],
+      "tile_size_m": [
+        1.3,
+        1.3
+      ],
+      "suggested_tile_size_m": null,
+      "normal_convention": "OpenGL (+Y up, green = up), the three.js default",
+      "normal_convention_verified": "G channel correlates 0.749 with the source height-map gradient (positive = OpenGL)",
+      "seamless_tiling_check": {
+        "color_seam_rank_xy": [
+          0.961,
+          0.944
+        ],
+        "color_seam_over_p99_xy": [
+          0.969,
+          0.965
+        ],
+        "visual_2x2_check": "pass"
+      },
+      "notes": "The 1.3 m source tile is small, so scale it up (for example 2.5 m) or break up repetition on large areas."
+    },
+    "gravel": {
+      "description": "Grey riverbed gravel or pebbles.",
+      "source": "ambientCG",
+      "asset_id": "Gravel035",
+      "source_url": "https://ambientcg.com/view?id=Gravel035",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "resolution": "1K",
+      "maps": [
+        "ao",
+        "color",
+        "normal",
+        "roughness"
+      ],
+      "missing_maps": [],
+      "tile_size_m": [
+        1.9,
+        1.9
+      ],
+      "suggested_tile_size_m": null,
+      "normal_convention": "OpenGL (+Y up, green = up), the three.js default",
+      "normal_convention_verified": "G channel correlates 0.807 with the source height-map gradient (positive = OpenGL)",
+      "seamless_tiling_check": {
+        "color_seam_rank_xy": [
+          0.62,
+          0.97
+        ],
+        "color_seam_over_p99_xy": [
+          0.858,
+          0.966
+        ],
+        "visual_2x2_check": "pass"
+      },
+      "notes": ""
+    },
+    "plaster": {
+      "description": "Clean, matte, smooth light facade plaster or stucco with subtle trowel mottling.",
+      "source": "ambientCG",
+      "asset_id": "Plaster001",
+      "source_url": "https://ambientcg.com/view?id=Plaster001",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "resolution": "1K",
+      "maps": [
+        "color",
+        "normal",
+        "roughness"
+      ],
+      "missing_maps": [
+        "ao"
+      ],
+      "tile_size_m": null,
+      "suggested_tile_size_m": 2.5,
+      "normal_convention": "OpenGL (+Y up, green = up), the three.js default",
+      "normal_convention_verified": "G channel correlates 0.791 with the source height-map gradient (positive = OpenGL)",
+      "seamless_tiling_check": {
+        "color_seam_rank_xy": [
+          1.0,
+          0.893
+        ],
+        "color_seam_over_p99_xy": [
+          1.12,
+          0.781
+        ],
+        "visual_2x2_check": "pass"
+      },
+      "notes": "ambientCG gives no physical size; about 2\u20133 m per repeat is suggested. The source has no AO."
+    },
+    "stone_cladding": {
+      "description": "Beige travertine square stone tiles or panels, usable as light stone facade cladding.",
+      "source": "ambientCG",
+      "asset_id": "Tiles139",
+      "source_url": "https://ambientcg.com/view?id=Tiles139",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "resolution": "1K",
+      "maps": [
+        "color",
+        "normal",
+        "roughness"
+      ],
+      "missing_maps": [
+        "ao"
+      ],
+      "tile_size_m": [
+        2.0,
+        2.0
+      ],
+      "suggested_tile_size_m": null,
+      "normal_convention": "OpenGL (+Y up, green = up), the three.js default",
+      "normal_convention_verified": "G channel correlates 0.792 with the source height-map gradient (positive = OpenGL)",
+      "seamless_tiling_check": {
+        "color_seam_rank_xy": [
+          0.988,
+          0.984
+        ],
+        "color_seam_over_p99_xy": [
+          0.819,
+          0.608
+        ],
+        "visual_2x2_check": "pass"
+      },
+      "notes": "About 6x6 squares per tile (about 33 cm each at the source scale). Scale by 2 for 60\u201370 cm facade panels. The source has no AO."
+    },
+    "pool_tiles": {
+      "description": "Small bright-blue pool tiles with grey grout.",
+      "source": "ambientCG",
+      "asset_id": "Tiles132A",
+      "source_url": "https://ambientcg.com/view?id=Tiles132A",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "resolution": "1K",
+      "maps": [
+        "ao",
+        "color",
+        "normal",
+        "roughness"
+      ],
+      "missing_maps": [],
+      "tile_size_m": null,
+      "suggested_tile_size_m": 1.2,
+      "normal_convention": "OpenGL (+Y up, green = up), the three.js default",
+      "normal_convention_verified": "G channel correlates 0.967 with the source height-map gradient (positive = OpenGL)",
+      "seamless_tiling_check": {
+        "color_seam_rank_xy": [
+          0.948,
+          0.956
+        ],
+        "color_seam_over_p99_xy": [
+          0.607,
+          0.708
+        ],
+        "visual_2x2_check": "pass"
+      },
+      "notes": "Exactly 12x12 tiles per texture. Map 1 repeat to 0.6 m for 5 cm mosaic or 1.2 m for 10 cm tiles. ambientCG gives no physical size."
+    },
+    "rubber": {
+      "description": "Red EPDM rubberised surface (running-track or playground rubber). Tint it for other playground colours.",
+      "source": "Poly Haven",
+      "asset_id": "rubberized_track",
+      "source_url": "https://polyhaven.com/a/rubberized_track",
+      "author": "Charlotte Baglioni",
+      "license": "CC0 1.0",
+      "resolution": "1K",
+      "maps": [
+        "ao",
+        "color",
+        "normal",
+        "roughness"
+      ],
+      "missing_maps": [],
+      "tile_size_m": [
+        2.0,
+        2.0
+      ],
+      "suggested_tile_size_m": null,
+      "normal_convention": "OpenGL (+Y up, green = up), the three.js default",
+      "normal_convention_verified": "G channel correlates 0.621 with the source height-map gradient (positive = OpenGL)",
+      "seamless_tiling_check": {
+        "color_seam_rank_xy": [
+          0.832,
+          0.959
+        ],
+        "color_seam_over_p99_xy": [
+          0.912,
+          0.969
+        ],
+        "visual_2x2_check": "pass"
+      },
+      "notes": ""
+    },
+    "wood_planks": {
+      "description": "Brown wooden planks for benches and pergolas.",
+      "source": "Poly Haven",
+      "asset_id": "wood_planks",
+      "source_url": "https://polyhaven.com/a/wood_planks",
+      "author": "Amal Kumar",
+      "license": "CC0 1.0",
+      "resolution": "1K",
+      "maps": [
+        "ao",
+        "color",
+        "normal",
+        "roughness"
+      ],
+      "missing_maps": [],
+      "tile_size_m": [
+        1.5,
+        1.5
+      ],
+      "suggested_tile_size_m": null,
+      "normal_convention": "OpenGL (+Y up, green = up), the three.js default",
+      "normal_convention_verified": "G channel correlates 0.705 with the source height-map gradient (positive = OpenGL)",
+      "seamless_tiling_check": {
+        "color_seam_rank_xy": [
+          0.999,
+          0.985
+        ],
+        "color_seam_over_p99_xy": [
+          4.682,
+          0.87
+        ],
+        "visual_2x2_check": "pass"
+      },
+      "notes": "All boards butt-join at the left/right tile edge, so a joint line appears once per repeat along the boards. Map 1 repeat per board length on bench slats and beams."
+    },
+    "metal_painted": {
+      "description": "Dark powder-coated or painted steel (anthracite or black), for railings, bench frames, lamp posts and bollards.",
+      "source": "ambientCG",
+      "asset_id": "Metal027",
+      "source_url": "https://ambientcg.com/view?id=Metal027",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "resolution": "1K",
+      "maps": [
+        "color",
+        "normal",
+        "roughness"
+      ],
+      "missing_maps": [
+        "ao"
+      ],
+      "tile_size_m": null,
+      "suggested_tile_size_m": 1.0,
+      "normal_convention": "OpenGL (+Y up, green = up), the three.js default",
+      "normal_convention_verified": "G channel correlates 0.678 with the source height-map gradient (positive = OpenGL)",
+      "seamless_tiling_check": {
+        "color_seam_rank_xy": [
+          1.0,
+          1.0
+        ],
+        "color_seam_over_p99_xy": [
+          1.121,
+          1.112
+        ],
+        "visual_2x2_check": "pass"
+      },
+      "notes": "The ambientCG metalness map is a uniform 1.0 (fully metallic) and was not copied. Use metalness=1 for a coated-steel sheen or metalness=0 for a matte painted (dielectric) look. No AO in the source. No physical size given; about 1 m is suggested."
+    },
+    "water": {
+      "description": "Tiling water normal map from the three.js examples, for THREE.Water (waterNormals) in pools.",
+      "source": "three.js (mrdoob/three.js, examples/textures)",
+      "asset_id": "waternormals.jpg",
+      "source_url": "https://github.com/mrdoob/three.js/blob/dev/examples/textures/waternormals.jpg",
+      "author": "three.js authors",
+      "license": "MIT",
+      "resolution": "1K",
+      "maps": [
+        "waternormals"
+      ],
+      "missing_maps": [],
+      "tile_size_m": null,
+      "suggested_tile_size_m": null,
+      "normal_convention": "tangent-space normal map as used by the three.js Water examples. There is no height map to verify the Y sign; use it as the examples do.",
+      "normal_convention_verified": null,
+      "seamless_tiling_check": {
+        "color_seam_rank_xy": [
+          1.0,
+          0.999
+        ],
+        "color_seam_over_p99_xy": [
+          1.944,
+          1.228
+        ],
+        "visual_2x2_check": "pass"
+      },
+      "notes": "Unmodified copy. MIT: keep the three.js copyright and permission notice (reproduced in assets/CREDITS_media.md)."
+    }
+  },
+  "files": [
+    {
+      "file": "assets/textures/asphalt/color.jpg",
+      "source_url": "https://ambientcg.com/view?id=Asphalt031",
+      "download_url": "https://ambientcg.com/get?file=Asphalt031_2K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Albedo/base colour. Set texture.colorSpace = THREE.SRGBColorSpace. Re-encoded from the source JPG (q85 progressive).",
+      "set": "asphalt",
+      "map": "color",
+      "width": 2048,
+      "height": 2048,
+      "mode": "RGB",
+      "bytes": 1335983,
+      "color_space": "srgb"
+    },
+    {
+      "file": "assets/textures/asphalt/normal.jpg",
+      "source_url": "https://ambientcg.com/view?id=Asphalt031",
+      "download_url": "https://ambientcg.com/get?file=Asphalt031_2K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Tangent-space normal map, OpenGL convention (+Y), which three.js expects: use normalScale (1, 1). The source was ambientCG *_NormalGL / Poly Haven nor_gl. Re-encoded from the source JPG (q90 4:4:4 progressive).",
+      "set": "asphalt",
+      "map": "normal",
+      "width": 2048,
+      "height": 2048,
+      "mode": "RGB",
+      "bytes": 2727694,
+      "color_space": "linear",
+      "normal_convention": "OpenGL (+Y)"
+    },
+    {
+      "file": "assets/textures/asphalt/roughness.jpg",
+      "source_url": "https://ambientcg.com/view?id=Asphalt031",
+      "download_url": "https://ambientcg.com/get?file=Asphalt031_2K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Grayscale roughness (linear). three.js reads the G channel, and a grayscale JPEG decodes with R=G=B. Re-encoded from the source JPG (q85 progressive, converted to 1-channel grayscale).",
+      "set": "asphalt",
+      "map": "roughness",
+      "width": 2048,
+      "height": 2048,
+      "mode": "L",
+      "bytes": 1286869,
+      "color_space": "linear"
+    },
+    {
+      "file": "assets/textures/asphalt/ao.jpg",
+      "source_url": "https://ambientcg.com/view?id=Asphalt031",
+      "download_url": "https://ambientcg.com/get?file=Asphalt031_2K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Grayscale ambient occlusion (linear). three.js reads the R channel; since r151 aoMap uses the primary UVs (texture.channel = 0). Re-encoded from the source JPG (q85 progressive, converted to 1-channel grayscale).",
+      "set": "asphalt",
+      "map": "ao",
+      "width": 2048,
+      "height": 2048,
+      "mode": "L",
+      "bytes": 1158182,
+      "color_space": "linear"
+    },
+    {
+      "file": "assets/textures/concrete/color.jpg",
+      "source_url": "https://ambientcg.com/view?id=Concrete034",
+      "download_url": "https://ambientcg.com/get?file=Concrete034_1K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Albedo/base colour. Set texture.colorSpace = THREE.SRGBColorSpace. Re-encoded from the source JPG (q85 progressive).",
+      "set": "concrete",
+      "map": "color",
+      "width": 1024,
+      "height": 512,
+      "mode": "RGB",
+      "bytes": 61365,
+      "color_space": "srgb"
+    },
+    {
+      "file": "assets/textures/concrete/normal.jpg",
+      "source_url": "https://ambientcg.com/view?id=Concrete034",
+      "download_url": "https://ambientcg.com/get?file=Concrete034_1K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Tangent-space normal map, OpenGL convention (+Y), which three.js expects: use normalScale (1, 1). The source was ambientCG *_NormalGL / Poly Haven nor_gl. Re-encoded from the source JPG (q90 4:4:4 progressive).",
+      "set": "concrete",
+      "map": "normal",
+      "width": 1024,
+      "height": 512,
+      "mode": "RGB",
+      "bytes": 187130,
+      "color_space": "linear",
+      "normal_convention": "OpenGL (+Y)"
+    },
+    {
+      "file": "assets/textures/concrete/roughness.jpg",
+      "source_url": "https://ambientcg.com/view?id=Concrete034",
+      "download_url": "https://ambientcg.com/get?file=Concrete034_1K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Grayscale roughness (linear). three.js reads the G channel, and a grayscale JPEG decodes with R=G=B. Re-encoded from the source JPG (q85 progressive, converted to 1-channel grayscale).",
+      "set": "concrete",
+      "map": "roughness",
+      "width": 1024,
+      "height": 512,
+      "mode": "L",
+      "bytes": 50347,
+      "color_space": "linear"
+    },
+    {
+      "file": "assets/textures/pavers/color.jpg",
+      "source_url": "https://ambientcg.com/view?id=PavingStones099",
+      "download_url": "https://ambientcg.com/get?file=PavingStones099_2K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Albedo/base colour. Set texture.colorSpace = THREE.SRGBColorSpace. Re-encoded from the source JPG (q85 progressive).",
+      "set": "pavers",
+      "map": "color",
+      "width": 2048,
+      "height": 2048,
+      "mode": "RGB",
+      "bytes": 897850,
+      "color_space": "srgb"
+    },
+    {
+      "file": "assets/textures/pavers/normal.jpg",
+      "source_url": "https://ambientcg.com/view?id=PavingStones099",
+      "download_url": "https://ambientcg.com/get?file=PavingStones099_2K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Tangent-space normal map, OpenGL convention (+Y), which three.js expects: use normalScale (1, 1). The source was ambientCG *_NormalGL / Poly Haven nor_gl. Re-encoded from the source JPG (q90 4:4:4 progressive).",
+      "set": "pavers",
+      "map": "normal",
+      "width": 2048,
+      "height": 2048,
+      "mode": "RGB",
+      "bytes": 2625099,
+      "color_space": "linear",
+      "normal_convention": "OpenGL (+Y)"
+    },
+    {
+      "file": "assets/textures/pavers/roughness.jpg",
+      "source_url": "https://ambientcg.com/view?id=PavingStones099",
+      "download_url": "https://ambientcg.com/get?file=PavingStones099_2K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Grayscale roughness (linear). three.js reads the G channel, and a grayscale JPEG decodes with R=G=B. Re-encoded from the source JPG (q85 progressive, converted to 1-channel grayscale).",
+      "set": "pavers",
+      "map": "roughness",
+      "width": 2048,
+      "height": 2048,
+      "mode": "L",
+      "bytes": 480680,
+      "color_space": "linear"
+    },
+    {
+      "file": "assets/textures/pavers_alt/color.jpg",
+      "source_url": "https://ambientcg.com/view?id=PavingStones135",
+      "download_url": "https://ambientcg.com/get?file=PavingStones135_2K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Albedo/base colour. Set texture.colorSpace = THREE.SRGBColorSpace. Re-encoded from the source JPG (q85 progressive).",
+      "set": "pavers_alt",
+      "map": "color",
+      "width": 2048,
+      "height": 2048,
+      "mode": "RGB",
+      "bytes": 1346045,
+      "color_space": "srgb"
+    },
+    {
+      "file": "assets/textures/pavers_alt/normal.jpg",
+      "source_url": "https://ambientcg.com/view?id=PavingStones135",
+      "download_url": "https://ambientcg.com/get?file=PavingStones135_2K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Tangent-space normal map, OpenGL convention (+Y), which three.js expects: use normalScale (1, 1). The source was ambientCG *_NormalGL / Poly Haven nor_gl. Re-encoded from the source JPG (q90 4:4:4 progressive).",
+      "set": "pavers_alt",
+      "map": "normal",
+      "width": 2048,
+      "height": 2048,
+      "mode": "RGB",
+      "bytes": 2681508,
+      "color_space": "linear",
+      "normal_convention": "OpenGL (+Y)"
+    },
+    {
+      "file": "assets/textures/pavers_alt/roughness.jpg",
+      "source_url": "https://ambientcg.com/view?id=PavingStones135",
+      "download_url": "https://ambientcg.com/get?file=PavingStones135_2K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Grayscale roughness (linear). three.js reads the G channel, and a grayscale JPEG decodes with R=G=B. Re-encoded from the source JPG (q85 progressive, converted to 1-channel grayscale).",
+      "set": "pavers_alt",
+      "map": "roughness",
+      "width": 2048,
+      "height": 2048,
+      "mode": "L",
+      "bytes": 1465176,
+      "color_space": "linear"
+    },
+    {
+      "file": "assets/textures/pavers_alt/ao.jpg",
+      "source_url": "https://ambientcg.com/view?id=PavingStones135",
+      "download_url": "https://ambientcg.com/get?file=PavingStones135_2K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Grayscale ambient occlusion (linear). three.js reads the R channel; since r151 aoMap uses the primary UVs (texture.channel = 0). Re-encoded from the source JPG (q85 progressive, converted to 1-channel grayscale).",
+      "set": "pavers_alt",
+      "map": "ao",
+      "width": 2048,
+      "height": 2048,
+      "mode": "L",
+      "bytes": 1322592,
+      "color_space": "linear"
+    },
+    {
+      "file": "assets/textures/grass/color.jpg",
+      "source_url": "https://ambientcg.com/view?id=Grass004",
+      "download_url": "https://ambientcg.com/get?file=Grass004_1K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Albedo/base colour. Set texture.colorSpace = THREE.SRGBColorSpace. Re-encoded from the source JPG (q85 progressive).",
+      "set": "grass",
+      "map": "color",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "bytes": 340646,
+      "color_space": "srgb"
+    },
+    {
+      "file": "assets/textures/grass/normal.jpg",
+      "source_url": "https://ambientcg.com/view?id=Grass004",
+      "download_url": "https://ambientcg.com/get?file=Grass004_1K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Tangent-space normal map, OpenGL convention (+Y), which three.js expects: use normalScale (1, 1). The source was ambientCG *_NormalGL / Poly Haven nor_gl. Re-encoded from the source JPG (q90 4:4:4 progressive).",
+      "set": "grass",
+      "map": "normal",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "bytes": 902176,
+      "color_space": "linear",
+      "normal_convention": "OpenGL (+Y)"
+    },
+    {
+      "file": "assets/textures/grass/roughness.jpg",
+      "source_url": "https://ambientcg.com/view?id=Grass004",
+      "download_url": "https://ambientcg.com/get?file=Grass004_1K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Grayscale roughness (linear). three.js reads the G channel, and a grayscale JPEG decodes with R=G=B. Re-encoded from the source JPG (q85 progressive, converted to 1-channel grayscale).",
+      "set": "grass",
+      "map": "roughness",
+      "width": 1024,
+      "height": 1024,
+      "mode": "L",
+      "bytes": 371488,
+      "color_space": "linear"
+    },
+    {
+      "file": "assets/textures/grass/ao.jpg",
+      "source_url": "https://ambientcg.com/view?id=Grass004",
+      "download_url": "https://ambientcg.com/get?file=Grass004_1K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Grayscale ambient occlusion (linear). three.js reads the R channel; since r151 aoMap uses the primary UVs (texture.channel = 0). Re-encoded from the source JPG (q85 progressive, converted to 1-channel grayscale).",
+      "set": "grass",
+      "map": "ao",
+      "width": 1024,
+      "height": 1024,
+      "mode": "L",
+      "bytes": 423952,
+      "color_space": "linear"
+    },
+    {
+      "file": "assets/textures/soil/color.jpg",
+      "source_url": "https://polyhaven.com/a/brown_mud_dry",
+      "download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_mud_dry/brown_mud_dry_diff_1k.jpg",
+      "author": "Rob Tuytel",
+      "license": "CC0 1.0",
+      "notes": "Albedo/base colour. Set texture.colorSpace = THREE.SRGBColorSpace. Re-encoded from the source JPG (q85 progressive).",
+      "set": "soil",
+      "map": "color",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "bytes": 423379,
+      "color_space": "srgb"
+    },
+    {
+      "file": "assets/textures/soil/normal.jpg",
+      "source_url": "https://polyhaven.com/a/brown_mud_dry",
+      "download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_mud_dry/brown_mud_dry_nor_gl_1k.jpg",
+      "author": "Rob Tuytel",
+      "license": "CC0 1.0",
+      "notes": "Tangent-space normal map, OpenGL convention (+Y), which three.js expects: use normalScale (1, 1). The source was ambientCG *_NormalGL / Poly Haven nor_gl. Re-encoded from the source JPG (q90 4:4:4 progressive).",
+      "set": "soil",
+      "map": "normal",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "bytes": 1099249,
+      "color_space": "linear",
+      "normal_convention": "OpenGL (+Y)"
+    },
+    {
+      "file": "assets/textures/soil/roughness.jpg",
+      "source_url": "https://polyhaven.com/a/brown_mud_dry",
+      "download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_mud_dry/brown_mud_dry_rough_1k.jpg",
+      "author": "Rob Tuytel",
+      "license": "CC0 1.0",
+      "notes": "Grayscale roughness (linear). three.js reads the G channel, and a grayscale JPEG decodes with R=G=B. Re-encoded from the source JPG (q85 progressive, converted to 1-channel grayscale).",
+      "set": "soil",
+      "map": "roughness",
+      "width": 1024,
+      "height": 1024,
+      "mode": "L",
+      "bytes": 188804,
+      "color_space": "linear"
+    },
+    {
+      "file": "assets/textures/soil/ao.jpg",
+      "source_url": "https://polyhaven.com/a/brown_mud_dry",
+      "download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_mud_dry/brown_mud_dry_ao_1k.jpg",
+      "author": "Rob Tuytel",
+      "license": "CC0 1.0",
+      "notes": "Grayscale ambient occlusion (linear). three.js reads the R channel; since r151 aoMap uses the primary UVs (texture.channel = 0). Re-encoded from the source JPG (q85 progressive, converted to 1-channel grayscale).",
+      "set": "soil",
+      "map": "ao",
+      "width": 1024,
+      "height": 1024,
+      "mode": "L",
+      "bytes": 318066,
+      "color_space": "linear"
+    },
+    {
+      "file": "assets/textures/gravel/color.jpg",
+      "source_url": "https://ambientcg.com/view?id=Gravel035",
+      "download_url": "https://ambientcg.com/get?file=Gravel035_1K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Albedo/base colour. Set texture.colorSpace = THREE.SRGBColorSpace. Re-encoded from the source JPG (q85 progressive).",
+      "set": "gravel",
+      "map": "color",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "bytes": 379180,
+      "color_space": "srgb"
+    },
+    {
+      "file": "assets/textures/gravel/normal.jpg",
+      "source_url": "https://ambientcg.com/view?id=Gravel035",
+      "download_url": "https://ambientcg.com/get?file=Gravel035_1K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Tangent-space normal map, OpenGL convention (+Y), which three.js expects: use normalScale (1, 1). The source was ambientCG *_NormalGL / Poly Haven nor_gl. Re-encoded from the source JPG (q90 4:4:4 progressive).",
+      "set": "gravel",
+      "map": "normal",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "bytes": 990963,
+      "color_space": "linear",
+      "normal_convention": "OpenGL (+Y)"
+    },
+    {
+      "file": "assets/textures/gravel/roughness.jpg",
+      "source_url": "https://ambientcg.com/view?id=Gravel035",
+      "download_url": "https://ambientcg.com/get?file=Gravel035_1K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Grayscale roughness (linear). three.js reads the G channel, and a grayscale JPEG decodes with R=G=B. Re-encoded from the source JPG (q85 progressive, converted to 1-channel grayscale).",
+      "set": "gravel",
+      "map": "roughness",
+      "width": 1024,
+      "height": 1024,
+      "mode": "L",
+      "bytes": 239003,
+      "color_space": "linear"
+    },
+    {
+      "file": "assets/textures/gravel/ao.jpg",
+      "source_url": "https://ambientcg.com/view?id=Gravel035",
+      "download_url": "https://ambientcg.com/get?file=Gravel035_1K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Grayscale ambient occlusion (linear). three.js reads the R channel; since r151 aoMap uses the primary UVs (texture.channel = 0). Re-encoded from the source JPG (q85 progressive, converted to 1-channel grayscale).",
+      "set": "gravel",
+      "map": "ao",
+      "width": 1024,
+      "height": 1024,
+      "mode": "L",
+      "bytes": 360456,
+      "color_space": "linear"
+    },
+    {
+      "file": "assets/textures/plaster/color.jpg",
+      "source_url": "https://ambientcg.com/view?id=Plaster001",
+      "download_url": "https://ambientcg.com/get?file=Plaster001_1K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Albedo/base colour. Set texture.colorSpace = THREE.SRGBColorSpace. Re-encoded from the source JPG (q85 progressive).",
+      "set": "plaster",
+      "map": "color",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "bytes": 122058,
+      "color_space": "srgb"
+    },
+    {
+      "file": "assets/textures/plaster/normal.jpg",
+      "source_url": "https://ambientcg.com/view?id=Plaster001",
+      "download_url": "https://ambientcg.com/get?file=Plaster001_1K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Tangent-space normal map, OpenGL convention (+Y), which three.js expects: use normalScale (1, 1). The source was ambientCG *_NormalGL / Poly Haven nor_gl. Re-encoded from the source JPG (q90 4:4:4 progressive).",
+      "set": "plaster",
+      "map": "normal",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "bytes": 680117,
+      "color_space": "linear",
+      "normal_convention": "OpenGL (+Y)"
+    },
+    {
+      "file": "assets/textures/plaster/roughness.jpg",
+      "source_url": "https://ambientcg.com/view?id=Plaster001",
+      "download_url": "https://ambientcg.com/get?file=Plaster001_1K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Grayscale roughness (linear). three.js reads the G channel, and a grayscale JPEG decodes with R=G=B. Re-encoded from the source JPG (q85 progressive, converted to 1-channel grayscale).",
+      "set": "plaster",
+      "map": "roughness",
+      "width": 1024,
+      "height": 1024,
+      "mode": "L",
+      "bytes": 74699,
+      "color_space": "linear"
+    },
+    {
+      "file": "assets/textures/stone_cladding/color.jpg",
+      "source_url": "https://ambientcg.com/view?id=Tiles139",
+      "download_url": "https://ambientcg.com/get?file=Tiles139_1K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Albedo/base colour. Set texture.colorSpace = THREE.SRGBColorSpace. Re-encoded from the source JPG (q85 progressive).",
+      "set": "stone_cladding",
+      "map": "color",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "bytes": 160614,
+      "color_space": "srgb"
+    },
+    {
+      "file": "assets/textures/stone_cladding/normal.jpg",
+      "source_url": "https://ambientcg.com/view?id=Tiles139",
+      "download_url": "https://ambientcg.com/get?file=Tiles139_1K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Tangent-space normal map, OpenGL convention (+Y), which three.js expects: use normalScale (1, 1). The source was ambientCG *_NormalGL / Poly Haven nor_gl. Re-encoded from the source JPG (q90 4:4:4 progressive).",
+      "set": "stone_cladding",
+      "map": "normal",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "bytes": 68321,
+      "color_space": "linear",
+      "normal_convention": "OpenGL (+Y)"
+    },
+    {
+      "file": "assets/textures/stone_cladding/roughness.jpg",
+      "source_url": "https://ambientcg.com/view?id=Tiles139",
+      "download_url": "https://ambientcg.com/get?file=Tiles139_1K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Grayscale roughness (linear). three.js reads the G channel, and a grayscale JPEG decodes with R=G=B. Re-encoded from the source JPG (q85 progressive, converted to 1-channel grayscale).",
+      "set": "stone_cladding",
+      "map": "roughness",
+      "width": 1024,
+      "height": 1024,
+      "mode": "L",
+      "bytes": 146781,
+      "color_space": "linear"
+    },
+    {
+      "file": "assets/textures/pool_tiles/color.jpg",
+      "source_url": "https://ambientcg.com/view?id=Tiles132A",
+      "download_url": "https://ambientcg.com/get?file=Tiles132A_1K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Albedo/base colour. Set texture.colorSpace = THREE.SRGBColorSpace. Re-encoded from the source JPG (q85 progressive).",
+      "set": "pool_tiles",
+      "map": "color",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "bytes": 93943,
+      "color_space": "srgb"
+    },
+    {
+      "file": "assets/textures/pool_tiles/normal.jpg",
+      "source_url": "https://ambientcg.com/view?id=Tiles132A",
+      "download_url": "https://ambientcg.com/get?file=Tiles132A_1K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Tangent-space normal map, OpenGL convention (+Y), which three.js expects: use normalScale (1, 1). The source was ambientCG *_NormalGL / Poly Haven nor_gl. Re-encoded from the source JPG (q90 4:4:4 progressive).",
+      "set": "pool_tiles",
+      "map": "normal",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "bytes": 248747,
+      "color_space": "linear",
+      "normal_convention": "OpenGL (+Y)"
+    },
+    {
+      "file": "assets/textures/pool_tiles/roughness.jpg",
+      "source_url": "https://ambientcg.com/view?id=Tiles132A",
+      "download_url": "https://ambientcg.com/get?file=Tiles132A_1K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Grayscale roughness (linear). three.js reads the G channel, and a grayscale JPEG decodes with R=G=B. Re-encoded from the source JPG (q85 progressive, converted to 1-channel grayscale).",
+      "set": "pool_tiles",
+      "map": "roughness",
+      "width": 1024,
+      "height": 1024,
+      "mode": "L",
+      "bytes": 163172,
+      "color_space": "linear"
+    },
+    {
+      "file": "assets/textures/pool_tiles/ao.jpg",
+      "source_url": "https://ambientcg.com/view?id=Tiles132A",
+      "download_url": "https://ambientcg.com/get?file=Tiles132A_1K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Grayscale ambient occlusion (linear). three.js reads the R channel; since r151 aoMap uses the primary UVs (texture.channel = 0). Re-encoded from the source JPG (q85 progressive, converted to 1-channel grayscale).",
+      "set": "pool_tiles",
+      "map": "ao",
+      "width": 1024,
+      "height": 1024,
+      "mode": "L",
+      "bytes": 53676,
+      "color_space": "linear"
+    },
+    {
+      "file": "assets/textures/rubber/color.jpg",
+      "source_url": "https://polyhaven.com/a/rubberized_track",
+      "download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rubberized_track/rubberized_track_diff_1k.jpg",
+      "author": "Charlotte Baglioni",
+      "license": "CC0 1.0",
+      "notes": "Albedo/base colour. Set texture.colorSpace = THREE.SRGBColorSpace. Re-encoded from the source JPG (q85 progressive).",
+      "set": "rubber",
+      "map": "color",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "bytes": 179575,
+      "color_space": "srgb"
+    },
+    {
+      "file": "assets/textures/rubber/normal.jpg",
+      "source_url": "https://polyhaven.com/a/rubberized_track",
+      "download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rubberized_track/rubberized_track_nor_gl_1k.jpg",
+      "author": "Charlotte Baglioni",
+      "license": "CC0 1.0",
+      "notes": "Tangent-space normal map, OpenGL convention (+Y), which three.js expects: use normalScale (1, 1). The source was ambientCG *_NormalGL / Poly Haven nor_gl. Re-encoded from the source JPG (q90 4:4:4 progressive).",
+      "set": "rubber",
+      "map": "normal",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "bytes": 525786,
+      "color_space": "linear",
+      "normal_convention": "OpenGL (+Y)"
+    },
+    {
+      "file": "assets/textures/rubber/roughness.jpg",
+      "source_url": "https://polyhaven.com/a/rubberized_track",
+      "download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rubberized_track/rubberized_track_rough_1k.jpg",
+      "author": "Charlotte Baglioni",
+      "license": "CC0 1.0",
+      "notes": "Grayscale roughness (linear). three.js reads the G channel, and a grayscale JPEG decodes with R=G=B. Re-encoded from the source JPG (q85 progressive, converted to 1-channel grayscale).",
+      "set": "rubber",
+      "map": "roughness",
+      "width": 1024,
+      "height": 1024,
+      "mode": "L",
+      "bytes": 7004,
+      "color_space": "linear"
+    },
+    {
+      "file": "assets/textures/rubber/ao.jpg",
+      "source_url": "https://polyhaven.com/a/rubberized_track",
+      "download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rubberized_track/rubberized_track_ao_1k.jpg",
+      "author": "Charlotte Baglioni",
+      "license": "CC0 1.0",
+      "notes": "Grayscale ambient occlusion (linear). three.js reads the R channel; since r151 aoMap uses the primary UVs (texture.channel = 0). Re-encoded from the source JPG (q85 progressive, converted to 1-channel grayscale).",
+      "set": "rubber",
+      "map": "ao",
+      "width": 1024,
+      "height": 1024,
+      "mode": "L",
+      "bytes": 337120,
+      "color_space": "linear"
+    },
+    {
+      "file": "assets/textures/wood_planks/color.jpg",
+      "source_url": "https://polyhaven.com/a/wood_planks",
+      "download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/wood_planks/wood_planks_diff_1k.jpg",
+      "author": "Amal Kumar",
+      "license": "CC0 1.0",
+      "notes": "Albedo/base colour. Set texture.colorSpace = THREE.SRGBColorSpace. Re-encoded from the source JPG (q85 progressive).",
+      "set": "wood_planks",
+      "map": "color",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "bytes": 141566,
+      "color_space": "srgb"
+    },
+    {
+      "file": "assets/textures/wood_planks/normal.jpg",
+      "source_url": "https://polyhaven.com/a/wood_planks",
+      "download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/wood_planks/wood_planks_nor_gl_1k.jpg",
+      "author": "Amal Kumar",
+      "license": "CC0 1.0",
+      "notes": "Tangent-space normal map, OpenGL convention (+Y), which three.js expects: use normalScale (1, 1). The source was ambientCG *_NormalGL / Poly Haven nor_gl. Re-encoded from the source JPG (q90 4:4:4 progressive).",
+      "set": "wood_planks",
+      "map": "normal",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "bytes": 212744,
+      "color_space": "linear",
+      "normal_convention": "OpenGL (+Y)"
+    },
+    {
+      "file": "assets/textures/wood_planks/roughness.jpg",
+      "source_url": "https://polyhaven.com/a/wood_planks",
+      "download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/wood_planks/wood_planks_rough_1k.jpg",
+      "author": "Amal Kumar",
+      "license": "CC0 1.0",
+      "notes": "Grayscale roughness (linear). three.js reads the G channel, and a grayscale JPEG decodes with R=G=B. Re-encoded from the source JPG (q85 progressive, converted to 1-channel grayscale).",
+      "set": "wood_planks",
+      "map": "roughness",
+      "width": 1024,
+      "height": 1024,
+      "mode": "L",
+      "bytes": 52393,
+      "color_space": "linear"
+    },
+    {
+      "file": "assets/textures/wood_planks/ao.jpg",
+      "source_url": "https://polyhaven.com/a/wood_planks",
+      "download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/wood_planks/wood_planks_ao_1k.jpg",
+      "author": "Amal Kumar",
+      "license": "CC0 1.0",
+      "notes": "Grayscale ambient occlusion (linear). three.js reads the R channel; since r151 aoMap uses the primary UVs (texture.channel = 0). Re-encoded from the source JPG (q85 progressive, converted to 1-channel grayscale).",
+      "set": "wood_planks",
+      "map": "ao",
+      "width": 1024,
+      "height": 1024,
+      "mode": "L",
+      "bytes": 67569,
+      "color_space": "linear"
+    },
+    {
+      "file": "assets/textures/metal_painted/color.jpg",
+      "source_url": "https://ambientcg.com/view?id=Metal027",
+      "download_url": "https://ambientcg.com/get?file=Metal027_1K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Albedo/base colour. Set texture.colorSpace = THREE.SRGBColorSpace. Re-encoded from the source JPG (q85 progressive).",
+      "set": "metal_painted",
+      "map": "color",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "bytes": 115982,
+      "color_space": "srgb"
+    },
+    {
+      "file": "assets/textures/metal_painted/normal.jpg",
+      "source_url": "https://ambientcg.com/view?id=Metal027",
+      "download_url": "https://ambientcg.com/get?file=Metal027_1K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Tangent-space normal map, OpenGL convention (+Y), which three.js expects: use normalScale (1, 1). The source was ambientCG *_NormalGL / Poly Haven nor_gl. Re-encoded from the source JPG (q90 4:4:4 progressive).",
+      "set": "metal_painted",
+      "map": "normal",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "bytes": 172076,
+      "color_space": "linear",
+      "normal_convention": "OpenGL (+Y)"
+    },
+    {
+      "file": "assets/textures/metal_painted/roughness.jpg",
+      "source_url": "https://ambientcg.com/view?id=Metal027",
+      "download_url": "https://ambientcg.com/get?file=Metal027_1K-JPG.zip",
+      "author": "ambientCG (Lennart Demes)",
+      "license": "CC0 1.0",
+      "notes": "Grayscale roughness (linear). three.js reads the G channel, and a grayscale JPEG decodes with R=G=B. Re-encoded from the source JPG (q85 progressive, converted to 1-channel grayscale).",
+      "set": "metal_painted",
+      "map": "roughness",
+      "width": 1024,
+      "height": 1024,
+      "mode": "L",
+      "bytes": 136125,
+      "color_space": "linear"
+    },
+    {
+      "file": "assets/textures/water/waternormals.jpg",
+      "source_url": "https://github.com/mrdoob/three.js/blob/dev/examples/textures/waternormals.jpg",
+      "download_url": "https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/waternormals.jpg",
+      "author": "three.js authors (mrdoob/three.js)",
+      "license": "MIT",
+      "notes": "Water normal map (unmodified). Use with THREE.Water (waterNormals) and RepeatWrapping.",
+      "set": "water",
+      "map": "normal",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "bytes": 248813,
+      "color_space": "linear"
+    }
+  ]
+}
