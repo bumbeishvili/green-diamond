@@ -64,5 +64,8 @@ export async function body(request) {
 
 export function fail(e) {
   console.error(e);
+  if (/no blob credentials/i.test(e && e.message)) {
+    return json({ error: 'Multiplayer isn\'t set up on this deployment yet: its Vercel project needs a private Blob store connected (Storage, then Blob), then a redeploy.' }, 503);
+  }
   return json({ error: e.status ? e.message : 'Server error' }, e.status || 500);
 }

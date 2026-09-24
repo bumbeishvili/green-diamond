@@ -2357,5 +2357,208 @@
   },
   "preview": "assets/previews/models/extra_prius.jpg",
   "preview_kind": "Blender 4.1 EEVEE render of the delivered GLB (front 3/4, rear 3/4, side, high chase view); Preview shows the glTF axes at the origin: +X red, +Y green, +Z blue."
+ },
+ {
+  "file": "assets/models/vehicles/leaf.glb",
+  "category": "vehicle",
+  "name": "Nissan Leaf, first generation (ZE0, 2010-2013 look), light-blue metallic SECURITY car with roof light bar",
+  "source_url": "https://github.com/FranzAlbers/nissan_leaf_launch/blob/main/nissan_leaf_description/mesh/NissanLeafZE0.dae",
+  "extra_sources": [
+   "https://github.com/FranzAlbers/nissan_leaf_urdf_description/blob/HEAD/meshes/NissanLeafZE0.dae (same file, package.xml says Apache License 2.0)",
+   "Wheels (tyre, 5-spoke rim, brake disc) and calipers re-used from assets/models/vehicles/prius.glb: 'Toyota Prius' by Isidor Goo (AirplaneChef), https://sketchfab.com/3d-models/toyota-prius-aa599d492d3d4618a1bf5f3786e1bbd9, CC BY 4.0"
+  ],
+  "download_note": "Downloaded from GitHub (raw.githubusercontent.com), no login. The repo (a fork of the Autoware vehicle-launch template) carries the Apache 2.0 LICENSE file; the Leaf mesh was added by Franz Albers (TU Dortmund).",
+  "author": "Franz Albers (TU Dortmund), mesh published in nissan_leaf_launch; wheels by Isidor Goo (AirplaneChef); livery, light bar, plates and fallback plate texture made for this project",
+  "license": "Apache-2.0 (body mesh) + CC-BY 4.0 (wheels and calipers from prius.glb); additions CC0",
+  "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+  "size_bytes": 1838408,
+  "sha1": "2557bc1d0c760d5ce4094803f1b81e60c26c99e9",
+  "triangles": 38255,
+  "bbox": {
+   "min": [
+    -2.1566,
+    0,
+    -0.9853
+   ],
+   "max": [
+    2.2987,
+    1.6897,
+    0.987
+   ],
+   "size": [
+    4.4553,
+    1.6896,
+    1.9723
+   ],
+   "space": "model units (metres), after all node transforms; max y is the top of the light bar, the width includes the mirrors"
+  },
+  "forward_axis": "+X (nose)",
+  "up_axis": "+Y",
+  "right_axis": "+Z (driver's side, left, is -Z; left-hand drive)",
+  "scale_to_m": 1.0,
+  "size_m": [
+   4.455,
+   1.69,
+   1.972
+  ],
+  "dimensions_m": {
+   "length_bumpers": 4.4487,
+   "width_body": 1.7826,
+   "width_with_mirrors": 1.9723,
+   "roof_height": 1.5257,
+   "height_with_antenna": 1.6712,
+   "height_with_light_bar": 1.6897,
+   "wheelbase": 2.7198,
+   "track": 1.5434,
+   "ground_clearance": 0.1845,
+   "front_overhang": 0.9322,
+   "rear_overhang": 0.7967,
+   "real_leaf_ze0": "4.445 x 1.770 x 1.550 m, wheelbase 2.700 m, track 1.540 m"
+  },
+  "origin": "on the ground (tyre contact plane, y = 0), midway between the front and rear wheel centres (x = 0), on the centreline (z = 0)",
+  "skinned": false,
+  "joints": 0,
+  "meshes": 11,
+  "primitives": 27,
+  "materials": 18,
+  "material_names": {
+   "Paint": "light-blue metallic body paint, sRGB #7eb0dd (linear 0.2086, 0.4342, 0.7230), metallic 0.5, roughness 0.3, KHR_materials_clearcoat 1.0 / 0.04; base colour x AO map",
+   "Glass": "dark tinted windows, alpha BLEND 0.42",
+   "HeadLight": "chrome reflectors inside the long headlight lenses; emissive off (black) by default",
+   "TailLight": "red lenses of the vertical tail lamps and the high stop lamp; emissive off (black) by default",
+   "LampLens": "clear headlight / fog-lamp covers, alpha BLEND 0.14",
+   "Indicator": "amber indicators (in the headlights and on the front wings)",
+   "Reflector": "red rear-bumper reflectors (not a lamp)",
+   "BeaconLight": "amber lenses of the roof light bar (node Beacon); emissive off (black) by default, flash it at runtime",
+   "Beacon_Housing": "black base, centre module and feet of the light bar",
+   "Livery": "SECURITY decals (node Livery): transparent PNG, alpha BLEND, sampler CLAMP_TO_EDGE",
+   "Trim_Black": "black plastic (window surrounds, wipers, grille, arch liners, underbody, dashboard)",
+   "Chrome": "badges, grille bar, door handles",
+   "Interior_Light": "seats and door cards (dark grey)",
+   "Rim": "silver 5-spoke alloy (from prius.glb)",
+   "Tyre": "rubber",
+   "Disc": "brake discs (inside the wheel nodes)",
+   "Caliper": "brake calipers (in Body, so they do not spin)",
+   "Plate": "number plates 520 x 110 mm, textured (see plates)"
+  },
+  "textures": [
+   "leaf_ao (image/jpeg, 1024x1024 greyscale ambient-occlusion atlas; baseColorTexture of the Body and wheel materials, multiplied by their baseColorFactor)",
+   "livery (image/png RGBA, 2048x512, 'SECURITY' in dark navy with a thin white keyline above a white pinstripe and navy stripe; transparent elsewhere)",
+   "plate_leaf_flipv (image/png, 1024x256, fallback Georgian-format plate 'SC-001-LF', number made up; stored vertically flipped, see plates)"
+  ],
+  "plates": {
+   "material": "Plate",
+   "node": "Plates (front on the bumper, rear on the tailgate, one mesh)",
+   "size_mm": [
+    520,
+    110
+   ],
+   "aspect": 4.727,
+   "uv_convention": "TEXCOORD_0 (= three.js geometry uv) covers each plate's outer face as the full 0..1 range: u 0 -> 1 left to right as the plate is read, v 0 at the bottom edge -> 1 at the top edge, on both plates; a THREE.CanvasTexture with its default flipY = true draws upright (checked in three.js r186 with 'QQ-939-QC'). Plate edges and backs sample one background texel (u 0.2, v 0.95).",
+   "fallback_texture_note": "The embedded PNG is stored upside down so that standard glTF viewers (flipY = false) also show it upright."
+  },
+  "livery": {
+   "node": "Livery",
+   "material": "Livery",
+   "parts": "one decal grid on each flank (front and rear doors, x -0.93..0.93 m, 0.47..0.82 m above the ground) and a smaller one on the bonnet (0.78 x 0.11 m, reads from the front)",
+   "offset": "3 mm off the paint along the surface normal; door shut-lines are bridged, not followed",
+   "reading": "reads left to right on both sides (front -> rear on the left flank, rear -> front on the right flank); not mirrored",
+   "ao": "not an AO occluder, so the paint under it is not darkened"
+  },
+  "beacon": {
+   "node": "Beacon",
+   "material": "BeaconLight (lenses), Beacon_Housing (base, feet, centre)",
+   "pivot": [
+    -0.3,
+    1.6447,
+    -0.0
+   ],
+   "size_m": [
+    0.26,
+    0.181,
+    0.98
+   ],
+   "note": "two amber pods either side of a black centre module on a black base with two feet on the roof; set BeaconLight.emissive (e.g. 0xffa21a) and flash emissiveIntensity at night"
+  },
+  "extensions_used": [
+   "KHR_materials_clearcoat"
+  ],
+  "animations": [],
+  "nodes": {
+   "Leaf": "root, identity transform",
+   "Body": "paint shell, trim, chrome, reflectors, calipers",
+   "Glass": "all windows",
+   "Lights": "HeadLight reflectors, LampLens covers, TailLight lenses, Indicators",
+   "Interior": "seats, door cards",
+   "Plates": "front and rear number plates",
+   "Livery": "SECURITY decals (both flanks + bonnet)",
+   "Beacon": "roof light bar, pivot at the centre of the lenses [-0.3, 1.6447, -0.0]",
+   "Wheel_FL": "front left wheel (tyre, rim, brake disc); pivot at the wheel centre [1.3599, 0.3174, -0.7717]",
+   "Wheel_FR": "front right wheel; pivot at [1.3599, 0.3174, 0.7717]",
+   "Wheel_RL": "rear left wheel; pivot at [-1.3599, 0.3174, -0.7717]",
+   "Wheel_RR": "rear right wheel; pivot at [-1.3599, 0.3174, 0.7717]"
+  },
+  "wheels": {
+   "names": [
+    "Wheel_FL",
+    "Wheel_FR",
+    "Wheel_RL",
+    "Wheel_RR"
+   ],
+   "radius_m": 0.3174,
+   "tyre_width_m": 0.2,
+   "segments_around": 60,
+   "centres": {
+    "Wheel_FL": [
+     1.3599,
+     0.3174,
+     -0.7717
+    ],
+    "Wheel_FR": [
+     1.3599,
+     0.3174,
+     0.7717
+    ],
+    "Wheel_RL": [
+     -1.3599,
+     0.3174,
+     -0.7717
+    ],
+    "Wheel_RR": [
+     -1.3599,
+     0.3174,
+     0.7717
+    ]
+   },
+   "spin": "about local +Z; rolling forward (+X) is negative rotation.z (rotation.z -= speed * dt / 0.3174)",
+   "steer": "about local +Y (use rotation.order 'YXZ' so steering is applied after the spin)",
+   "note": "identity rotation, unit scale; tyre + rim + disc only (calipers stay in Body), so Box3 height / 2 = radius"
+  },
+  "notes": "Same conventions as prius.glb. Source search: no permissively licensed first-generation Leaf exists on poly.pizza, OpenGameArt or in the login-free Objaverse mirror of Sketchfab (only a CC-BY 2018 second-generation car and an NC-SA boot part); GitHub (via the Objaverse-XL index and the GitHub API) has this Apache-2.0 ZE0 mesh. Provenance caveat: its materials are named 'PDM_Nissan_Leaf_2011_*' and it carries a SketchUp camera, so it was converted from a SketchUp model; the Apache-2.0 licence is the one the repo declares, the original modeller could not be identified. Changes: rotated to nose +X (the source had it at -Y, Z up, already in metres), origin moved to the ground between the axles, the SketchUp double-sided layers removed (41.7k -> 20.8k source faces; the author's normals kept), the rim-less source tyres replaced by the Prius wheels scaled to the Leaf's 205/55R16 size (r 0.317 m, 0.20 m wide) and placed symmetrically on the source axles, calipers moved over from the Prius, PBR materials authored, light-blue clear-coated paint, 520 x 110 mm plates with runtime-canvas UVs, SECURITY decals, amber roof light bar, ambient occlusion baked in Cycles (1024 px, 256 samples, 0.5 m reach; body occluded by ground, wheels, cabin, lamps and light bar; wheels self-occlusion only). Nothing in it is called 'brake' (a game rule treats /taillight|brake/i as a tail light). Checked from all sides and below; the lettering reads correctly on both flanks.",
+  "validation": {
+   "glb_magic": true,
+   "json_chunk_parsed": true,
+   "glb_chunks": [
+    [
+     "JSON",
+     24800
+    ],
+    [
+     "BIN",
+     1813580
+    ]
+   ],
+   "khronos_validator": {
+    "version": "2.0.0-dev.3.10",
+    "errors": 0,
+    "warnings": 0,
+    "infos": 0,
+    "hints": 0,
+    "codes": []
+   },
+   "threejs_r186_load": "ok (GLTFLoader in headless Chromium from http://127.0.0.1:8765/assets/models/vehicles/leaf.glb, Wheel_FL/FR/RL/RR found, wheelR 0.3174, wheel pivots hold under spin + steer, runtime CanvasTexture plates read upright, no console errors)"
+  },
+  "preview": "assets/previews/models/extra_leaf.jpg",
+  "preview_kind": "Blender 4.1 EEVEE render of the delivered GLB (front 3/4, rear 3/4, high chase, left side, right side, night with the lamps and light bar lit); glTF axes at the origin: +X red, +Y green, +Z blue."
  }
 ]

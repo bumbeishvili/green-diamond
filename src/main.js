@@ -176,7 +176,7 @@ class Game {
 
   credits() {
     $('credits').textContent = 'Map data © OpenStreetMap contributors (ODbL) · Terrain: AWS Terrain Tiles · Imagery: Sentinel-2 cloudless 2024 by EOX (CC BY-NC-SA 4.0) · '
-      + 'Models: Quaternius, Kenney, J-Toastie, Rikindle3D, dogchicken, bachosoftdesign, Benjinsmith, mightydinosaurcol, jeremy, SirDraco65, Pichuliru, LonesomeDucky, Lucian Pavel & others (see assets/models/CREDITS.md) · Textures: ambientCG, Poly Haven · three.js';
+      + 'Models: Quaternius, Kenney, J-Toastie, Rikindle3D, dogchicken, bachosoftdesign, Benjinsmith, mightydinosaurcol, jeremy, SirDraco65, Pichuliru, LonesomeDucky, Lucian Pavel, Isidor Goo (Prius), Franz Albers (Leaf) & others (see assets/models/CREDITS.md) · Textures: ambientCG, Poly Haven · three.js';
   }
 
   start() {

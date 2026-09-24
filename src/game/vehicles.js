@@ -222,8 +222,8 @@ export class Vehicles {
           n = m.clone(); n.emissive = new THREE.Color(0xfff4e0); n.emissiveIntensity = 0; lights.head.push(n);
         } else if (/taillight|brake/i.test(m.name)) {
           n = m.clone(); n.emissive = new THREE.Color(0xff1a0a); n.emissiveIntensity = 0.15; lights.tail.push(n);
-        } else if (/beacon/i.test(m.name)) {
-          n = m.clone(); n.emissive = new THREE.Color(0xffa010); n.emissiveIntensity = 0.1; lights.beacon.push(n);
+        } else if (/beaconlight/i.test(m.name)) {
+          n = m.clone(); n.emissive = new THREE.Color(0xff5a00); n.emissiveIntensity = 0.1; lights.beacon.push(n);
         } else if (/^plate$/i.test(m.name) && spec.plate) {
           n = m.clone(); n.map = this.plateTexture(spec.plate, plateFlip(car));
         } else if (/livery/i.test(m.name)) {
@@ -281,7 +281,7 @@ export class Vehicles {
     if (!v || !v.lights.beacon.length) return;
     const on = this.active === v || this.g.atmo.lampLevel > 0.4;
     const phase = (time * 1.6) % 1;
-    const k = on ? (phase < 0.12 || (phase > 0.24 && phase < 0.36) ? 7 : 0.35) : 0.1;
+    const k = on ? (phase < 0.12 || (phase > 0.24 && phase < 0.36) ? 3.2 : 0.3) : 0.1;
     for (const m of v.lights.beacon) m.emissiveIntensity = k;
   }
 

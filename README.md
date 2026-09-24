@@ -147,7 +147,7 @@ Debug URL flags: `?debug` (fps overlay), `?time=19.5`, `?wave=5`, `?god`,
 - Map data © OpenStreetMap contributors (ODbL).
 - Terrain: AWS Terrain Tiles.
 - Imagery: Sentinel-2 cloudless 2024 by EOX IT Services (CC BY-NC-SA 4.0; personal, non-commercial use).
-- 3D models by Quaternius, Kenney, J-Toastie, Rikindle3D, dogchicken, bachosoftdesign, Benjinsmith (zombie crow, CC-BY 3.0), mightydinosaurcol (M60, CC-BY 4.0), jeremy (motorbike, CC-BY 3.0), SirDraco65, Pichuliru, LonesomeDucky, AdamKokrito, Lucian Pavel, Teh_Bucket and others: see `assets/models/CREDITS.md`. The compound bow, arrow and personal drone were modelled for this project.
+- 3D models by Quaternius, Kenney, J-Toastie, Rikindle3D, dogchicken, bachosoftdesign, Benjinsmith (zombie crow, CC-BY 3.0), mightydinosaurcol (M60, CC-BY 4.0), jeremy (motorbike, CC-BY 3.0), SirDraco65, Pichuliru, LonesomeDucky, AdamKokrito, Lucian Pavel, Teh_Bucket and others: see `assets/models/CREDITS.md`. The blue 2010 Toyota Prius is "Toyota Prius" by Isidor Goo (AirplaneChef, CC BY 4.0); the Nissan Leaf security car is built on Franz Albers' Nissan Leaf ZE0 (Apache-2.0) with the Prius wheels. The compound bow, arrow and personal drone were modelled for this project.
 - Textures, sounds and HDRIs: see `assets/CREDITS_media.md`.
 - Built with three.js.
 

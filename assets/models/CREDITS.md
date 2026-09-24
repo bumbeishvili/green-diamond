@@ -168,3 +168,15 @@ CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/), attribution required. 
 | `vehicles/prius.glb` | Toyota Prius (XW30, 2010 look), Blue Ribbon Metallic | Isidor Goo (AirplaneChef) | https://sketchfab.com/3d-models/toyota-prius-aa599d492d3d4618a1bf5f3786e1bbd9 |
 
 The fallback number-plate texture (Georgian format, made-up number "PR-010-US"; the game draws its own plates at runtime) was made for this project (CC0). Licence note: CC BY 4.0 is the licence the uploader declared on Sketchfab; the original authorship of the mesh could not be verified independently.
+
+## Nissan Leaf security car (added 2026-09-24)
+
+`vehicles/leaf.glb` combines two sources plus additions made for this project:
+
+- Body, glass, lamps and cabin: "NissanLeafZE0.dae" from nissan_leaf_launch by Franz Albers (TU Dortmund), https://github.com/FranzAlbers/nissan_leaf_launch (file `nissan_leaf_description/mesh/NissanLeafZE0.dae`; the same file is in https://github.com/FranzAlbers/nissan_leaf_urdf_description), licensed under the Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0). Modified: re-oriented, re-origined, SketchUp back-face layers removed, rim-less tyres replaced, materials re-authored, repainted light blue, ambient occlusion baked; see manifest_extra.json. Licence note: Apache 2.0 is the licence the repository declares; the mesh was converted from a SketchUp model whose original modeller is not named.
+- Wheels (tyre, 5-spoke rim, brake disc) and brake calipers: taken from `vehicles/prius.glb`, i.e. "Toyota Prius" by Isidor Goo (AirplaneChef) (https://sketchfab.com/3d-models/toyota-prius-aa599d492d3d4618a1bf5f3786e1bbd9), licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/); scaled to the Leaf's tyre size.
+- Made for this project (CC0): the SECURITY livery decals and their texture, the roof light bar, the number plates and the fallback plate texture (made-up number "SC-001-LF").
+
+| File | Name | Author | Source |
+|---|---|---|---|
+| `vehicles/leaf.glb` | Nissan Leaf (ZE0), light-blue SECURITY car | Franz Albers (body); Isidor Goo / AirplaneChef (wheels) | https://github.com/FranzAlbers/nissan_leaf_launch, https://sketchfab.com/3d-models/toyota-prius-aa599d492d3d4618a1bf5f3786e1bbd9 |
