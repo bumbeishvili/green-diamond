@@ -1,3 +1,5 @@
+import { DEFS, CATS } from './weapons.js';
+
 // DOM heads-up display + minimap drawn from the level data.
 const $ = (id) => document.getElementById(id);
 
@@ -13,6 +15,7 @@ export class HUD {
     this.big = false;
     this.buildMap(level);
     this.lastPrompt = '';
+    this.pendingPrompt = ''; this.pendingPrio = -1;
   }
 
   show(on) { this.el.hud.classList.toggle('hidden', !on); if (on) this.flashKeys(12); }
@@ -30,20 +33,34 @@ export class HUD {
 
   weapon(def, ammo) {
     this.el.ammoName.textContent = def.name;
+    if (def.melee) {
+      this.el.mag.textContent = '—';
+      this.el.mag.classList.remove('low');
+      this.el.res.textContent = '';
+      return;
+    }
     this.el.mag.textContent = ammo.mag;
-    this.el.mag.classList.toggle('low', ammo.mag <= Math.ceil(def.mag * 0.25));
-    this.el.res.textContent = `/ ${ammo.reserve}`;
+    this.el.mag.classList.toggle('low', !def.bow && ammo.mag <= Math.ceil(def.mag * 0.25));
+    this.el.res.textContent = def.bow ? `+ ${ammo.reserve} arrows` : `/ ${ammo.reserve}`;
+  }
+
+  grenades(n) {
+    const el = document.getElementById('nades');
+    if (el) el.innerHTML = `<b>G</b> grenades × ${n}`;
+    if (el) el.classList.toggle('none', n <= 0);
   }
 
   points(n) { this.el.points.textContent = n; }
 
-  // 1-4 weapon slots next to the ammo counter
+  // weapon categories 1-7 next to the ammo counter (owned guns bright, the one in hand gold)
   slots(owned, current) {
     const el = document.getElementById('slots');
     if (!el) return;
-    const names = { pistol: 'Makarov', rifle: 'AK-74', shotgun: 'Shotgun', sniper: 'SVD' };
-    el.innerHTML = ['pistol', 'rifle', 'shotgun', 'sniper'].map((k, i) =>
-      `<span class="${owned[k] ? 'own' : ''} ${k === current ? 'cur' : ''}"><b>${i + 1}</b>${names[k]}</span>`).join('');
+    el.innerHTML = Object.values(CATS).map((kinds, i) => {
+      const own = kinds.filter((k) => owned[k]);
+      const label = own.length ? own.map((k) => (k === current ? `<u>${DEFS[k].short}</u>` : DEFS[k].short)).join(' · ') : DEFS[kinds[0]].short;
+      return `<span class="${own.length ? 'own' : ''} ${kinds.includes(current) ? 'cur' : ''}"><b>${i + 1}</b>${label}</span>`;
+    }).join('');
   }
 
   // short message in the middle of the screen (e.g. where to buy a gun)
@@ -76,7 +93,13 @@ export class HUD {
     b.classList.remove('on'); void b.offsetWidth; b.classList.add('on');
   }
 
-  prompt(html) {
+  // Several systems can offer a prompt in a frame (shop 3 > stairs 2 > vehicle 1); the best one shows.
+  prompt(html, prio = 1) {
+    if (!html) return;
+    if (prio > this.pendingPrio) { this.pendingPrompt = html; this.pendingPrio = prio; }
+  }
+
+  showPrompt(html) {
     if (html === this.lastPrompt) return;
     this.lastPrompt = html;
     this.el.prompt.innerHTML = html || '';
@@ -115,6 +138,8 @@ export class HUD {
   }
 
   update(dt) {
+    this.showPrompt(this.pendingPrompt);
+    this.pendingPrompt = ''; this.pendingPrio = -1;
     if (this.hitT > 0) { this.hitT -= dt; this.el.hit.style.opacity = Math.min(1, this.hitT * 8); }
     else this.el.hit.style.opacity = 0;
     if (this.dmgT > 0) { this.dmgT -= dt; this.el.dmg.style.opacity = Math.min(1, this.dmgT * 2); }
@@ -147,6 +172,12 @@ export class HUD {
     const cols = { road: '#4a4d52', parking: '#4a4d52', pavers: '#6b6a64', lawn: '#35512f', deck: '#b8b2a2', court_pavers: '#6b6a64', court_lawn: '#35512f', court_deck: '#b8b2a2' };
     for (const [k, zs] of Object.entries(level.zones)) for (const z of zs) poly(z, cols[k] || '#555');
     for (const p of level.pools) poly(p.poly, '#2d8fbf');
+    for (const c of level.sport || []) {
+      const [a, b] = P(c.x, c.y);
+      ctx.beginPath(); ctx.arc(a, b, (c.w / 2) * this.mapScale, 0, Math.PI * 2);
+      ctx.fillStyle = c.kind === 'court_round' ? '#a4473a' : '#d66d8a'; ctx.fill();
+      if (c.kind === 'court_round') { ctx.strokeStyle = '#2f5a3a'; ctx.lineWidth = 2; ctx.stroke(); }
+    }
     for (const b of level.buildings) poly(b.poly, b.group === 'podium' ? '#9a9486' : '#d9d6cf');
     for (const b of level.surroundings.buildings) poly(b.poly, '#6d6d6b');
     this.mapCanvas = c;
@@ -171,14 +202,19 @@ export class HUD {
     }
     const toMap = (x, z) => big ? [x * (W / (2 * this.mapR)), z * (W / (2 * this.mapR))] : [(x - px) * scale, (z + py) * scale];
     for (const m of markers) {
+      if (m.bigOnly && !big) continue;
       const [mx, mz] = toMap(m.x, m.z);
-      ctx.fillStyle = m.color; ctx.beginPath(); ctx.arc(mx, mz, big ? 5 : 3.5, 0, Math.PI * 2); ctx.fill();
+      const r = (big ? 5 : 3.5) * (m.size || 1);
+      ctx.fillStyle = m.color;
+      if (m.shape === 'square') { ctx.fillRect(mx - r * 0.6, mz - r * 0.6, r * 1.2, r * 1.2); continue; }
+      ctx.beginPath(); ctx.arc(mx, mz, r, 0, Math.PI * 2); ctx.fill();
     }
-    ctx.fillStyle = '#ff3b30';
+    const zc = { human: '#ff3b30', dog: '#ff9a3a', crow: '#c77dff' };
     for (const z of zombies) {
-      if (z.state === 'dead') continue;
+      if (z.state === 'dead' || z.state === 'climb') continue;
       const [zx, zz] = toMap(z.pos.x, z.pos.z);
-      ctx.beginPath(); ctx.arc(zx, zz, big ? 3.5 : 2.6, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = zc[z.species] || zc.human;
+      ctx.beginPath(); ctx.arc(zx, zz, (big ? 3.5 : 2.6) * (z.species === 'crow' ? 0.8 : z.def && z.def.shove ? 1.4 : 1), 0, Math.PI * 2); ctx.fill();
     }
     ctx.restore();
     // player arrow: on the rotating minimap it always points up (the map turns instead);

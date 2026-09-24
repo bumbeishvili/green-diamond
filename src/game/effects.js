@@ -147,8 +147,27 @@ export class Effects {
 
   muzzle(p) {
     this.flash.position.copy(p);
+    this.flash.distance = 14;
     this.flash.intensity = 6;
     this.flashT = 0.05;
+  }
+
+  // Grenade / bloater blast: flash, fireball (or bile), smoke, debris and a scorch mark.
+  explosion(p, r = 6, kind = 'fire') {
+    const bile = kind === 'bile';
+    this.flash.position.copy(p);
+    this.flash.color.setHex(bile ? 0x9dff6a : 0xffb060);
+    this.flash.distance = r * 7;
+    this.flash.intensity = bile ? 25 : 60;
+    this.flashT = 0.14;
+    const q = p.clone(); q.y += 0.4;
+    this.emit(q, 36, { color: bile ? [0.45, 0.85, 0.2] : [1.0, 0.62, 0.2], speed: r * 1.1, spread: 2, up: 1.3, life: 0.4, size: 0.9, gravity: -2 });
+    this.emit(q, 18, { color: bile ? [0.7, 1.0, 0.35] : [1.0, 0.9, 0.55], speed: r * 0.6, spread: 1.5, up: 1, life: 0.25, size: 0.7, gravity: 0 });
+    this.emit(q, 28, { color: bile ? [0.25, 0.4, 0.12] : [0.2, 0.19, 0.18], speed: r * 0.45, spread: 1.6, up: 1.2, life: 1.9, size: 1.5, gravity: -1.2 });
+    this.emit(q, 26, { color: bile ? [0.3, 0.55, 0.12] : [0.3, 0.27, 0.24], speed: 10, spread: 2, up: 1.6, life: 1.1, size: 0.08, gravity: 14 });
+    const g = p.clone(); g.y += 0.02;
+    if (bile) this.blood.add(g, new THREE.Vector3(0, 1, 0), 2.2);
+    else this.holes.add(g, new THREE.Vector3(0, 1, 0), r * 2.2);
   }
 
   update(dt) {
@@ -178,7 +197,10 @@ export class Effects {
     }
     if (any) this.tracers.geometry.attributes.position.needsUpdate = true;
 
-    if (this.flashT > 0) { this.flashT -= dt; if (this.flashT <= 0) this.flash.intensity = 0; }
+    if (this.flashT > 0) {
+      this.flashT -= dt;
+      if (this.flashT <= 0) { this.flash.intensity = 0; this.flash.color.setHex(0xffc27a); }
+    }
   }
 
   setViewport(h) { this.points.material.uniforms.uScale.value = h * 0.6; }

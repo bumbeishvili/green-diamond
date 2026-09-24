@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { DEFS } from './weapons.js';
 import { pointInPoly } from '../world/geom.js';
 
-// Rules of the survival mode: waves, spawning, points, power-ups and the shops on the podium.
+// Rules of the survival mode: waves and what's in them, spawning, points, power-ups and the shops.
 
 const POWERUPS = {
   maxammo: { label: 'MAX AMMO', color: 0x5fd35f },
@@ -10,6 +10,7 @@ const POWERUPS = {
   double: { label: 'DOUBLE POINTS', color: 0xffd23f },
   nuke: { label: 'NUKE', color: 0xff8a2a },
 };
+const centroid = (pts) => [pts.reduce((a, q) => a + q[0], 0) / pts.length, pts.reduce((a, q) => a + q[1], 0) / pts.length];
 
 export class Director {
   constructor(game) {
@@ -18,47 +19,75 @@ export class Director {
     this.state = 'intermission';
     this.timer = 6;
     this.toSpawn = 0;
+    this.total = 0;
     this.spawnT = 0;
     this.points = 500;
     this.kills = 0;
     this.headshots = 0;
     this.double = 0;
     this.drops = [];
+    this.packs = [];       // dog packs / crow flocks still to come this wave: {at, kind, n}
+    this.roofT = 0;        // how long the player has been up on a roof / in the air
+    this.crowT = 0;
     this.dropGroup = new THREE.Group();
     game.scene.add(this.dropGroup);
     this.buildStations();
     // zombies that wander far out of sight get moved to a closer spawn
-    game.zombies.relocate = (zb) => { const sp = this.pickSpawn(); if (sp) { zb.pos.set(sp[1], game.hm.atWorld(sp[1], sp[2]), sp[2]); zb.vel.set(0, 0, 0); } };
+    game.zombies.relocate = (zb) => {
+      const sp = this.pickSpawn();
+      if (sp) { zb.roof = null; zb.pos.set(sp[1], game.hm.atWorld(sp[1], sp[2]), sp[2]); zb.vel.set(0, 0, 0); }
+    };
+    game.zombies.onScream = (zb) => this.onScream(zb);
   }
 
-  // ---- shops: real brands on the podium, as buy stations ----
+  // ---- shops: real brands on the podium, security booths, a crate by the stadium, a rooftop cache ----
   buildStations() {
-    const L = this.g.level, byName = (n) => L.pois.find((p) => p.name === n);
+    const g = this.g, L = g.level, byName = (n) => L.pois.find((p) => p.name === n);
     const S = [];
     const add = (poi, item, label, cost) => { if (poi) S.push({ x: poi.x, z: -poi.y, item, label, cost }); };
-    add(byName('Spar'), 'rifle', `AK-74 at Spar`, DEFS.rifle.price);
-    add(byName('Nikora'), 'shotgun', `TOZ-194 shotgun at Nikora`, DEFS.shotgun.price);
-    add(byName('Ori Nabiji'), 'ammo', 'Ammo at 2 Nabiji', 600);
+    add(byName('Spar'), 'rifle', 'AK-74 at Spar', DEFS.rifle.price);
+    add(byName('Assorti'), 'm4', 'M4A1 at Assorti', DEFS.m4.price);
+    add(byName('Diamond'), 'deagle', 'Desert Eagle at the Diamond salon', DEFS.deagle.price);
+    add(byName('Nikora'), 'shotgun', 'TOZ-194 shotgun at Nikora', DEFS.shotgun.price);
+    add(byName('Ori Nabiji'), 'ammo', 'Ammo and grenades at 2 Nabiji', 600);
     add(byName('36.6'), 'health', 'Pharmacy 36.6: more health', 2500);
     add(byName('Format Fit'), 'stamina', 'Format Fit: faster legs', 2000);
     add(byName('TBC Bank'), 'double', 'TBC terminal: double points (30 s)', 1200);
-    // the security booth by Gate 2 sells the Dragunov (buy on its courtyard side)
-    const booth = L.buildings.find((b) => b.group === 'guard' && b.poly.outer.some(([x, y]) => y > 20));
-    if (booth) {
-      const cx = booth.poly.outer.reduce((a, q) => a + q[0], 0) / booth.poly.outer.length;
-      const cy = booth.poly.outer.reduce((a, q) => a + q[1], 0) / booth.poly.outer.length;
-      S.push({ x: cx - 3.2, z: -cy, item: 'sniper', label: 'SVD Dragunov at the security booth', cost: DEFS.sniper.price });
+    // the security booths: Gate 2 sells the Dragunov, Gate 1 the M60 (buy on the courtyard side)
+    for (const b of L.buildings.filter((q) => q.group === 'guard')) {
+      const [cx, cy] = centroid(b.poly.outer);
+      const north = cy > 0;
+      S.push({ x: cx - 3.2, z: -cy, item: north ? 'sniper' : 'mg', label: north ? 'SVD Dragunov at the Gate 2 security booth' : 'M60 machine gun at the Gate 1 security booth', cost: DEFS[north ? 'sniper' : 'mg'].price });
     }
     // an ammo crate in the middle courtyard, by the pool house, so you can restock mid-fight
-    const poolHouse = L.buildings.find((b) => b.group === 'small' && L.court_mid && pointInPoly(
-      b.poly.outer.reduce((a, q) => a + q[0], 0) / b.poly.outer.length, b.poly.outer.reduce((a, q) => a + q[1], 0) / b.poly.outer.length, L.court_mid.outer));
+    const poolHouse = L.buildings.find((b) => b.group === 'small' && L.court_mid && pointInPoly(...centroid(b.poly.outer), L.court_mid.outer));
     if (poolHouse) {
-      const cx = poolHouse.poly.outer.reduce((a, q) => a + q[0], 0) / poolHouse.poly.outer.length;
-      const cy = poolHouse.poly.outer.reduce((a, q) => a + q[1], 0) / poolHouse.poly.outer.length;
+      const [cx, cy] = centroid(poolHouse.poly.outer);
       S.push({ x: cx, z: -cy, item: 'ammo', label: 'Ammo crate by the pool house', cost: 750, crate: true });
+    }
+    // the compound bow: a crate at the south gate of the stadium
+    const stadium = (L.sport || []).find((c) => c.kind === 'court_round');
+    if (stadium) S.push({ x: stadium.x + 1.8, z: -(stadium.y - stadium.w / 2 - 2.2), item: 'bow', label: 'Compound bow in the crate by the stadium', cost: DEFS.bow.price, crate: true, fixed: true });
+    // the SCAR 20S: a cache on the highest roof you can climb to
+    const top = [...g.stairs.list].sort((a, b) => b.top - a.top)[0];
+    if (top) {
+      const [hx, hz] = [top.roof.x, top.roof.z];
+      const dir = new THREE.Vector2(-Math.sin(top.face), -Math.cos(top.face));
+      let spot = null;
+      for (const d of [4, 3, 5, 2.5]) {
+        for (const turn of [0, 0.6, -0.6, 1.2, -1.2]) {
+          const v = dir.clone().rotateAround(new THREE.Vector2(), turn);
+          const x = hx + v.x * d, z = hz + v.y * d;
+          const r = g.player.roofObj(x, z);
+          if (r && r.stair === top && !g.colliders.resolve({ x, z }, 1.4, top.top + 0.1, top.top + 1.5, 1)) { spot = { x, z }; break; }
+        }
+        if (spot) break;
+      }
+      if (spot) S.push({ x: spot.x, z: spot.z, y: top.top, item: 'autosniper', label: 'FN SCAR 20S (rooftop cache)', cost: DEFS.autosniper.price, crate: true, roof: true });
     }
     // OSM puts shop points inside the buildings: move each station out onto the pavement in front
     for (const st of S) {
+      if (st.roof || st.fixed) continue;
       const inside = L.buildings.find((b) => pointInPoly(st.x, -st.z, b.poly.outer));
       if (!inside) continue;
       let best = null;
@@ -77,46 +106,62 @@ export class Director {
       }
       if (best) { st.x = best.ox; st.z = -best.oy; }
     }
+    // two stations must not share a spot (Nikora / TBC / 2 Nabiji are next door to each other)
+    for (let i = 0; i < S.length; i++) for (let j = 0; j < i; j++) {
+      const a = S[i], b = S[j], d = Math.hypot(a.x - b.x, a.z - b.z);
+      if (d < 2.4 && !a.roof && !b.roof) { const k = (2.4 - d) / (d || 1); a.x += (a.x - b.x) * k + (d ? 0 : 2.4); a.z += (a.z - b.z) * k; }
+    }
+    for (const st of S) if (st.y == null) st.y = g.hm.atWorld(st.x, st.z);
     this.stations = S;
-    // glowing markers in front of the shop doors
+    // crates and glowing rings
     const mat = new THREE.MeshBasicMaterial({ color: 0xffd36b, transparent: true, opacity: 0.85 });
+    const crateMat = new THREE.MeshStandardMaterial({ color: 0x4d5a36, roughness: 0.8 }), lidMat = new THREE.MeshStandardMaterial({ color: 0xd9b43a, roughness: 0.6 });
     for (const st of S.filter((q) => q.crate)) {
-      const crate = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.6, 0.7), new THREE.MeshStandardMaterial({ color: 0x4d5a36, roughness: 0.8 }));
-      const y = this.g.hm.atWorld(st.x, st.z);
-      crate.position.set(st.x + 1.0, y + 0.3, st.z);
+      const crate = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.6, 0.7), crateMat);
+      crate.position.set(st.x + 1.0, st.y + 0.3, st.z);
       crate.castShadow = crate.receiveShadow = true;
-      this.g.scene.add(crate);
-      this.g.colliders.addBox(st.x + 1.0, st.z, 0.55, 0.35, 0, { height: y + 0.6, kind: 'crate' });
-      const lid = new THREE.Mesh(new THREE.BoxGeometry(1.14, 0.08, 0.74), new THREE.MeshStandardMaterial({ color: 0xd9b43a, roughness: 0.6 }));
-      lid.position.set(st.x + 1.0, y + 0.62, st.z);
-      this.g.scene.add(lid);
+      g.scene.add(crate);
+      g.colliders.addBox(st.x + 1.0, st.z, 0.55, 0.35, 0, { height: st.y + 0.6, minY: st.y - 0.3, kind: 'crate' });
+      const lid = new THREE.Mesh(new THREE.BoxGeometry(1.14, 0.08, 0.74), lidMat);
+      lid.position.set(st.x + 1.0, st.y + 0.62, st.z);
+      g.scene.add(lid);
     }
     this.stationMeshes = S.map((s) => {
       const m = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.04, 8, 32), mat);
       m.rotation.x = Math.PI / 2;
-      m.position.set(s.x, this.g.hm.atWorld(s.x, s.z) + 0.05, s.z);
-      this.g.scene.add(m);
+      m.position.set(s.x, s.y + 0.05, s.z);
+      g.scene.add(m);
       return m;
     });
   }
 
   nearestStation() {
-    const p = this.g.player.pos;
+    const p = this.g.player;
+    if (p.vehicle) return null;
     let best = null, bd = 2.6;
-    for (const s of this.stations) { const d = Math.hypot(s.x - p.x, s.z - p.z); if (d < bd) { bd = d; best = s; } }
+    for (const s of this.stations) {
+      if (Math.abs(s.y - p.pos.y) > 2) continue;
+      const d = Math.hypot(s.x - p.pos.x, s.z - p.pos.z);
+      if (d < bd) { bd = d; best = s; }
+    }
     return best;
+  }
+
+  isGun(item) { return !!DEFS[item] && !DEFS[item].melee; }
+
+  cost(s) {
+    return this.isGun(s.item) && this.g.weapons.owned[s.item] ? Math.round(s.cost / 2) : s.cost;
   }
 
   tryBuy(s) {
     const g = this.g, w = g.weapons;
-    let cost = s.cost;
-    if (s.item === 'rifle' || s.item === 'shotgun' || s.item === 'sniper') { if (w.owned[s.item]) cost = Math.round(cost / 2); }
+    const cost = this.cost(s);
     if (s.item === 'health' && g.player.maxHealth >= 150) return g.hud.banner('Already bought', '');
     if (s.item === 'stamina' && g.player.speedMul > 1) return g.hud.banner('Already bought', '');
     if (this.points < cost) { g.audio.play('empty'); return; }
     this.addPoints(-cost, true);
     g.audio.play('buy');
-    if (s.item === 'rifle' || s.item === 'shotgun' || s.item === 'sniper') w.give(s.item);
+    if (this.isGun(s.item)) w.give(s.item);
     else if (s.item === 'ammo') w.refillAll();
     else if (s.item === 'health') { g.player.maxHealth = 150; g.player.health = 150; }
     else if (s.item === 'stamina') g.player.speedMul = 1.18;
@@ -134,18 +179,28 @@ export class Director {
   waveCount(w) { return Math.round(6 + w * 3.2 + w * w * 0.32); }
   maxAlive(w) { return Math.min(8 + w * 2, 26); }
   health(w) { return w <= 9 ? 90 + 55 * w : (90 + 55 * 9) * Math.pow(1.09, w - 9); }
+  damage(w) { return 34 + Math.min(26, w * 2); }
 
   startWave() {
     this.wave++;
+    const w = this.wave;
     this.state = 'active';
-    this.toSpawn = this.waveCount(this.wave);
+    this.toSpawn = this.total = this.waveCount(w);
     this.spawnT = 1.5;
-    this.g.hud.wave(this.wave);
-    this.g.hud.banner(`Wave ${this.wave}`, this.wave === 1 ? 'They’re coming through the gates' : '');
+    // stray dog packs from wave 3, crows from wave 4
+    this.packs = [];
+    if (w >= 3 && (w % 2 === 1 || Math.random() < 0.5)) this.packs.push({ at: 0.25 + Math.random() * 0.3, kind: 'dogs', n: Math.min(6, 2 + Math.floor(w / 3)) });
+    if (w >= 7 && Math.random() < 0.6) this.packs.push({ at: 0.6 + Math.random() * 0.25, kind: 'dogs', n: Math.min(6, 2 + Math.floor(w / 4)) });
+    if (w >= 4 && Math.random() < 0.7) this.packs.push({ at: 0.35 + Math.random() * 0.4, kind: 'crows', n: Math.min(8, 3 + Math.floor(w / 4)) });
+    const g = this.g;
+    g.hud.wave(w);
+    const note = w === 1 ? 'They’re coming through the gates' : w === 3 ? 'Listen for the dogs' : w === 4 ? 'Watch the sky' : '';
+    g.hud.banner(`Wave ${w}`, note);
     // wave 1: a distant air-raid siren somewhere over Dighomi, quiet and fading; later waves: a soft low boom
-    if (this.wave === 1) this.g.audio.play('waveStart', { vol: 0.3, lowpass: 1300, fade: 5, jitter: 0 });
-    else this.g.audio.play('waveSoft', { vol: 0.8 });
-    this.g.onWave?.(this.wave);
+    if (w === 1) g.audio.play('waveStart', { vol: 0.3, lowpass: 1300, fade: 5, jitter: 0 });
+    else g.audio.play('waveSoft', { vol: 0.8 });
+    g.pickups?.replenish(25);
+    g.onWave?.(w);
   }
 
   pickSpawn() {
@@ -163,30 +218,86 @@ export class Director {
       cands.push([w, x, z, s.kind]);
     }
     if (!cands.length) return null;
-    let tot = cands.reduce((a, c) => a + c[0], 0), r = Math.random() * tot;
+    const tot = cands.reduce((a, c) => a + c[0], 0);
+    let r = Math.random() * tot;
     for (const c of cands) { r -= c[0]; if (r <= 0) return c; }
     return cands[cands.length - 1];
   }
 
+  // What kind of zombie comes next: walkers early, then runners, crawlers, bloaters, screamers, brutes.
+  pickType(w) {
+    const z = this.g.zombies;
+    const table = [
+      ['runner', THREE.MathUtils.clamp((w - 2) * 0.1, 0, 0.42)],
+      ['crawler', w >= 2 ? 0.08 : 0],
+      ['bloater', w >= 3 && z.count('bloater') < 3 ? 0.07 : 0],
+      ['screamer', w >= 4 && z.count('screamer') < 1 ? 0.05 : 0],
+      ['brute', w >= 5 && z.count('brute') < 2 + Math.floor(w / 8) ? Math.min(0.1, 0.03 + (w - 5) * 0.01) : 0],
+    ];
+    let r = Math.random();
+    for (const [t, p] of table) { if (r < p) return t; r -= p; }
+    return 'walker';
+  }
+
+  speedMul(type, w) { return type === 'runner' ? 1 + Math.min(0.08, w * 0.01) : 1 + Math.min(0.2, w * 0.02); }
+
   spawnOne() {
+    const g = this.g, w = this.wave, pl = g.player;
+    const type = this.pickType(w);
+    const opts = { type, hp: this.health(w), speedMul: this.speedMul(type, w), damage: this.damage(w) };
+    // camping on a roof: some come straight out of the roof door (they took the stairs earlier)
+    const st = pl.roof && pl.roof.stair;
+    if (st && this.roofT > 12 && Math.random() < 0.35) {
+      const a = Math.random() * Math.PI * 2;
+      g.zombies.spawn(st.roof.x + Math.cos(a) * 0.5, st.roof.z + Math.sin(a) * 0.5, { ...opts, roof: st.top, stair: st });
+      return true;
+    }
     const s = this.pickSpawn();
     if (!s) return false;
-    const w = this.wave;
-    const runnerP = THREE.MathUtils.clamp((w - 2) * 0.12, 0, 0.75);
-    const type = w >= 6 && Math.random() < 0.06 ? 'brute' : Math.random() < runnerP ? 'runner' : 'walker';
-    const hp = this.health(w) * (type === 'brute' ? 3 : 1);
-    const speed = type === 'runner' ? 3.4 + Math.min(1.0, w * 0.05) : type === 'brute' ? 1.2 : 1.25 + Math.min(0.5, w * 0.05);
     const jitter = () => (Math.random() - 0.5) * 1.5;
-    this.g.zombies.spawn(s[1] + jitter(), s[2] + jitter(), { type, hp, speed, damage: 34 + Math.min(26, w * 2) });
+    g.zombies.spawn(s[1] + jitter(), s[2] + jitter(), opts);
     return true;
+  }
+
+  spawnPack(pack) {
+    const g = this.g, w = this.wave;
+    if (pack.kind === 'dogs') {
+      const s = this.pickSpawn();
+      if (!s) return;
+      for (let i = 0; i < pack.n; i++) {
+        const a = (i / pack.n) * Math.PI * 2;
+        const type = i === 0 && w >= 6 ? 'wolf' : 'dog'; // from wave 6 a wolf leads the pack
+        g.zombies.spawn(s[1] + Math.cos(a) * 1.2, s[2] + Math.sin(a) * 1.2, { type, hp: this.health(w), speedMul: this.speedMul('dog', w), damage: this.damage(w) });
+      }
+      g.audio.play('growl', { vol: 0.9, pos: { x: s[1], y: g.hm.atWorld(s[1], s[2]) + 0.6, z: s[2] }, ref: 12 });
+      g.hud.notice('Stray dogs: they are fast, keep moving');
+    } else this.spawnCrows(pack.n);
+  }
+
+  spawnCrows(n) {
+    const g = this.g, p = g.player.pos, w = this.wave;
+    const a0 = Math.random() * Math.PI * 2;
+    for (let i = 0; i < n; i++) {
+      const a = a0 + (Math.random() - 0.5) * 0.8, d = 45 + Math.random() * 15;
+      g.zombies.spawn(p.x + Math.cos(a) * d, p.z + Math.sin(a) * d, { type: 'crow', hp: this.health(w), damage: this.damage(w), y: p.y + 22 + Math.random() * 10 });
+    }
+    g.audio.play('caw', { vol: 0.8 });
+  }
+
+  onScream(zb) {
+    const g = this.g;
+    g.hud.notice('A screamer called the horde');
+    // the scream brings company, if there's room
+    for (let i = 0; i < 2; i++) if (g.zombies.alive < this.maxAlive(this.wave) + 4) this.spawnOne();
   }
 
   onKill(zb, head, weapon) {
     this.kills++;
     if (head) this.headshots++;
-    this.addPoints(weapon === 'knife' ? 130 : head ? 100 : 60);
+    const bonus = zb.type === 'brute' ? 120 : zb.type === 'screamer' || zb.type === 'wolf' ? 60 : zb.species === 'crow' ? 10 : 0;
+    this.addPoints((weapon === 'knife' ? 130 : head ? 100 : 60) + bonus);
     // power-up drop
-    if (Math.random() < 0.035 && this.drops.length < 3) this.drop(zb.pos);
+    if (zb.species !== 'crow' && Math.random() < 0.035 && this.drops.length < 3) this.drop(zb.pos);
   }
 
   onHit(zb, killed) { if (!killed) this.addPoints(10); }
@@ -204,9 +315,9 @@ export class Director {
   update(dt) {
     const g = this.g;
     const w = g.weapons, a = w.ammo;
-    if (a && a.mag + a.reserve <= w.def.mag * 1.5 && !this.ammoHinted?.[w.current]) {
+    if (a && !w.def.melee && !w.def.bow && a.mag + a.reserve <= w.def.mag * 1.5 && !this.ammoHinted?.[w.current]) {
       (this.ammoHinted ||= {})[w.current] = true;
-      g.hud.notice('Low on ammo: press F at the ammo crate by the pool (750) or at 2 Nabiji on the podium (600)');
+      g.hud.notice('Low on ammo: grab an ammo can, or press F at the pool-house crate (750) or 2 Nabiji (600)');
     }
     if (a && a.reserve > w.def.mag * 2 && this.ammoHinted) this.ammoHinted[w.current] = false;
     if (this.double > 0) this.double -= dt;
@@ -219,7 +330,7 @@ export class Director {
       d.mesh.position.y += Math.sin(d.t * 3) * 0.004;
       d.mesh.visible = d.t < 22 || Math.floor(d.t * 6) % 2 === 0;
       const p = g.player.pos;
-      if (Math.hypot(d.mesh.position.x - p.x, d.mesh.position.z - p.z) < 1.2) {
+      if (Math.hypot(d.mesh.position.x - p.x, d.mesh.position.z - p.z) < 1.2 && Math.abs(d.mesh.position.y - 1 - p.y) < 2) {
         this.collect(d.kind);
         this.dropGroup.remove(d.mesh); this.drops.splice(i, 1);
       } else if (d.t > 28) { this.dropGroup.remove(d.mesh); this.drops.splice(i, 1); }
@@ -227,14 +338,18 @@ export class Director {
     // shops prompt
     const s = this.nearestStation();
     if (s && !g.player.dead) {
-      const isGun = ['rifle', 'shotgun', 'sniper'].includes(s.item);
-      const owned = isGun && g.weapons.owned[s.item];
-      const cost = owned ? Math.round(s.cost / 2) : s.cost;
+      const owned = this.isGun(s.item) && g.weapons.owned[s.item];
+      const cost = this.cost(s);
       const what = owned ? `Ammo for the ${DEFS[s.item].name}` : s.label;
-      g.hud.prompt(`Press <b>F</b> \u2014 ${what} <b>[${cost}]</b>${this.points < cost ? ' <span style="color:#ff6b6b">not enough points</span>' : ''}`);
-      if (g.input.hit('KeyF')) this.tryBuy(s);
-    } else g.hud.prompt('');
+      g.hud.prompt(`Press <b>F</b> — ${what} <b>[${cost}]</b>${this.points < cost ? ' <span style="color:#ff6b6b">not enough points</span>' : ''}`, 3);
+      if (g.input.hit('KeyF')) { g.input.pressed.delete('KeyF'); this.tryBuy(s); }
+    }
     for (const m of this.stationMeshes) m.rotation.z += dt;
+
+    // up on a roof or in the drone for a while: the crows find you
+    const pl = g.player;
+    const high = pl.roof || (pl.vehicle && pl.vehicle.type === 'drone' && pl.pos.y - g.hm.atWorld(pl.pos.x, pl.pos.z) > 6);
+    this.roofT = high ? this.roofT + dt : 0;
 
     if (g.frozen) return;
     if (this.state === 'intermission') {
@@ -248,10 +363,16 @@ export class Director {
       if (this.spawnOne()) this.toSpawn--;
       this.spawnT = Math.max(0.35, 2.2 - this.wave * 0.14) * (0.6 + Math.random() * 0.8);
     }
-    if (this.toSpawn <= 0 && g.zombies.alive === 0) {
+    const progress = 1 - this.toSpawn / (this.total || 1);
+    for (let i = this.packs.length - 1; i >= 0; i--) if (progress >= this.packs[i].at) { this.spawnPack(this.packs[i]); this.packs.splice(i, 1); }
+    if (this.roofT > 15 && this.wave >= 2) {
+      this.crowT -= dt;
+      if (this.crowT <= 0 && g.zombies.count('crow') < 8) { this.crowT = 18; this.spawnCrows(2 + Math.floor(Math.random() * 2)); }
+    } else this.crowT = Math.min(this.crowT, 4);
+    if (this.toSpawn <= 0 && !this.packs.length && g.zombies.alive === 0) {
       this.state = 'intermission';
       this.timer = 11;
-      g.hud.banner(`Wave ${this.wave} survived`, 'The shops on the podium are open — press F to buy');
+      g.hud.banner(`Wave ${this.wave} survived`, 'The shops are open: press F to buy');
       g.audio.play('waveEnd', { vol: 0.45 });
       g.onWaveEnd?.(this.wave);
     }
@@ -268,8 +389,9 @@ export class Director {
   }
 
   markers() {
-    const m = this.stations.map((s) => ({ x: s.x, z: s.z, color: '#ffd36b' }));
-    for (const d of this.drops) m.push({ x: d.mesh.position.x, z: d.mesh.position.z, color: '#7cff7c' });
+    const m = this.stations.map((s) => ({ x: s.x, z: s.z, color: '#ffb347' }));
+    for (const d of this.drops) m.push({ x: d.mesh.position.x, z: d.mesh.position.z, color: '#e0e6ff' });
     return m;
   }
 }
+

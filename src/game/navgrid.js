@@ -32,13 +32,25 @@ export class NavGrid {
     return out;
   }
 
-  rasterize(col) {
+  // Recompute blocked cells in a small box (a car was driven off / parked).
+  refreshArea(col, x0, z0, x1, z1) {
+    const n = this.n, c = this.cell;
+    const ix0 = Math.max(0, Math.floor((x0 - this.minX) / c)), ix1 = Math.min(n - 1, Math.floor((x1 - this.minX) / c));
+    const iz0 = Math.max(0, Math.floor((z0 - this.minZ) / c)), iz1 = Math.min(n - 1, Math.floor((z1 - this.minZ) / c));
+    for (let iz = iz0; iz <= iz1; iz++) for (let ix = ix0; ix <= ix1; ix++) this.blocked[iz * n + ix] = 0;
+    const items = [];
+    col.forEachNear(x0 - 2, z0 - 2, x1 + 2, z1 + 2, (o) => { items.push(o); });
+    this.rasterize({ items }, [ix0, iz0, ix1, iz1]);
+  }
+
+  rasterize(col, clip = null) {
     const n = this.n, c = this.cell, b = this.blocked;
     const mark = (x, z, r) => {
       const ix0 = Math.floor((x - r - this.minX) / c), ix1 = Math.floor((x + r - this.minX) / c);
       const iz0 = Math.floor((z - r - this.minZ) / c), iz1 = Math.floor((z + r - this.minZ) / c);
       for (let iz = Math.max(0, iz0); iz <= Math.min(n - 1, iz1); iz++) {
         for (let ix = Math.max(0, ix0); ix <= Math.min(n - 1, ix1); ix++) {
+          if (clip && (ix < clip[0] || iz < clip[1] || ix > clip[2] || iz > clip[3])) continue;
           const cx = this.minX + (ix + 0.5) * c, cz = this.minZ + (iz + 0.5) * c;
           if ((cx - x) ** 2 + (cz - z) ** 2 <= r * r) b[iz * n + ix] = 1;
         }
@@ -60,8 +72,9 @@ export class NavGrid {
     }
   }
 
-  // Start (or restart) a field towards world point (x, z).
-  request(x, z) {
+  // Start (or restart) a field towards world point (x, z), plus any extra goal points
+  // (e.g. every lobby door of the building whose roof the player is on).
+  request(x, z, extra = null) {
     const t = this.idx(x, z);
     if (t < 0) return;
     if (this.busy && t === this.pendingTarget) return;
@@ -69,9 +82,14 @@ export class NavGrid {
     this.busy = true;
     this.work.fill(0xffffffff);
     this.hs = 0;
-    // if the player stands in a blocked cell (next to a wall), seed from free neighbours
-    const seeds = [t];
-    if (this.blocked[t]) for (const [dx, dz] of DIRS) { const j = t + dx + dz * this.n; if (j >= 0 && j < this.work.length && !this.blocked[j]) seeds.push(j); }
+    const goals = [t];
+    if (extra) for (const p of extra) { const j = this.idx(p.x, p.z); if (j >= 0) goals.push(j); }
+    // a goal in a blocked cell (player next to a wall) seeds from its free neighbours
+    const seeds = [];
+    for (const g of goals) {
+      seeds.push(g);
+      if (this.blocked[g]) for (const [dx, dz] of DIRS) { const j = g + dx + dz * this.n; if (j >= 0 && j < this.work.length && !this.blocked[j]) seeds.push(j); }
+    }
     for (const s of seeds) { this.work[s] = 0; this.push(s, 0); }
   }
 

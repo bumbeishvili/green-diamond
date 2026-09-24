@@ -36,6 +36,37 @@ export class Player {
     this.bounds = null;        // play area polygon (x,z) for the invisible gate barriers
     this.pools = [];           // [{pts: [[x, y(map)]...], water}] set by the game
     this.inWater = false;
+    this.roofs = [];           // [{pts, top}] flat roofs you can stand on (reachable by drone)
+    this.vehicle = null;       // set while driving/flying; the vehicle then places the camera
+    this.roof = null;          // the roof you're standing on (with its stairwell, if any)
+    this.onFall = null;        // callback(damage) for a hard landing
+    this.speedWeapon = 1;      // heavy guns slow you down, the knife speeds you up
+  }
+
+  roofObj(x, z) {
+    for (const r of this.roofs) if (pointInPoly(x, -z, r.pts)) return r;
+    return null;
+  }
+
+  roofAt(x, z) {
+    const r = this.roofObj(x, z);
+    return r ? r.top : -Infinity;
+  }
+
+  // ground under the feet: terrain, or a roof if we're up on one
+  groundAt(x, z, y) {
+    const g = this.hm.maxAround(x, -z, 0.18);
+    const r = this.roofAt(x, z);
+    return y >= r - 0.6 ? Math.max(g, r) : g;
+  }
+
+  // mouse look only (used while in a vehicle)
+  look(input, allowControl) {
+    if (!allowControl) return;
+    const zoom = this.adsZoom ?? 0.22;
+    const sens = 0.0021 * settings.sens * (1 - this.ads * Math.max(0.45, zoom));
+    this.yaw -= input.mouse.dx * sens;
+    this.pitch = THREE.MathUtils.clamp(this.pitch - input.mouse.dy * sens, -1.45, 1.45);
   }
 
   spawn(x, z, yaw = 0) {
@@ -51,6 +82,14 @@ export class Player {
   get eyeHeight() { return THREE.MathUtils.lerp(WORLD.eyeHeight, WORLD.crouchEye, this.crouch); }
 
   update(dt, input, allowControl = true) {
+    if (this.vehicle) {
+      this.roof = null;
+      this.look(input, allowControl);
+      this.shake = Math.max(0, this.shake - dt * 2.5);
+      this.regenDelay -= dt;
+      if (!this.dead && this.regenDelay <= 0 && this.health < this.maxHealth) this.health = Math.min(this.maxHealth, this.health + 22 * dt);
+      return;
+    }
     const zoom = this.adsZoom ?? 0.22;
     const sens = 0.0021 * settings.sens * (1 - this.ads * Math.max(0.45, zoom));
     if (allowControl) {
@@ -75,7 +114,7 @@ export class Player {
     this.inWater = this.pools.some((pl) => this.pos.y < pl.water - 0.3 && pointInPoly(this.pos.x, -this.pos.z, pl.pts));
     if (this.inWater) this.sprinting = false;
     const speed = (this.crouch > 0.5 ? WORLD.crouchSpeed : this.sprinting ? WORLD.sprintSpeed : WORLD.walkSpeed)
-      * this.speedMul * (1 - this.ads * 0.35) * (this.inWater ? 0.55 : 1);
+      * this.speedMul * this.speedWeapon * (1 - this.ads * 0.35) * (this.inWater ? 0.55 : 1);
 
     const sin = Math.sin(this.yaw), cos = Math.cos(this.yaw);
     const wishX = fx * cos + fz * sin, wishZ = -fx * sin + fz * cos;
@@ -98,7 +137,7 @@ export class Player {
       p.x += (this.vel.x * dt) / steps;
       p.z += (this.vel.z * dt) / steps;
       // curbs: refuse steps higher than maxStep
-      const gNew = this.hm.maxAround(p.x, -p.z, 0.2);
+      const gNew = this.groundAt(p.x, p.z, this.pos.y);
       if (gNew - this.pos.y > WORLD.maxStep && this.onGround) { p.x = ox; p.z = oz; }
       this.col.resolve(p, WORLD.playerRadius, this.pos.y + 0.25, this.pos.y + this.eyeHeight + 0.1, 3, PLAYER_SKIP);
     }
@@ -108,16 +147,26 @@ export class Player {
     this.pos.z = p.z;
 
     // vertical
-    const ground = this.hm.maxAround(this.pos.x, -this.pos.z, 0.18);
+    const ground = this.groundAt(this.pos.x, this.pos.z, this.pos.y);
     this.pos.y += this.vel.y * dt;
     if (this.pos.y <= ground) {
       if (!this.onGround && this.vel.y < -7) this.shake = Math.min(1, this.shake + 0.25);
+      // falling more than about two storeys hurts; off a 9-storey roof it kills
+      if (!this.onGround && this.vel.y < -13 && !this.inWater) {
+        const dmg = (-this.vel.y - 13) * 9;
+        this.health -= dmg;
+        this.regenDelay = 4;
+        if (this.health <= 0) { this.health = 0; this.dead = true; }
+        if (this.onFall) this.onFall(dmg);
+      }
       this.pos.y = ground;
       this.vel.y = 0;
       this.onGround = true;
     } else if (this.pos.y > ground + 0.05) {
       this.onGround = false;
     }
+    const r = this.roofObj(this.pos.x, this.pos.z);
+    this.roof = r && this.pos.y > r.top - 0.4 ? r : null;
     // the eye follows the feet with a little lag so curbs and steps don't pop
     this.viewY = this.onGround ? THREE.MathUtils.damp(this.viewY ?? this.pos.y, this.pos.y, 16, dt) : this.pos.y;
 

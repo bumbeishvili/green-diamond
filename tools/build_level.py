@@ -419,14 +419,17 @@ playgrounds = [
 ]
 courts_sport = [
     {'x': 80.0, 'y': 94.0, 'r': 0.0, 'w': 14.0, 'd': 14.0, 'kind': 'basketball_half'},
+    # the "small stadium": round red-rubber court with a tall green mesh fence and one glass-backboard
+    # hoop, west end of the middle courtyard (the dark red circle in the imagery, and the gallery photos)
+    {'x': -41.0, 'y': -15.5, 'r': 0.0, 'w': 15.0, 'd': 15.0, 'kind': 'court_round'},
 ]
 pergolas = [
-    {'x': -46.0, 'y': -11.0, 'r': 0.3}, {'x': 80.0, 'y': -24.0, 'r': -0.25},
-    {'x': -26.0, 'y': 104.0, 'r': 0.0}, {'x': 24.0, 'y': 104.0, 'r': 0.0},
+    {'x': 80.0, 'y': -24.0, 'r': -0.25, 'kind': 'gazebo'},
+    {'x': -26.0, 'y': 104.0, 'r': 0.0, 'kind': 'pergola'}, {'x': 24.0, 'y': 104.0, 'r': 0.0, 'kind': 'gazebo'},
 ]
 
 # Remove trees and benches that collide with hand-placed features.
-features = unary_union([Point(f['x'], f['y']).buffer(max(f['w'], f['d']) * 0.62)
+features = unary_union([Point(f['x'], f['y']).buffer(f['w'] / 2 + 1.2 if f.get('kind') == 'court_round' else max(f['w'], f['d']) * 0.62)
                         for f in playgrounds + courts_sport] +
                        [Point(f['x'], f['y']).buffer(4.5) for f in pergolas])
 trees = [t for t in trees if not features.contains(Point(t['x'], t['y']))]

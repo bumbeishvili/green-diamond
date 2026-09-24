@@ -18,6 +18,9 @@ import { Zombies } from './game/zombies.js';
 import { Weapons } from './game/weapons.js';
 import { HUD } from './game/hud.js';
 import { Director } from './game/director.js';
+import { Vehicles } from './game/vehicles.js';
+import { Stairs } from './game/stairs.js';
+import { Pickups } from './game/pickups.js';
 
 const $ = (id) => document.getElementById(id);
 const START_HOUR = 17.25;       // wave 1 starts at 17:15; each wave pushes the clock ~12 minutes
@@ -102,14 +105,29 @@ class Game {
     this.player = new Player(this.camera, this.hm, this.colliders);
     this.player.pools = this.level.pools.map((pl) => ({ pts: pl.poly.outer, water: pl.rim - 0.13 }));
     this.player.onStep = () => this.audio.play('step', { vol: 0.25, jitter: 0.2 });
+    this.player.onFall = () => { this.hud.damage(); this.audio.play('hurt', { vol: 0.9 }); };
+    // stairwells, and the flat roofs you can stand on (each knows its stairwell, if it has one)
+    this.stairs = new Stairs(this, this.buildings.stairs);
+    this.player.roofs = this.buildings.heights.map((h) => ({ id: h.id, pts: h.pts, top: h.roof, stair: this.stairs.byId.get(h.id) || null }));
     this.hud = new HUD(this.level);
     this.zombies = new Zombies(this.scene, { colliders: this.colliders, hm: this.hm, nav: this.nav, effects: this.effects, audio: this.audio, player: this.player, models: this.models });
+    this.zombies.stairs = this.stairs.list;
     this.weapons = new Weapons(this);
     this.weapons.setup(this.models);
     this.director = new Director(this);
+    this.pickups = new Pickups(this);
+    this.pickups.setup(this.models);
+    this.vehicles = new Vehicles(this);
+    this.vehicles.setup(this.models);
     this.zombies.onKill = (zb, head, weapon) => this.director.onKill(zb, head, weapon);
     this.weapons.onHit = (zb, killed, head) => this.director.onHit(zb, killed, head);
+    this.zombies.onBlastHit = (zb, killed) => this.director.onHit(zb, killed);
     this.zombies.onPlayerHit = () => { this.hud.damage(); this.audio.play('hurt', { vol: 0.8 }); };
+    this.zombies.onExplode = (x, y, z, r, src) => {
+      const p = new THREE.Vector3(x, y, z);
+      this.effects.explosion(p, r, src === 'bloater' ? 'bile' : 'fire');
+      this.audio.play(src === 'bloater' ? 'burst' : 'explosion', { pos: p, vol: 1.3, ref: 10 });
+    };
 
     // flashlight (always in the scene so shaders never recompile)
     this.flashlight = new THREE.SpotLight(0xfff2dd, 0, 38, 0.42, 0.45, 1.4);
@@ -133,7 +151,7 @@ class Game {
 
   credits() {
     $('credits').textContent = 'Map data © OpenStreetMap contributors (ODbL) · Terrain: AWS Terrain Tiles · Imagery: Sentinel-2 cloudless 2024 by EOX (CC BY-NC-SA 4.0) · '
-      + 'Models: Quaternius, Kenney, J-Toastie, Rikindle3D, dogchicken, bachosoftdesign & others (see assets/models/CREDITS.md) · Textures: ambientCG, Poly Haven · three.js';
+      + 'Models: Quaternius, Kenney, J-Toastie, Rikindle3D, dogchicken, bachosoftdesign, Benjinsmith, mightydinosaurcol, jeremy, SirDraco65, Pichuliru, LonesomeDucky, Lucian Pavel & others (see assets/models/CREDITS.md) · Textures: ambientCG, Poly Haven · three.js';
   }
 
   start() {
@@ -171,6 +189,8 @@ class Game {
     const hh = Math.floor(this.hour), mm = String(Math.round((this.hour - hh) * 60)).padStart(2, '0');
     this.hud.banner('Green Diamond', `Bob Walsh St 32 · Dighomi · ${hh}:${mm}`);
     this.hud.slots(this.weapons.owned, this.weapons.current);
+    this.hud.grenades(this.weapons.grenades);
+    this.pickups.replenish(8);
     if (URLFLAGS.wave) { this.director.wave = URLFLAGS.wave - 1; this.director.timer = 0.5; }
     if (URLFLAGS.nozombies) { this.director.timer = Infinity; }
     const q = new URLSearchParams(location.search);
@@ -232,21 +252,30 @@ class Game {
       if (URLFLAGS.god) { this.player.health = this.player.maxHealth; this.player.dead = false; }
       if (playing && this.player.dead) this.gameOver();
     }
+    this.vehicles.update(dt, this.input, playing && !debugCam);
+    this.stairs.update(dt, this.input, playing && !debugCam);
     if (playing) {
-      // flow field towards the player, time-sliced
+      // flow field towards the player; if they're up on a roof, towards that building's lobby doors
+      const st = this.player.roof && this.player.roof.stair;
+      this.zombies.targetStair = st || null;
       this.navT = (this.navT || 0) - dt;
-      if (this.navT <= 0 && !this.nav.busy) { this.nav.request(this.player.pos.x, this.player.pos.z); this.navT = 0.3; }
+      if (this.navT <= 0 && !this.nav.busy) {
+        if (st) this.nav.request(st.doors[0].x, st.doors[0].z, st.doors.slice(1));
+        else this.nav.request(this.player.pos.x, this.player.pos.z);
+        this.navT = 0.3;
+      }
       this.nav.step(this.quality === QUALITY.low ? 9000 : 16000);
       this.zombies.frozen = this.frozen;
       this.zombies.update(dt, this.time);
       this.weapons.update(dt, this.input, !debugCam);
       if (this.forceAds) this.player.ads = 1;
       this.director.update(dt);
+      this.pickups.update(dt);
       if (this.input.hit('KeyM')) this.hud.toggleMap();
       if (this.input.hit('KeyH')) this.hud.toggleKeys();
-      if (this.input.hit('KeyG')) this.flashOn = !this.flashOn;
+      if (this.input.hit('KeyL')) this.flashOn = !this.flashOn;
     }
-    // flashlight: on by itself once it's dark, G toggles
+    // flashlight: on by itself once it's dark, L toggles
     const wantLight = this.flashOn !== (this.atmo.lampLevel > 0.6);
     this.flashlight.intensity = THREE.MathUtils.damp(this.flashlight.intensity, wantLight ? 60 : 0, 12, dt);
 
@@ -254,7 +283,7 @@ class Game {
     this.effects.update(dt);
     this.hud.update(dt);
     this.hud.health(this.player.health, this.player.maxHealth);
-    if ((this.frameCount || 0) % 2 === 0) this.hud.drawMap(this.player, this.zombies.list, this.director.markers());
+    if ((this.frameCount || 0) % 2 === 0) this.hud.drawMap(this.player, this.zombies.list, [...this.stairs.markers(), ...this.pickups.markers(), ...this.director.markers()]);
     this.atmo.follow(debugCam ? (this.camera.position.y > 30 ? new THREE.Vector3(0, 0, 0) : this.camera.position) : this.player.pos);
     if (this.audio.ctx) this.audio.setListener(this.camera.position, this.player.forward(new THREE.Vector3()));
 

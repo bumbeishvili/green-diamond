@@ -171,6 +171,50 @@ export class Audio {
       case 'pickup': case 'buy': env(tone('sine', 660, 990, 0.18), 0.005, 0.35, 0.2); break;
       case 'waveStart': { const o = tone('sawtooth', 55, 50, 2.5); const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 300; o.connect(f); env(f, 0.4, 0.7, 2.2); env(tone('sine', 220, 110, 2.2), 0.3, 0.25, 2.0); break; }
       case 'waveEnd': env(tone('sine', 330, 660, 0.9), 0.05, 0.35, 0.9); break;
+      case 'explosion': {
+        // a close crack, a deep thump and a long rumbling tail
+        env(noise(5200, 0.8), 0.001, 1.2, 0.12);
+        env(noise(900, 0.7), 0.002, 1.6, 1.3);
+        env(tone('sine', 110, 28, 1.1), 0.002, 1.0, 1.1);
+        env(noise(240, 0.6), 0.05, 0.9, 1.35);
+        break;
+      }
+      case 'burst': { env(noise(700, 1.2), 0.002, 1.1, 0.5); env(tone('sine', 90, 35, 0.5), 0.002, 0.8, 0.5); env(noise(2400, 2, 'bandpass'), 0.01, 0.5, 0.35); break; }
+      case 'hiss': { const f = noise(3800, 1.5, 'highpass'); env(f, 0.05, 0.35, 0.65); env(tone('sawtooth', 70, 60, 0.7), 0.05, 0.25, 0.65); break; }
+      case 'growl': {
+        const o = tone('sawtooth', 70 + Math.random() * 25, 55, 0.7);
+        const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 700;
+        const lfo = c.createOscillator(); lfo.frequency.value = 28 + Math.random() * 10;
+        const lg = c.createGain(); lg.gain.value = 18; lfo.connect(lg).connect(o.frequency); lfo.start(t); lfo.stop(t + 0.8);
+        o.connect(f); env(f, 0.04, 0.55, 0.6); break;
+      }
+      case 'yelp': { const o = tone('triangle', 900, 380, 0.3); env(o, 0.01, 0.45, 0.28); env(noise(1800, 2, 'bandpass'), 0.01, 0.25, 0.2); break; }
+      case 'caw': {
+        for (let k = 0; k < 2; k++) {
+          const o = c.createOscillator(); o.type = 'sawtooth';
+          const t0 = t + k * 0.22;
+          o.frequency.setValueAtTime(760, t0); o.frequency.exponentialRampToValueAtTime(520, t0 + 0.16);
+          const f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1300; f.Q.value = 2;
+          const g = c.createGain(); g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.4, t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.18);
+          o.connect(f).connect(g).connect(out); o.start(t0); o.stop(t0 + 0.2);
+        }
+        break;
+      }
+      case 'scream': {
+        const o = tone('sawtooth', 520, 900, 1.3);
+        const f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1600; f.Q.value = 1.2;
+        const lfo = c.createOscillator(); lfo.frequency.value = 9;
+        const lg = c.createGain(); lg.gain.value = 60; lfo.connect(lg).connect(o.frequency); lfo.start(t); lfo.stop(t + 1.4);
+        o.connect(f); env(f, 0.06, 0.8, 1.2); env(noise(2600, 1, 'bandpass'), 0.05, 0.35, 1.1); break;
+      }
+      case 'bow': { env(noise(900, 1.5, 'bandpass'), 0.001, 0.8, 0.09); env(tone('sine', 180, 90, 0.18), 0.001, 0.5, 0.16); env(noise(3000, 1, 'highpass'), 0.002, 0.25, 0.12); break; }
+      case 'bowDraw': { const f = noise(420, 3, 'bandpass'); env(f, 0.25, 0.18, 0.45); break; }
+      case 'arrowHit': { env(noise(1400, 1.5), 0.001, 0.7, 0.08); env(tone('triangle', 260, 120, 0.12), 0.001, 0.4, 0.12); break; }
+      case 'pin': { env(noise(6000, 6, 'bandpass'), 0.001, 0.35, 0.05); env(tone('square', 2400, 2300, 0.03), 0.001, 0.12, 0.03); break; }
+      case 'throw': env(noise(1200, 0.8), 0.03, 0.3, 0.18); break;
+      case 'clink': env(tone('triangle', 2100 + Math.random() * 400, 1800, 0.08), 0.001, 0.35, 0.08); break;
+      case 'heal': env(tone('sine', 520, 880, 0.35), 0.01, 0.3, 0.35); env(tone('sine', 780, 1320, 0.3), 0.06, 0.18, 0.3); break;
+      case 'cash': env(tone('square', 1320, 1318, 0.06), 0.002, 0.15, 0.06); env(tone('square', 1760, 1758, 0.12), 0.07, 0.15, 0.12); break;
       case 'waveSoft': {
         env(tone('sine', 70, 38, 1.4), 0.01, 0.55, 1.4);
         const d = tone('sawtooth', 55, 52, 2.2); const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 180; d.connect(f); env(f, 0.35, 0.18, 1.8);

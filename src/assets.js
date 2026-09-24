@@ -139,5 +139,112 @@ export async function loadModels(onProgress = () => {}) {
     tick();
     if (g) out.weapons[name] = g;
   }
+
+  // props the game systems place themselves: the stadium hoop and the pickups
+  out.props = {};
+  await Promise.all([['hoop', 'basketball_hoop'], ['ammo_can', 'pickup_ammo_can'], ['medkit', 'pickup_medkit']].map(async ([key, file]) => {
+    const g = await load(`assets/models/props/${file}.glb`);
+    if (!g) return;
+    g.scene.traverse((o) => {
+      if (!o.isMesh) return;
+      for (const m of Array.isArray(o.material) ? o.material : [o.material]) m.metalness = Math.min(m.metalness ?? 0, 0.1);
+    });
+    out.props[key] = g.scene;
+  }));
+
+  await loadExtras(out);
   return out;
+}
+
+// Optional extras (animals, vehicles, more guns). Each is used if its file exists; the game has
+// procedural stand-ins for all of them. manifest_extra.json may say which way a model faces.
+// forward axes as the model previews show them (a manifest entry can override)
+const EXTRA_ANIMALS = {
+  dog: { file: 'animals/dog.glb', height: 0.78, forward: '+z' },
+  wolf: { file: 'animals/wolf.glb', height: 0.98, forward: '+z' },
+  crow: { file: ['animals/crow_evil.glb', 'animals/crow.glb'], length: 0.62, forward: '+z' },
+};
+const EXTRA_VEHICLES = { bike: { file: 'vehicles/bike.glb', length: 1.95 }, drone: { file: 'vehicles/drone.glb', length: 2.75 } };
+const EXTRA_WEAPONS = ['mg', 'knife', 'knife_fps', 'm4', 'deagle', 'autosniper', 'grenade', 'bow'];
+
+// yaw that turns the model's forward axis to +Z (animals) or +X (vehicles)
+function yawFor(forward, to = 'z') {
+  const f = String(forward || '').toLowerCase().replace(/\s/g, '');
+  const toZ = { '+z': 0, 'z': 0, '-z': Math.PI, '+x': -Math.PI / 2, 'x': -Math.PI / 2, '-x': Math.PI / 2 };
+  let y = null;
+  for (const [k, v] of Object.entries(toZ)) if (f.startsWith(k)) { y = v; break; }
+  if (y == null) return null;
+  return to === 'z' ? y : y + Math.PI / 2;
+}
+
+async function loadExtras(out) {
+  out.animals = {}; out.vehicles = {};
+  let manifest = [];
+  try { const r = await fetch('assets/models/manifest_extra.json'); if (r.ok) { const j = await r.json(); manifest = Array.isArray(j) ? j : j.models || j.files || Object.values(j); } } catch (e) { /* none */ }
+  const info = (file) => manifest.find((m) => m && typeof m === 'object' && String(m.file || m.path || '').endsWith(file)) || {};
+  const forwardOf = (m) => { for (const [k, v] of Object.entries(m)) if (/forward/i.test(k) && typeof v === 'string') return v; return null; };
+
+  await Promise.all(Object.entries(EXTRA_ANIMALS).map(async ([key, cfg]) => {
+    let g = null, file = null;
+    for (const f of [].concat(cfg.file)) { g = await load(`assets/models/${f}`); if (g) { file = f; break; } }
+    if (!g) return;
+    const anims = g.animations.map((a) => stripRootMotion(a));
+    const mixer = new THREE.AnimationMixer(g.scene);
+    const pose = anims.find((a) => /walk|idle|fly/i.test(a.name)) || anims[0];
+    if (pose) { mixer.clipAction(pose).play(); mixer.update(0.1); }
+    g.scene.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(g.scene, true);
+    mixer.stopAllAction();
+    const size = box.getSize(new THREE.Vector3());
+    const scale = cfg.height ? cfg.height / (size.y || 1) : cfg.length / (Math.max(size.x, size.z) || 1);
+    let yaw = yawFor(forwardOf(info(file)) || cfg.forward, 'z');
+    if (yaw == null) yaw = size.x > size.z * 1.2 ? -Math.PI / 2 : 0; // long along x: assume nose to +x
+    g.scene.traverse((o) => { if (o.isMesh) { o.castShadow = true; for (const m of Array.isArray(o.material) ? o.material : [o.material]) m.metalness = Math.min(m.metalness ?? 0, 0.1); } });
+    out.animals[key] = { name: file, scene: g.scene, animations: anims, scale, yaw };
+  }));
+
+  await Promise.all(Object.entries(EXTRA_VEHICLES).map(async ([key, cfg]) => {
+    const g = await load(`assets/models/${cfg.file}`);
+    if (!g) return;
+    const inner = g.scene;
+    let yaw = yawFor(forwardOf(info(cfg.file)), 'x');
+    inner.updateMatrixWorld(true);
+    let box = new THREE.Box3().setFromObject(inner, true);
+    let size = box.getSize(new THREE.Vector3());
+    if (yaw == null) yaw = size.z > size.x * 1.2 ? Math.PI / 2 : 0;
+    inner.rotation.y = yaw;
+    inner.updateMatrixWorld(true);
+    box = new THREE.Box3().setFromObject(inner, true); size = box.getSize(new THREE.Vector3());
+    const k = cfg.length / (Math.max(size.x, size.z) || 1);
+    inner.scale.multiplyScalar(k);
+    inner.updateMatrixWorld(true);
+    box = new THREE.Box3().setFromObject(inner, true);
+    const c = box.getCenter(new THREE.Vector3());
+    inner.position.set(-c.x, -box.min.y, -c.z);
+    const root = new THREE.Group();
+    root.add(inner);
+    // moving parts are found again by name on every clone (userData is copied as JSON)
+    const parts = (re) => {
+      const found = [];
+      inner.traverse((o) => { if (re.test(o.name)) found.push(o); });
+      // the top-most node of each part only (a node and its mesh can share the name)
+      const top = found.filter((o) => { for (let q = o.parent; q; q = q.parent) if (found.includes(q)) return false; return true; });
+      return [...new Set(top.map((o) => o.name))];
+    };
+    inner.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    const rotorNames = parts(/rotor|propell|blade/i), wheelNames = parts(/wheel|tyre|tire/i);
+    root.updateMatrixWorld(true);
+    const seat = inner.getObjectByName('SeatPoint');
+    if (seat) { const p = root.worldToLocal(seat.getWorldPosition(new THREE.Vector3())); root.userData.seat = [p.x, p.y + 0.78, p.z]; }
+    const wheel = wheelNames.length && inner.getObjectByName(wheelNames[0]);
+    if (wheel) { const b = new THREE.Box3().setFromObject(wheel); root.userData.wheelR = (b.max.y - b.min.y) / 2; }
+    root.userData.rotorNames = rotorNames;
+    root.userData.wheelNames = wheelNames;
+    out.vehicles[key] = root;
+  }));
+
+  await Promise.all(EXTRA_WEAPONS.map(async (name) => {
+    const g = await load(`assets/models/weapons/${name}.glb`);
+    if (g) out.weapons[name] = g;
+  }));
 }

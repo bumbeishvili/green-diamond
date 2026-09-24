@@ -39,6 +39,7 @@ export function buildBuildings(level, scene, colliders, atmo) {
   const boxes = [];   // {x,y,z, sx,sy,sz, ry, color}
   const glass = [];   // same layout, glass railings
   const heights = [];
+  const stairs = [];   // stairwells: lobby doors on the ground <-> a door on the roof housing
 
   for (const b of level.buildings) {
     const { gH, top, levels, style } = buildingHeight(b);
@@ -46,7 +47,7 @@ export function buildBuildings(level, scene, colliders, atmo) {
     const pts = b.poly.outer;
     const parapet = style === 'small' ? 0.4 : 1.0;
     const rand = mulberry(b.id % 2147483647);
-    heights.push({ id: b.id, top: top + parapet, style });
+    heights.push({ id: b.id, top: top + parapet, roof: top + 0.15, style, pts });
 
     // collision: the footprint, full height
     colliders.addRing(pts.map(([x, y]) => [x, -y]), { height: top + parapet, kind: 'building' });
@@ -145,10 +146,26 @@ export function buildBuildings(level, scene, colliders, atmo) {
     roofs.push(flatGeometry([b.poly], top + 0.15, 4));
     const [cx, cy] = polyCentroid(pts);
     if (levels >= 5 && pointInPoly(cx, cy, pts)) {
-      const hw = style === 'tower' ? 3 : 2.4;
+      const hw = style === 'tower' ? 3 : 2.4, hd = hw * 0.8;
+      const ry = rand() * 0.2;
       const housing = style === 'tower' ? 0x8f877d : style === 'twin' ? 0x3a3b3d : WHITE;
-      boxes.push({ x: cx, y: top + 1.6, z: -cy, sx: hw * 2, sy: 3.2, sz: hw * 1.6, ry: rand() * 0.2, color: housing });
+      boxes.push({ x: cx, y: top + 1.6, z: -cy, sx: hw * 2, sy: 3.2, sz: hd * 2, ry, color: housing });
+      colliders.addBox(cx, -cy, hw, hd, -ry, { height: top + 3.3, minY: top - 0.5, kind: 'wall' });
       if (style !== 'stripe') pergola(boxes, pts, top + 0.15, rand);
+      // stairwell: a door on one side of the roof housing that isn't too close to the roof edge
+      const c = Math.cos(ry), sn = Math.sin(ry);
+      const sides = [[1, 0, hw], [-1, 0, hw], [0, 1, hd], [0, -1, hd]];
+      for (const [ax, az, ext] of sides) {
+        const lx = ax, lz = az; // local axes of the housing: +x -> (c, sn) in map coords, +z -> (sn, -c)
+        const dx = lx * c + lz * sn, dy = lx * sn - lz * c;
+        const px = cx + dx * (ext + 1.3), py = cy + dy * (ext + 1.3);
+        const ok = [[0, 0], [1.2, 0], [-1.2, 0], [0, 1.2], [0, -1.2]].every(([ox, oy]) => pointInPoly(px + ox, py + oy, pts));
+        if (!ok) continue;
+        const angle = Math.atan2(dy, dx); // three.js rotation.y for a box facing (dx, dy)
+        boxes.push({ x: cx + dx * (ext + 0.03), y: top + 1.2, z: -(cy + dy * (ext + 0.03)), sx: 0.08, sy: 2.1, sz: 1.0, ry: angle, color: 0x3a2a20 });
+        stairs.push({ id: b.id, levels, top: top + 0.15, roof: { x: px, y: py }, housing: { x: cx, y: cy }, doors: level.doors.filter((d) => d.building === b.id) });
+        break;
+      }
     }
   }
 
@@ -225,7 +242,7 @@ export function buildBuildings(level, scene, colliders, atmo) {
 
   scene.add(group);
   return {
-    group, heights,
+    group, heights, stairs,
     update() {
       facadeMat.userData.shader && (facadeMat.userData.shader.uniforms.uLamp.value = atmo.lampLevel);
     },

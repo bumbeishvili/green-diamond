@@ -18,39 +18,54 @@ It has to be served over http. Opening `index.html` as a file won't work.
 | Key | Action |
 |---|---|
 | WASD, Shift, Space, C | move, sprint, jump, crouch |
-| Click | shoot (hold the trackpad button for the AK) |
-| E (or hold right-click) | aim down the sights / sniper scope |
-| Shift while scoped | hold your breath to steady the SVD |
+| Click | shoot (hold the trackpad button for automatic guns; hold and release to draw and loose the bow) |
+| E (or hold right-click) | aim down the sights / scope |
+| Shift while scoped | hold your breath to steady the scope |
 | R | reload |
-| Q or 1–4 | switch weapon (1 Makarov, 2 AK-74, 3 shotgun, 4 SVD) |
-| V | knife |
-| F | buy at a shop (stand on the yellow ring) |
-| G | flashlight (switches on by itself after dark) |
+| 1–7 | weapon group: 1 pistols, 2 rifles, 3 shotgun, 4 snipers, 5 machine gun, 6 bow, 7 knife (press again for the next gun in the group) |
+| Q | next weapon |
+| G | throw an F-1 grenade (about 3 s fuse) |
+| V | quick knife |
+| F | buy at a shop, take the stairs at a lobby door or roof door, get in or out of a car, motorbike or drone |
+| L | flashlight (switches on by itself after dark) |
 | M | big map |
 | H | hide or show the key strip |
 | Esc | pause |
 
+Driving: W/S throttle and brake, A/D steer, Space handbrake, C switches to a chase camera. You can shoot out of the window.
+Drone: WASD to move where you look, Space to climb, C or Shift to descend. Land on a roof and step out.
+
 ### How it plays
 
 - Zombies come in waves: out of the lobbies, up the underground-garage ramps, through the Bob Walsh Street gates, over the courtyard railing, and through broken fence panels on the construction side.
+- Kinds of zombie: walkers; runners; crawlers (low, hard to hit); brutes (big, soak up bullets, knock you back); screamers (stop and scream, which speeds up everything nearby and brings more); bloaters (glowing hazmat suits that burst when they reach you or die, taking out anything close). From wave 3, packs of stray dogs; from wave 4, crows that dive at your head. Crows find you on the roofs and in the drone too.
 - The clock is real Tbilisi sun: wave 1 starts at 17:15, sunset comes around wave 8, and it's night after that.
-- You earn points for hits and kills. Spend them at the shops on the podium:
+- Every block with a roof housing has stairs. Press F at a lobby door to go up and at the roof door to come down. The zombies use the stairs too, so a roof is a choke point, not a safe room.
+- Ammo cans, first-aid kits and bundles of lari lie around the complex, some of them up on the roofs. More turn up every wave (they show on the minimap).
+- You earn points for hits and kills. Spend them at the shops:
 
 | Place | Sells |
 |---|---|
-| Spar | AK-74 / AK ammo |
-| Nikora | TOZ-194 shotgun |
-| 2 Nabiji | ammo for everything (600) |
+| Spar | AK-74 |
+| Assorti | M4A1 carbine (holographic sight) |
+| Diamond salon | Desert Eagle .50 AE |
+| Nikora | TOZ-194 pump shotgun |
+| 2 Nabiji | ammo and grenades for everything (600) |
 | 36.6 pharmacy | more health |
 | Format Fit | faster legs |
 | TBC terminal | double points |
 | Gate 2 security booth | SVD Dragunov |
-| Ammo crate by the pool house (middle courtyard) | ammo for everything (750) |
+| Gate 1 security booth | M60 machine gun |
+| Crate by the stadium (middle courtyard) | compound bow |
+| Cache on the twin tower roof (take the stairs) | FN SCAR 20S auto sniper |
+| Ammo crate by the pool house (middle courtyard) | ammo and grenades for everything (750) |
 
 Guns you already own are half price at their shop, and buying one again refills its ammo.
 
+- Weapons behave like the real ones: recoil climbs and drifts, spread blooms when you hold the trigger, tactical reloads keep a round in the chamber, the shotgun loads shell by shell. Rifle rounds go through car bodies and through a zombie or two. Arrows drop with distance and stick where they land; walk over them to pick them up.
+- Every parked car can be driven, and there are motorbikes and one-person drones around the complex. Cars and bikes run zombies down, but they can still reach you through the door.
 - Power-ups sometimes drop from kills: Max Ammo, Insta-Kill, Double Points, Nuke.
-- If you fall into a pool, walk out up the steps (by the chrome rails), or jump at any edge.
+- Falling more than a couple of storeys hurts. If you fall into a pool, walk out up the steps (by the chrome rails), or jump at any edge.
 
 ### Graphics
 
@@ -72,6 +87,7 @@ The game picks Low, Medium or High from your GPU on the first run. You can chang
   - Stage-3 blocks: vertical colour stripes.
   - Timber pergolas on the roofs, the Gate 2 portal and the glass diamond.
 - **Shops:** the real shops on the podium: Spar, Nikora, 2 Nabiji, 36.6, Format Fit, Assorti, Diamond, TBC.
+- **The small stadium:** the round red-rubber court with the tall green mesh fence and the glass-backboard hoop at the west end of the middle courtyard, placed from the satellite imagery and the developer's photos.
 - **Surroundings:** the Olympic arenas and pitches across Bob Walsh Street, and the forest and construction sites to the west. The hills around Tbilisi use real elevation data draped with Sentinel-2 imagery, and 900 real high-rises form the skyline.
 
 ## Project layout
@@ -79,7 +95,7 @@ The game picks Low, Medium or High from your GPU on the first run. You can chang
 ```
 index.html, src/          the game (ES modules, no build step)
   world/                  ground, buildings, props, sky, surroundings
-  game/                   player, weapons, zombies, pathfinding, waves, HUD, audio
+  game/                   player, weapons, zombies, vehicles, stairs, pickups, pathfinding, waves, HUD, audio
 data/                     generated level, heightmap, terrain, skyline
 assets/                   models, textures, audio (see the CREDITS files)
 tools/build_level.py      OSM -> data/level.json + heightmap (python3, shapely)
@@ -96,7 +112,7 @@ Debug URL flags: `?debug` (fps overlay), `?time=19.5`, `?wave=5`, `?god`,
 - Map data © OpenStreetMap contributors (ODbL).
 - Terrain: AWS Terrain Tiles.
 - Imagery: Sentinel-2 cloudless 2024 by EOX IT Services (CC BY-NC-SA 4.0; personal, non-commercial use).
-- 3D models by Quaternius, Kenney, J-Toastie, Rikindle3D, dogchicken, bachosoftdesign and others: see `assets/models/CREDITS.md`.
+- 3D models by Quaternius, Kenney, J-Toastie, Rikindle3D, dogchicken, bachosoftdesign, Benjinsmith (zombie crow, CC-BY 3.0), mightydinosaurcol (M60, CC-BY 4.0), jeremy (motorbike, CC-BY 3.0), SirDraco65, Pichuliru, LonesomeDucky, AdamKokrito, Lucian Pavel, Teh_Bucket and others: see `assets/models/CREDITS.md`. The compound bow, arrow and personal drone were modelled for this project.
 - Textures, sounds and HDRIs: see `assets/CREDITS_media.md`.
 - Built with three.js.
 

@@ -249,9 +249,10 @@ export function buildProps(level, scene, colliders, hm, atmo, quality, models = 
     }
   }
 
-  // ---------------- basketball pads: pink circle, triple hoop ----------------
+  // ---------------- basketball pads: pink circle, triple hoop; the fenced "small stadium" ----------------
   const pink = new THREE.MeshStandardMaterial({ color: 0xd66d8a, roughness: 0.9 });
   for (const c of level.sport) {
+    if (c.kind === 'court_round') { buildStadium(c, group, metalCyls, metalBoxes, colliders, H, models); continue; }
     const y = H(c.x, c.y);
     const pad = new THREE.Mesh(new THREE.CircleGeometry(c.w / 2, 40).rotateX(-Math.PI / 2), pink);
     pad.position.set(c.x, y + 0.03, -c.y);
@@ -274,7 +275,7 @@ export function buildProps(level, scene, colliders, hm, atmo, quality, models = 
     const y = H(pg.x, pg.y);
     const ca = Math.cos(pg.r), sa = Math.sin(pg.r);
     const L = (lx, lz) => [pg.x + lx * ca - lz * sa, pg.y + lx * sa + lz * ca];
-    if (idx % 2 === 1) {
+    if ((pg.kind || (idx % 2 ? 'gazebo' : 'pergola')) === 'gazebo') {
       // octagonal gazebo with a green roof (as in the photos)
       for (let k = 0; k < 8; k++) {
         const a = (k / 8) * Math.PI * 2;
@@ -503,8 +504,9 @@ function buildCars(level, group, colliders, H, models) {
   const cars = [];
   for (const c of level.cars) {
     const y = H(c.x, c.y);
-    cars.push({ x: c.x, z: -c.y, h: c.h, ground: y, v: c.v, color: CAR_COLORS[(c.v * 7) % CAR_COLORS.length] });
-    colliders.addBox(c.x, -c.y, 2.2, 0.92, -c.h, { height: y + 1.45, kind: 'car' });
+    const rec = { x: c.x, z: -c.y, h: c.h, ground: y, v: c.v, color: CAR_COLORS[(c.v * 7) % CAR_COLORS.length], taken: false };
+    rec.col = colliders.addBox(c.x, -c.y, 2.2, 0.92, -c.h, { height: y + 1.45, kind: 'car' });
+    cars.push(rec);
   }
   const fleet = (models.cars || []).filter((m) => m.geometry);
   const mat = carMaterial();
@@ -535,7 +537,7 @@ function buildCars(level, group, colliders, H, models) {
   const DETAIL = 95;
   let tick = 0;
   return {
-    cars,
+    cars, fleet, mat,
     update(camera) {
       if ((tick++ % 3) !== 0) return;
       pm.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
@@ -544,6 +546,7 @@ function buildCars(level, group, colliders, H, models) {
       const counts = meshes.map(() => 0);
       let pc = 0;
       for (const c of cars) {
+        if (c.taken) continue;
         const dx = c.x - cx, dz = c.z - cz, d = Math.hypot(dx, dz);
         sphere.center.set(c.x, c.ground + 1, c.z);
         const inView = frustum.intersectsSphere(sphere);
@@ -602,7 +605,7 @@ function signTexture(def) {
 
 function buildShopSigns(level, group, H) {
   const podiums = level.buildings.filter((b) => b.group === 'podium');
-  const used = [];
+  const placed = [];
   for (const poi of level.pois) {
     const def = SIGNS[poi.name];
     if (!def) continue;
@@ -615,25 +618,137 @@ function buildShopSigns(level, group, H) {
         const L = Math.hypot(bx - ax, by - ay);
         if (L < def.w + 0.4) continue;
         const tx = (bx - ax) / L, ty = (by - ay) / L;
-        let t = (poi.x - ax) * tx + (poi.y - ay) * ty;
-        t = Math.max(def.w / 2 + 0.2, Math.min(L - def.w / 2 - 0.2, t));
-        const px = ax + tx * t, py = ay + ty * t;
-        const d = Math.hypot(poi.x - px, poi.y - py);
-        if (!best || d < best.d) best = { d, px, py, nx: ty, ny: -tx };
+        const t = Math.max(def.w / 2 + 0.2, Math.min(L - def.w / 2 - 0.2, (poi.x - ax) * tx + (poi.y - ay) * ty));
+        const d = Math.hypot(poi.x - (ax + tx * t), poi.y - (ay + ty * t));
+        if (!best || d < best.d) best = { d, key: `${b.id}:${i}`, ax, ay, tx, ty, L, t, nx: ty, ny: -tx };
       }
     }
-    if (!best || best.d > 14) continue;
-    // don't stack two signs on top of each other
-    if (used.some((u) => Math.hypot(u[0] - best.px, u[1] - best.py) < 3.2)) { best.px += best.ny * 3.6; best.py -= best.nx * 3.6; }
-    used.push([best.px, best.py]);
-    const h = def.w * 0.25;
-    const sign = new THREE.Mesh(new THREE.PlaneGeometry(def.w, h), new THREE.MeshStandardMaterial({
-      map: signTexture(def), roughness: 0.5, emissive: 0xffffff, emissiveMap: null, emissiveIntensity: 0 }));
+    if (best && best.d <= 14) placed.push({ ...best, def, lift: 0 });
+  }
+  // Signs sharing a wall are packed side by side with a gap (overlapping planes z-fight: Nikora and
+  // TBC stand ~2.5 m apart). If a wall is too crowded, the leftover sign goes up a row.
+  const walls = new Map();
+  for (const s of placed) { if (!walls.has(s.key)) walls.set(s.key, []); walls.get(s.key).push(s); }
+  const GAP = 0.35;
+  for (const list of walls.values()) {
+    list.sort((a, b) => a.t - b.t);
+    const lo = (s) => s.def.w / 2 + 0.2, hi = (s) => s.L - s.def.w / 2 - 0.2;
+    for (let pass = 0; pass < 6; pass++) {
+      for (let i = 1; i < list.length; i++) list[i].t = Math.max(list[i].t, list[i - 1].t + (list[i - 1].def.w + list[i].def.w) / 2 + GAP);
+      list[list.length - 1].t = Math.min(list[list.length - 1].t, hi(list[list.length - 1]));
+      for (let i = list.length - 2; i >= 0; i--) list[i].t = Math.min(list[i].t, list[i + 1].t - (list[i + 1].def.w + list[i].def.w) / 2 - GAP);
+      list[0].t = Math.max(list[0].t, lo(list[0]));
+    }
+    for (let i = 1; i < list.length; i++) {
+      if (list[i].t - list[i - 1].t < (list[i - 1].def.w + list[i].def.w) / 2) list[i].lift = list[i - 1].lift + list[i - 1].def.w * 0.25 + 0.2;
+    }
+  }
+  placed.forEach((s, i) => {
+    const px = s.ax + s.tx * s.t, py = s.ay + s.ty * s.t;
+    const h = s.def.w * 0.25;
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(s.def.w, h), new THREE.MeshStandardMaterial({
+      map: signTexture(s.def), roughness: 0.5, emissive: 0xffffff, emissiveMap: null, emissiveIntensity: 0 }));
     sign.material.emissiveMap = sign.material.map;
-    const y = H(best.px, best.py) + 3.78;
-    sign.position.set(best.px + best.nx * 0.14, y, -(best.py + best.ny * 0.14));
-    sign.rotation.y = Math.atan2(best.nx, -best.ny);
+    const y = H(px, py) + 3.78 + s.lift;
+    const off = 0.14 + (i % 3) * 0.015; // never exactly coplanar with a neighbour
+    sign.position.set(px + s.nx * off, y, -(py + s.ny * off));
+    sign.rotation.y = Math.atan2(s.nx, -s.ny);
     sign.userData.sign = true;
     group.add(sign);
+  });
+}
+
+// The "small stadium" at the west end of the middle courtyard (gallery photos): a round court of red
+// rubber with white markings, a tall dark-green welded-mesh fence on round posts with a gate north and
+// south, and one basketball hoop with a glass backboard on a white pole.
+function buildStadium(c, group, metalCyls, metalBoxes, colliders, H, models) {
+  const R = c.w / 2, y = H(c.x, c.y);
+  const surface = (() => {
+    const S = 1024, k = S / (2 * R), cv = canvas(S), ctx = cv.getContext('2d'), r = mulberry(77);
+    ctx.fillStyle = '#a4473a'; ctx.fillRect(0, 0, S, S);
+    for (let i = 0; i < 16000; i++) {
+      ctx.fillStyle = r() < 0.5 ? `rgba(70,22,16,${0.08 + r() * 0.1})` : `rgba(215,130,110,${0.06 + r() * 0.08})`;
+      ctx.fillRect(r() * S, r() * S, 2, 2);
+    }
+    ctx.strokeStyle = 'rgba(244,243,236,0.92)'; ctx.lineWidth = 0.06 * k;
+    const X = (m) => S / 2 + m * k, Y = (m) => S / 2 - m * k; // canvas: east right, north up
+    ctx.beginPath(); ctx.arc(X(0), Y(0), (R - 0.4) * k, 0, Math.PI * 2); ctx.stroke();            // boundary
+    const base = R - 0.9;                                                                          // baseline under the hoop (east)
+    ctx.strokeRect(X(base - 5.8), Y(2.45), 5.8 * k, 4.9 * k);                                      // the key
+    ctx.beginPath(); ctx.arc(X(base - 5.8), Y(0), 1.8 * k, 0, Math.PI * 2); ctx.stroke();        // free-throw circle
+    ctx.beginPath(); ctx.arc(X(base - 1.575), Y(0), 1.25 * k, Math.PI * 0.5, Math.PI * 1.5); ctx.stroke(); // restricted arc
+    ctx.beginPath(); ctx.arc(X(-R + 0.4), Y(0), 1.8 * k, -Math.PI / 2, Math.PI / 2); ctx.stroke(); // centre half-circle at the far side
+    const t = new THREE.CanvasTexture(cv);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = 8;
+    return t;
+  })();
+  const court = new THREE.Mesh(new THREE.CircleGeometry(R, 72).rotateX(-Math.PI / 2),
+    new THREE.MeshStandardMaterial({ map: surface, roughness: 0.92, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+  court.position.set(c.x, y + 0.04, -c.y);
+  court.receiveShadow = true;
+  group.add(court);
+  const curb = new THREE.Mesh(new THREE.RingGeometry(R, R + 0.3, 72).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xcfcbc3, roughness: 0.9 }));
+  curb.position.set(c.x, y + 0.06, -c.y);
+  curb.receiveShadow = true;
+  group.add(curb);
+
+  // fence: posts every 18 degrees, welded mesh panels, top and bottom rails, gates north and south
+  const mesh = (() => {
+    const cv = canvas(128), ctx = cv.getContext('2d');
+    ctx.clearRect(0, 0, 128, 128);
+    ctx.strokeStyle = '#27513a'; ctx.lineWidth = 2.5;
+    for (let x = 4; x < 128; x += 16) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 128); ctx.stroke(); }
+    for (let yy = 4; yy < 128; yy += 16) { ctx.beginPath(); ctx.moveTo(0, yy); ctx.lineTo(128, yy); ctx.stroke(); }
+    const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace;
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    return t;
+  })();
+  const meshMat = new THREE.MeshStandardMaterial({ map: mesh, alphaTest: 0.45, alphaToCoverage: true, side: THREE.DoubleSide, roughness: 0.6, metalness: 0.3 });
+  const N = 20, RF = R + 0.15, TOP = 3.6, green = 0x21412e;
+  const gate = (a) => Math.abs(Math.sin(a) + 1) < 0.08 || Math.abs(Math.sin(a) - 1) < 0.08; // panel centred due south / north
+  const panels = [];
+  for (let i = 0; i < N; i++) {
+    const a0 = (i / N) * Math.PI * 2 + Math.PI / N, a1 = ((i + 1) / N) * Math.PI * 2 + Math.PI / N;
+    const x0 = c.x + Math.cos(a0) * RF, y0 = c.y + Math.sin(a0) * RF, x1 = c.x + Math.cos(a1) * RF, y1 = c.y + Math.sin(a1) * RF;
+    metalCyls.add(x0, y + TOP / 2, -y0, 0, 0.1, TOP, 0.1, green);
+    const L = Math.hypot(x1 - x0, y1 - y0), ang = Math.atan2(y1 - y0, x1 - x0), mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
+    if (gate((a0 + a1) / 2)) {
+      metalBoxes.add(mx, y + TOP - 0.03, -my, ang, L, 0.06, 0.06, green); // lintel over the gate
+      continue;
+    }
+    for (const h of [0.12, 1.3, TOP - 0.03]) metalBoxes.add(mx, y + h, -my, ang, L, 0.05, 0.05, green);
+    const g = new THREE.BufferGeometry();
+    const P = [x0, y + 0.1, -y0, x1, y + 0.1, -y1, x1, y + TOP, -y1, x0, y + 0.1, -y0, x1, y + TOP, -y1, x0, y + TOP, -y0];
+    const u = L / 0.5, v = (TOP - 0.1) / 0.5;
+    g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute([0, 0, u, 0, u, v, 0, 0, u, v, 0, v], 2));
+    g.computeVertexNormals();
+    panels.push(g);
+    colliders.addSegment(x0, -y0, x1, -y1, { height: y + TOP, kind: 'fence', shoot: false });
   }
+  const fm = new THREE.Mesh(mergeGeometries(panels), meshMat);
+  fm.castShadow = true;
+  group.add(fm);
+
+  // the hoop, on the east side, facing the centre
+  const hx = c.x + R - 0.45, hy = c.y;
+  const hoop = models.props && models.props.hoop;
+  if (hoop) {
+    const m = hoop.clone(true);
+    m.rotation.y = Math.PI / 2; // the backboard faces -Z in the file; turn it to face west (-x)
+    m.position.set(0, 0, 0);
+    m.updateMatrixWorld(true);
+    const b = new THREE.Box3().setFromObject(m);
+    m.position.set(hx - b.max.x, y + 0.04 - b.min.y, -hy - (b.min.z + b.max.z) / 2);
+    m.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    group.add(m);
+  } else {
+    const white = 0xf2f2ef;
+    metalCyls.add(hx, y + 1.75, -hy, 0, 0.16, 3.5, 0.16, white);
+    metalBoxes.add(hx - 0.6, y + 3.45, -hy, 0, 1.2, 0.12, 0.12, white);
+    metalBoxes.add(hx - 1.2, y + 3.4, -hy, 0, 0.04, 1.05, 1.8, 0xdfe8ea);
+    metalCyls.add(hx - 1.6, y + 3.05, -hy, 0, 0.46, 0.03, 0.46, 0xe0582a);
+  }
+  colliders.addCircle(hx, -hy, 0.18, { height: y + 4, kind: 'post' });
 }

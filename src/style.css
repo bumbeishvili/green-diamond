@@ -138,6 +138,15 @@ canvas#game { position: fixed; inset: 0; width: 100vw; height: 100vh; display: b
 #keys.bright { opacity: .9; }
 #keys.off { opacity: 0; }
 @media (max-width: 700px) { #keys { display: none; } }
+#nades { position: absolute; right: 36px; bottom: 128px; font: 12px/1 var(--body); letter-spacing: .06em; color: rgba(255,255,255,.75); text-shadow: 0 1px 2px #000; }
+#nades b { display: inline-block; margin-right: 5px; padding: 1px 4px; border-radius: 3px; background: rgba(255,255,255,.12); color: #fff; }
+#nades.none { color: rgba(255,255,255,.3); }
+#slots u { text-decoration: none; color: #f2d36b; }
+#vhud { position: absolute; left: 50%; bottom: 78px; transform: translateX(-50%); font-size: 34px; color: #fff; text-shadow: 0 2px 0 #000, 0 0 10px rgba(0,0,0,.6);
+  letter-spacing: .04em; opacity: 0; transition: opacity .2s; }
+#vhud.on { opacity: .95; }
+#fade { position: fixed; inset: 0; background: #000; opacity: 0; pointer-events: none; transition: opacity .3s ease; z-index: 15; }
+#fade.on { opacity: 1; }
 #stats { position: absolute; right: 10px; top: 8px; font: 12px/1.35 ui-monospace, Menlo, monospace; color: #9f9; text-shadow: 0 1px 0 #000; white-space: pre; }
 
 @media (max-width: 700px) {

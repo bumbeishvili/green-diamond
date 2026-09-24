@@ -109,3 +109,42 @@ Attribution lines (ready to paste):
 - poly.pizza: per-model licence as shown on each model page (CC0 1.0 or CC-BY 3.0). 'Poly by Google' items are former Google Poly uploads (CC-BY 3.0).
 - OpenGameArt.org: licence as stated on each content page (checked on the page, not assumed).
 - Authored placeholders (boom barrier, spring rider, outdoor fitness bars) were modelled from primitives for this project with a Blender script and contain no third-party content (CC0).
+
+
+## Extra models (added 2026-09-24): animals, weapons, vehicles
+
+Every file below was verified (GLB magic + JSON chunk parsed, Khronos glTF Validator 0 errors, loads in three.js r186) and is listed with its source, author, licence, size, axes, scale and clips in `manifest_extra.json`.
+
+### CC-BY (attribution required)
+
+Attribution lines (ready to paste):
+
+- "Evil Crow Creature" by Benjinsmith (https://opengameart.org/content/evil-crow-creature), licensed under CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/). Used as `assets/models/animals/crow_evil.glb` (modified: converted from .blend, IK baked, scaled; see notes in manifest_extra.json).
+- "M60 machine gun" by mightydinosaurcol (https://opengameart.org/content/m60-machine-gun), licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/) (the author also offers it under GPL 3.0). Used as `assets/models/weapons/mg.glb` (modified: converted from FBX, re-oriented, scaled, bipod legs split and folded; see notes in manifest_extra.json).
+- "Motorcycle" by jeremy (https://poly.pizza/m/0lBe-ApqJs4), licensed under CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/). Used as `assets/models/vehicles/bike.glb` (modified: wheels split into separate nodes, scaled to metres; see notes in manifest_extra.json).
+
+| File | Name | Author | Source |
+|---|---|---|---|
+| `animals/crow_evil.glb` | Evil Crow Creature | Benjinsmith | https://opengameart.org/content/evil-crow-creature |
+| `weapons/mg.glb` | M60 machine gun | mightydinosaurcol | https://opengameart.org/content/m60-machine-gun |
+| `vehicles/bike.glb` | Motorcycle | jeremy | https://poly.pizza/m/0lBe-ApqJs4 |
+
+### CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/)
+
+| File | Name | Author | Source |
+|---|---|---|---|
+| `animals/dog.glb` | Husky (Ultimate Animated Animal Pack) | Quaternius | https://poly.pizza/m/wcWiuEqwzq |
+| `animals/wolf.glb` | Wolf (Ultimate Animated Animal Pack) | Quaternius | https://poly.pizza/m/P1gU3Qkr9r |
+| `animals/rat.glb` | Rat | Quaternius | https://poly.pizza/m/iltq5bVNaV |
+| `animals/crow.glb` | Raven | Teh_Bucket | https://opengameart.org/content/raven-0 |
+| `weapons/knife.glb` | M9 Bayonet | AdamKokrito | https://poly.pizza/m/bmQwC8leii |
+| `weapons/knife_fps.glb` | FPS arms + animations from "Pirate Sword (Animated)", holding the M9 Bayonet | Lucian Pavel (arms, rig, animations); AdamKokrito (knife) | https://opengameart.org/content/pirate-sword-animated, https://poly.pizza/m/bmQwC8leii |
+| `weapons/m4.glb` | Assault Rifle (M4-style, Ultimate Guns Pack) | Quaternius | https://poly.pizza/m/Bgvuu4CUMV |
+| `weapons/deagle.glb` | Desert Eagle | SirDraco65 | https://opengameart.org/content/desert-eagle-0 |
+| `weapons/autosniper.glb` | Sniper Rifle West + Rifle Scope | Pichuliru | https://poly.pizza/m/kwJawENuvA, https://poly.pizza/m/98ocxnqLFf |
+| `weapons/grenade.glb` | Mk2 Grenade | LonesomeDucky | https://opengameart.org/content/mk2-grenade |
+| `weapons/bow.glb` | Compound bow (placeholder) | Original, procedurally modelled in Blender 4.1 for this project | (authored for this project) |
+| `weapons/arrow.glb` | Carbon arrow (placeholder) | Original, procedurally modelled in Blender 4.1 for this project | (authored for this project) |
+| `vehicles/drone.glb` | Personal one-seat multicopter (placeholder) | Original, procedurally modelled in Blender 4.1 for this project | (authored for this project) |
+
+Crediting Quaternius, Teh_Bucket, Lucian Pavel, AdamKokrito, SirDraco65, Pichuliru and LonesomeDucky is appreciated but not required. The authored placeholders (compound bow, arrow, multicopter) were built from primitives with a Blender script and contain no third-party content.

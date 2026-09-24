@@ -1,0 +1,2042 @@
+[
+ {
+  "file": "assets/models/animals/dog.glb",
+  "category": "animal",
+  "name": "Husky (Ultimate Animated Animal Pack)",
+  "source_url": "https://poly.pizza/m/wcWiuEqwzq",
+  "source_pack": "Quaternius, Ultimate Animated Animal Pack (https://quaternius.com)",
+  "author": "Quaternius",
+  "license": "CC0 1.0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "size_bytes": 558164,
+  "sha1": "243eeb4ff0e00b4bc2d0785314abf1aeadca8b97",
+  "triangles": 1920,
+  "bbox": {
+   "min": [
+    -0.495,
+    0.003,
+    -1.4779
+   ],
+   "max": [
+    0.495,
+    3.19,
+    2.4111
+   ],
+   "size": [
+    0.99,
+    3.1869,
+    3.889
+   ],
+   "space": "model units, rest pose, after all node transforms (skinned meshes skinned on the CPU)"
+  },
+  "forward_axis": "+Z (head)",
+  "up_axis": "+Y",
+  "scale_to_m": 0.24,
+  "size_m": [
+   0.238,
+   0.765,
+   0.933
+  ],
+  "origin": "on the ground under the body (paws at y=0)",
+  "skinned": true,
+  "joints": 49,
+  "meshes": 1,
+  "primitives": 5,
+  "materials": 5,
+  "textures": [],
+  "extensions_used": [],
+  "animations": [
+   {
+    "name": "Attack",
+    "duration": 1.167
+   },
+   {
+    "name": "Death",
+    "duration": 1.042
+   },
+   {
+    "name": "Eating",
+    "duration": 2.667
+   },
+   {
+    "name": "Gallop",
+    "duration": 0.542
+   },
+   {
+    "name": "Gallop_Jump",
+    "duration": 0.917
+   },
+   {
+    "name": "Idle",
+    "duration": 3.333
+   },
+   {
+    "name": "Idle_2",
+    "duration": 3.333
+   },
+   {
+    "name": "Idle_2_HeadLow",
+    "duration": 4.0
+   },
+   {
+    "name": "Idle_HitReact_Left",
+    "duration": 0.667
+   },
+   {
+    "name": "Idle_HitReact_Right",
+    "duration": 0.667
+   },
+   {
+    "name": "Jump_ToIdle",
+    "duration": 1.333
+   },
+   {
+    "name": "Walk",
+    "duration": 1.042
+   }
+  ],
+  "translation_channels": {
+   "Attack": {
+    "node": "Body",
+    "net_xyz": [
+     0.0,
+     -0.0069,
+     0.0108
+    ],
+    "range_xyz": [
+     0.0,
+     0.3586,
+     0.5649
+    ]
+   },
+   "Death": {
+    "node": "Body",
+    "net_xyz": [
+     0.188,
+     0.1624,
+     -0.0191
+    ],
+    "range_xyz": [
+     0.2021,
+     0.3532,
+     0.0301
+    ]
+   },
+   "Eating": {
+    "node": "Body",
+    "net_xyz": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "range_xyz": [
+     0.0,
+     0.0972,
+     0.0139
+    ]
+   },
+   "Gallop": {
+    "node": "Body",
+    "net_xyz": [
+     -0.0,
+     0.0264,
+     -0.0025
+    ],
+    "range_xyz": [
+     0.0,
+     0.2928,
+     0.0406
+    ]
+   },
+   "Gallop_Jump": {
+    "node": "Body",
+    "net_xyz": [
+     0.0,
+     0.0417,
+     -0.0006
+    ],
+    "range_xyz": [
+     0.0,
+     1.2708,
+     0.0285
+    ]
+   },
+   "Idle": {
+    "node": "Body",
+    "net_xyz": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "range_xyz": [
+     0.0,
+     0.0425,
+     0.0087
+    ]
+   },
+   "Idle_2": {
+    "node": "Body",
+    "net_xyz": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "range_xyz": [
+     0.0,
+     0.0215,
+     0.0416
+    ]
+   },
+   "Idle_2_HeadLow": {
+    "node": "Body",
+    "net_xyz": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "range_xyz": [
+     0.0,
+     0.0,
+     0.0246
+    ]
+   },
+   "Idle_HitReact_Left": {
+    "node": "Body",
+    "net_xyz": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "range_xyz": [
+     0.0084,
+     0.1039,
+     0.0238
+    ]
+   },
+   "Idle_HitReact_Right": {
+    "node": "Body",
+    "net_xyz": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "range_xyz": [
+     0.0084,
+     0.1039,
+     0.0238
+    ]
+   },
+   "Jump_ToIdle": {
+    "node": "Body",
+    "net_xyz": [
+     -0.0,
+     -0.0556,
+     0.0213
+    ],
+    "range_xyz": [
+     0.0,
+     1.2708,
+     0.0285
+    ]
+   },
+   "Walk": {
+    "node": "Body",
+    "net_xyz": [
+     0.0,
+     0.001,
+     -0.0
+    ],
+    "range_xyz": [
+     0.0,
+     0.0473,
+     0.0
+    ]
+   }
+  },
+  "nodes": {
+   "root_motion_bone": "Body",
+   "head_bone": "Head",
+   "tail_bones": "Tail1..Tail6"
+  },
+  "notes": "Realistic-ish low-poly husky, 5 flat-colour materials, 49-joint rig. Model units: withers ~2.35, ear tips 3.19, nose-to-tail 3.89; x0.24 gives a 0.56 m withers / 0.77 m to the ear tips (a large stray). Clips: Walk, Gallop (run), Gallop_Jump (leap / pounce), Attack (lunging bite), Death (falls on its side), Idle, Idle_2, Idle_2_HeadLow, Eating (head down, good for 'feeding on a corpse'), Idle_HitReact_Left/Right, Jump_ToIdle. All locomotion is in place: only the 'Body' bone bobs vertically (Gallop_Jump rises 1.27 units); Death shifts Body 0.19 units sideways. Nothing needs stripping (assets.js stripRootMotion would not match 'Body' anyway). Changes vs poly.pizza: removed 12 duplicate 'AnimalArmature|*' clips (numerically identical to the plain-named ones, max quaternion diff 0.004), metallicFactor 0.4 -> 0 and roughness 0.8 on fur (eyes/nose keep 0.42), skins[0].skeleton set to the joints' common root (was a Khronos validator error; three.js ignores the field).",
+  "validation": {
+   "glb_magic": true,
+   "json_chunk_parsed": true,
+   "glb_chunks": [
+    [
+     "JSON",
+     118776
+    ],
+    [
+     "BIN",
+     439360
+    ]
+   ],
+   "khronos_validator": {
+    "errors": 0,
+    "warnings": 2,
+    "codes": [
+     "W:NODE_SKINNED_MESH_NON_ROOT",
+     "W:NODE_SKINNED_MESH_LOCAL_TRANSFORMS"
+    ]
+   },
+   "threejs_r186_load": "ok (GLTFLoader in headless Chromium, clips found, no console errors)"
+  },
+  "preview": "assets/previews/models/extra_dog.jpg",
+  "preview_kind": "Blender 4.1 EEVEE render of the delivered GLB; Preview shows the glTF axes at the origin: +X red, +Y green, +Z blue."
+ },
+ {
+  "file": "assets/models/animals/wolf.glb",
+  "category": "animal",
+  "name": "Wolf (Ultimate Animated Animal Pack)",
+  "source_url": "https://poly.pizza/m/P1gU3Qkr9r",
+  "source_pack": "Quaternius, Ultimate Animated Animal Pack (https://quaternius.com)",
+  "author": "Quaternius",
+  "license": "CC0 1.0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "size_bytes": 588648,
+  "sha1": "3bcc9a6569df28a3336db3816d9becc9f0b818d2",
+  "triangles": 1962,
+  "bbox": {
+   "min": [
+    -0.5283,
+    -0.0102,
+    -2.7147
+   ],
+   "max": [
+    0.5283,
+    2.6908,
+    2.5576
+   ],
+   "size": [
+    1.0566,
+    2.701,
+    5.2723
+   ],
+   "space": "model units, rest pose, after all node transforms (skinned meshes skinned on the CPU)"
+  },
+  "forward_axis": "+Z (head)",
+  "up_axis": "+Y",
+  "scale_to_m": 0.3,
+  "size_m": [
+   0.317,
+   0.81,
+   1.582
+  ],
+  "origin": "on the ground under the body",
+  "skinned": true,
+  "joints": 51,
+  "meshes": 1,
+  "primitives": 4,
+  "materials": 4,
+  "textures": [],
+  "extensions_used": [],
+  "animations": [
+   {
+    "name": "Attack",
+    "duration": 1.333
+   },
+   {
+    "name": "Death",
+    "duration": 1.042
+   },
+   {
+    "name": "Eating",
+    "duration": 2.5
+   },
+   {
+    "name": "Gallop",
+    "duration": 0.542
+   },
+   {
+    "name": "Gallop_Jump",
+    "duration": 0.917
+   },
+   {
+    "name": "Idle",
+    "duration": 3.333
+   },
+   {
+    "name": "Idle_2",
+    "duration": 3.333
+   },
+   {
+    "name": "Idle_2_HeadLow",
+    "duration": 4.0
+   },
+   {
+    "name": "Idle_HitReact_Left",
+    "duration": 0.667
+   },
+   {
+    "name": "Idle_HitReact_Right",
+    "duration": 0.667
+   },
+   {
+    "name": "Jump_ToIdle",
+    "duration": 1.333
+   },
+   {
+    "name": "Walk",
+    "duration": 1.042
+   }
+  ],
+  "translation_channels": {
+   "Attack": {
+    "node": "Body",
+    "net_xyz": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "range_xyz": [
+     0.0,
+     0.3586,
+     0.5599
+    ]
+   },
+   "Death": {
+    "node": "Body",
+    "net_xyz": [
+     0.188,
+     0.1624,
+     -0.0191
+    ],
+    "range_xyz": [
+     0.2021,
+     0.3532,
+     0.0301
+    ]
+   },
+   "Eating": {
+    "node": "Body",
+    "net_xyz": [
+     0.0,
+     -0.0075,
+     0.0
+    ],
+    "range_xyz": [
+     0.0704,
+     0.1087,
+     0.3731
+    ]
+   },
+   "Gallop": {
+    "node": "Body",
+    "net_xyz": [
+     -0.0,
+     0.0264,
+     -0.0025
+    ],
+    "range_xyz": [
+     0.0,
+     0.2928,
+     0.0406
+    ]
+   },
+   "Gallop_Jump": {
+    "node": "Body",
+    "net_xyz": [
+     0.0,
+     0.0417,
+     -0.0006
+    ],
+    "range_xyz": [
+     0.0,
+     1.2708,
+     0.0285
+    ]
+   },
+   "Idle": {
+    "node": "Body",
+    "net_xyz": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "range_xyz": [
+     0.0,
+     0.0173,
+     0.0087
+    ]
+   },
+   "Idle_2": {
+    "node": "Body",
+    "net_xyz": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "range_xyz": [
+     0.0453,
+     0.0195,
+     0.021
+    ]
+   },
+   "Idle_2_HeadLow": {
+    "node": "Body",
+    "net_xyz": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "range_xyz": [
+     0.0,
+     0.0,
+     0.0246
+    ]
+   },
+   "Idle_HitReact_Left": {
+    "node": "Body",
+    "net_xyz": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "range_xyz": [
+     0.0084,
+     0.1039,
+     0.0238
+    ]
+   },
+   "Idle_HitReact_Right": {
+    "node": "Body",
+    "net_xyz": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "range_xyz": [
+     0.0084,
+     0.1039,
+     0.0238
+    ]
+   },
+   "Jump_ToIdle": {
+    "node": "Body",
+    "net_xyz": [
+     -0.0,
+     -0.0556,
+     0.0213
+    ],
+    "range_xyz": [
+     0.0,
+     1.2708,
+     0.0285
+    ]
+   },
+   "Walk": {
+    "node": "Body",
+    "net_xyz": [
+     0.0,
+     0.001,
+     -0.0
+    ],
+    "range_xyz": [
+     0.0,
+     0.0473,
+     0.0
+    ]
+   }
+  },
+  "nodes": {
+   "root_motion_bone": "Body",
+   "head_bone": "Head"
+  },
+  "notes": "Grey wolf, same rig and clip set as dog.glb (51 joints, long 8-bone tail). Model units: withers ~2.3, ear tips 2.69, nose-to-tail-tip 5.27; x0.30 gives 0.69 m at the withers and 1.58 m overall. Clips and root-motion behaviour as dog.glb (in place; Death drifts 0.19 units). Same edits as dog.glb (duplicate clips removed, matte fur, skeleton root fixed).",
+  "validation": {
+   "glb_magic": true,
+   "json_chunk_parsed": true,
+   "glb_chunks": [
+    [
+     "JSON",
+     124908
+    ],
+    [
+     "BIN",
+     463712
+    ]
+   ],
+   "khronos_validator": {
+    "errors": 0,
+    "warnings": 2,
+    "codes": [
+     "W:NODE_SKINNED_MESH_NON_ROOT",
+     "W:NODE_SKINNED_MESH_LOCAL_TRANSFORMS"
+    ]
+   },
+   "threejs_r186_load": "ok (GLTFLoader in headless Chromium, clips found, no console errors)"
+  },
+  "preview": "assets/previews/models/extra_wolf.jpg",
+  "preview_kind": "Blender 4.1 EEVEE render of the delivered GLB; Preview shows the glTF axes at the origin: +X red, +Y green, +Z blue."
+ },
+ {
+  "file": "assets/models/animals/rat.glb",
+  "category": "animal",
+  "name": "Rat",
+  "source_url": "https://poly.pizza/m/iltq5bVNaV",
+  "author": "Quaternius",
+  "license": "CC0 1.0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "size_bytes": 541672,
+  "sha1": "9f3194386d48ed59308e03ff8e8b1d7704c3db22",
+  "triangles": 4004,
+  "bbox": {
+   "min": [
+    -0.7548,
+    -0.0012,
+    -4.7205
+   ],
+   "max": [
+    0.7553,
+    2.243,
+    2.0872
+   ],
+   "size": [
+    1.51,
+    2.2442,
+    6.8077
+   ],
+   "space": "model units, rest pose, after all node transforms (skinned meshes skinned on the CPU)"
+  },
+  "forward_axis": "+Z (nose)",
+  "up_axis": "+Y",
+  "scale_to_m": 0.06,
+  "size_m": [
+   0.091,
+   0.135,
+   0.408
+  ],
+  "origin": "on the ground under the body",
+  "skinned": true,
+  "joints": 31,
+  "meshes": 1,
+  "primitives": 2,
+  "materials": 2,
+  "textures": [],
+  "extensions_used": [],
+  "animations": [
+   {
+    "name": "Attack",
+    "duration": 0.667
+   },
+   {
+    "name": "Death",
+    "duration": 1.083
+   },
+   {
+    "name": "Idle",
+    "duration": 2.375
+   },
+   {
+    "name": "Jump",
+    "duration": 0.833
+   },
+   {
+    "name": "Run",
+    "duration": 0.5
+   },
+   {
+    "name": "Walk",
+    "duration": 1.333
+   }
+  ],
+  "translation_channels": {
+   "Attack": {
+    "node": "Body",
+    "net_xyz": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "range_xyz": [
+     0.0,
+     0.4042,
+     1.0453
+    ]
+   },
+   "Death": {
+    "node": "FrontFoot.R",
+    "net_xyz": [
+     0.841,
+     0.0783,
+     0.3478
+    ],
+    "range_xyz": [
+     0.9063,
+     0.0783,
+     0.3478
+    ]
+   },
+   "Idle": {
+    "node": "Body",
+    "net_xyz": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "range_xyz": [
+     0.0,
+     0.0577,
+     0.023
+    ]
+   },
+   "Jump": {
+    "node": "FrontFoot.R",
+    "net_xyz": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "range_xyz": [
+     0.0,
+     0.8686,
+     1.3153
+    ]
+   },
+   "Run": {
+    "node": "FrontFoot.R",
+    "net_xyz": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "range_xyz": [
+     0.344,
+     0.4639,
+     1.79
+    ]
+   },
+   "Walk": {
+    "node": "FrontFoot.R",
+    "net_xyz": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "range_xyz": [
+     0.0,
+     0.2962,
+     1.0435
+    ]
+   }
+  },
+  "nodes": {
+   "root_motion_bone": "Body"
+  },
+  "notes": "Grey rat with pink ears/tail, 31-joint rig, 4k tris (the densest of the animals; fine for a swarm of ~20, consider InstancedMesh-free cloning with shared geometry). Model units: nose-to-tail-base ~4.0, tail ~2.8; x0.06 gives a 0.24 m body (0.41 m with tail). Clips renamed from 'RatArmature|Rat_*' to Attack, Death, Idle, Jump, Run, Walk. In place except Death (Body shifts 0.60 units sideways as it rolls over). Metallic 0.4 -> 0, roughness 0.8.",
+  "validation": {
+   "glb_magic": true,
+   "json_chunk_parsed": true,
+   "glb_chunks": [
+    [
+     "JSON",
+     57524
+    ],
+    [
+     "BIN",
+     484120
+    ]
+   ],
+   "khronos_validator": {
+    "errors": 0,
+    "warnings": 2,
+    "codes": [
+     "W:NODE_SKINNED_MESH_NON_ROOT",
+     "W:NODE_SKINNED_MESH_LOCAL_TRANSFORMS"
+    ]
+   },
+   "threejs_r186_load": "ok (GLTFLoader in headless Chromium, clips found, no console errors)"
+  },
+  "preview": "assets/previews/models/extra_rat.jpg",
+  "preview_kind": "Blender 4.1 EEVEE render of the delivered GLB; Preview shows the glTF axes at the origin: +X red, +Y green, +Z blue."
+ },
+ {
+  "file": "assets/models/animals/crow.glb",
+  "category": "animal",
+  "name": "Raven",
+  "source_url": "https://opengameart.org/content/raven-0",
+  "author": "Teh_Bucket",
+  "license": "CC0 1.0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "size_bytes": 379604,
+  "sha1": "c7184cc2ca15e5f9c236fbbdb9da5e907b925f46",
+  "triangles": 2380,
+  "bbox": {
+   "min": [
+    -0.5055,
+    -0.2018,
+    -0.2898
+   ],
+   "max": [
+    0.5061,
+    0.0745,
+    0.1147
+   ],
+   "size": [
+    1.0116,
+    0.2763,
+    0.4045
+   ],
+   "space": "model units, rest pose, after all node transforms (skinned meshes skinned on the CPU)"
+  },
+  "forward_axis": "+Z (beak)",
+  "up_axis": "+Y",
+  "scale_to_m": 1.0,
+  "size_m": [
+   1.012,
+   0.276,
+   0.405
+  ],
+  "origin": "body centre between the wing roots (not the feet)",
+  "skinned": true,
+  "joints": 32,
+  "meshes": 1,
+  "primitives": 1,
+  "materials": 1,
+  "textures": [
+   "raven (image/jpeg)"
+  ],
+  "extensions_used": [],
+  "animations": [
+   {
+    "name": "Fly",
+    "duration": 1.417
+   },
+   {
+    "name": "Glide",
+    "duration": 1.0
+   },
+   {
+    "name": "Perch",
+    "duration": 1.0
+   }
+  ],
+  "translation_channels": {
+   "Fly": {
+    "node": "Bone",
+    "net_xyz": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "range_xyz": [
+     0.0,
+     0.021,
+     0.0
+    ]
+   }
+  },
+  "nodes": {
+   "root_bone": "ROOT",
+   "beak_bone": "beak"
+  },
+  "notes": "Realistic black raven/crow, 32-bone rig, 1024 px texture (JPEG, embedded). Converted from .blend (Blender 2.7x file) with Blender 4.1: rebuilt the material from the packed texture, applied the Mirror/EdgeSplit modifiers, rotated 180 deg so it faces +Z like the other animals, scaled x0.24 to metres (1.01 m wingspan gliding, 0.40 m beak to tail). Clips: Fly (one full wing-beat, 1.42 s: slow, play with timeScale ~2.5 for a crow's ~0.55 s beat), Glide (static wings-spread pose, 1 s), Perch (wings folded, 1 s). No root motion (Fly bobs the body 2 cm). When perched, the feet are 0.20 m below the origin (place the origin 0.20 m above the perch). No attack/death clips: dive/tumble in code, or use crow_evil.glb.",
+  "validation": {
+   "glb_magic": true,
+   "json_chunk_parsed": true,
+   "glb_chunks": [
+    [
+     "JSON",
+     73300
+    ],
+    [
+     "BIN",
+     306276
+    ]
+   ],
+   "khronos_validator": {
+    "errors": 0,
+    "warnings": 1,
+    "codes": [
+     "W:NODE_SKINNED_MESH_NON_ROOT"
+    ]
+   },
+   "threejs_r186_load": "ok (GLTFLoader in headless Chromium, clips found, no console errors)"
+  },
+  "preview": "assets/previews/models/extra_crow.jpg",
+  "preview_kind": "Blender 4.1 EEVEE render of the delivered GLB; Preview shows the glTF axes at the origin: +X red, +Y green, +Z blue."
+ },
+ {
+  "file": "assets/models/animals/crow_evil.glb",
+  "category": "animal",
+  "name": "Evil Crow Creature",
+  "source_url": "https://opengameart.org/content/evil-crow-creature",
+  "author": "Benjinsmith",
+  "license": "CC-BY 3.0",
+  "license_url": "https://creativecommons.org/licenses/by/3.0/",
+  "size_bytes": 166352,
+  "sha1": "0be6998c5a8912a01f4fec6ba33485f395d716d1",
+  "triangles": 640,
+  "bbox": {
+   "min": [
+    -0.3321,
+    -0.2408,
+    -0.3227
+   ],
+   "max": [
+    0.3321,
+    0.2891,
+    0.3682
+   ],
+   "size": [
+    0.6643,
+    0.5299,
+    0.691
+   ],
+   "space": "model units, rest pose, after all node transforms (skinned meshes skinned on the CPU)"
+  },
+  "forward_axis": "+Z (beak)",
+  "up_axis": "+Y",
+  "scale_to_m": 1.0,
+  "size_m": [
+   0.664,
+   0.53,
+   0.691
+  ],
+  "origin": "body centre",
+  "skinned": true,
+  "joints": 14,
+  "meshes": 1,
+  "primitives": 1,
+  "materials": 1,
+  "textures": [
+   "Norm_Map (image/jpeg)",
+   "Diff_Map1 (image/jpeg)"
+  ],
+  "extensions_used": [],
+  "animations": [
+   {
+    "name": "Fly",
+    "duration": 0.833
+   },
+   {
+    "name": "Fly_L",
+    "duration": 0.833
+   },
+   {
+    "name": "Fly_R",
+    "duration": 0.833
+   },
+   {
+    "name": "Attack1",
+    "duration": 0.833
+   },
+   {
+    "name": "Attack2",
+    "duration": 0.833
+   }
+  ],
+  "translation_channels": {
+   "Fly": {
+    "node": "tail_IK_contr",
+    "net_xyz": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "range_xyz": [
+     0.0005,
+     0.01,
+     0.0332
+    ]
+   },
+   "Fly_L": {
+    "node": "head_IK",
+    "net_xyz": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "range_xyz": [
+     0.0075,
+     0.0122,
+     0.0198
+    ]
+   },
+   "Fly_R": {
+    "node": "tail_IK_contr",
+    "net_xyz": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "range_xyz": [
+     0.0215,
+     0.004,
+     0.0305
+    ]
+   },
+   "Attack1": {
+    "node": "body2",
+    "net_xyz": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "range_xyz": [
+     0.0,
+     0.0154,
+     0.0
+    ]
+   },
+   "Attack2": {
+    "node": "head_IK",
+    "net_xyz": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "range_xyz": [
+     0.0,
+     0.0464,
+     0.0127
+    ]
+   }
+  },
+  "nodes": {
+   "root_bone": "body1"
+  },
+  "notes": "Alternative, deliberately 'warped' zombie-looking crow (red eyes, ragged wings), 640 tris, 14 bones, 512 px painted diffuse + normal map (JPEG). Converted from .blend: IK constraints baked (every frame sampled), scaled x0.2 to metres (0.79 m wingspan, 0.69 m long, hunched). Clips (0.83 s each, 24 fps): Fly (flap loop), Fly_L / Fly_R (banking turns), Attack1 (lunging peck), Attack2 (clawing strike). No root motion. CC-BY: needs attribution (see CREDITS.md).",
+  "validation": {
+   "glb_magic": true,
+   "json_chunk_parsed": true,
+   "glb_chunks": [
+    [
+     "JSON",
+     50980
+    ],
+    [
+     "BIN",
+     115344
+    ]
+   ],
+   "khronos_validator": {
+    "errors": 0,
+    "warnings": 2,
+    "codes": [
+     "W:MESH_PRIMITIVE_GENERATED_TANGENT_SPACE",
+     "W:NODE_SKINNED_MESH_NON_ROOT"
+    ]
+   },
+   "threejs_r186_load": "ok (GLTFLoader in headless Chromium, clips found, no console errors)"
+  },
+  "preview": "assets/previews/models/extra_crow_evil.jpg",
+  "preview_kind": "Blender 4.1 EEVEE render of the delivered GLB; Preview shows the glTF axes at the origin: +X red, +Y green, +Z blue."
+ },
+ {
+  "file": "assets/models/weapons/mg.glb",
+  "category": "weapon",
+  "name": "M60 machine gun",
+  "source_url": "https://opengameart.org/content/m60-machine-gun",
+  "author": "mightydinosaurcol",
+  "license": "CC-BY 4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "license_note": "Dual-licensed CC-BY 4.0 / GPL 3.0 by the author; used under CC-BY 4.0.",
+  "size_bytes": 526392,
+  "sha1": "4960d7d0959074a9a119bcdd4d2894c11c8fdbc0",
+  "triangles": 6528,
+  "bbox": {
+   "min": [
+    -0.3577,
+    -0.0953,
+    -0.1844
+   ],
+   "max": [
+    0.7473,
+    0.1596,
+    0.0564
+   ],
+   "size": [
+    1.105,
+    0.2549,
+    0.2408
+   ],
+   "space": "model units, rest pose, after all node transforms (skinned meshes skinned on the CPU)"
+  },
+  "forward_axis": "+X (muzzle)",
+  "up_axis": "+Y",
+  "scale_to_m": 1.0,
+  "size_m": [
+   1.105,
+   0.255,
+   0.241
+  ],
+  "origin": "top of the pistol grip, under the receiver",
+  "skinned": false,
+  "joints": 0,
+  "meshes": 3,
+  "primitives": 3,
+  "materials": 1,
+  "textures": [
+   "M60TEXT (image/jpeg)",
+   "m60_metal-m60ROU (image/jpeg)"
+  ],
+  "extensions_used": [],
+  "animations": [],
+  "nodes": {
+   "Bipod_L": "left bipod leg, pivot at its hinge",
+   "Bipod_R": "right bipod leg, pivot at its hinge"
+  },
+  "notes": "Belt-fed M60 GPMG (6.5k tris) with PBR textures (1024 px base colour + packed metal/roughness, JPEG). Converted from FBX: dropped the stray default cube/cameras/lights, rotated muzzle to +X, scaled to the real 1.105 m length. The source mesh has the bipod deployed; I split the two legs into nodes 'Bipod_L'/'Bipod_R' pivoting at their hinges and folded them back under the barrel by default (node rotations Bipod_L [0.0495,-0.3761,-0.5968,0.7071], Bipod_R [-0.0495,0.3761,-0.5968,0.7071]). Set both quaternions to identity to deploy the bipod. Gun only (no arms, no clips): belt box on the left side. Metallic map makes it read as gun metal with an envMap.",
+  "validation": {
+   "glb_magic": true,
+   "json_chunk_parsed": true,
+   "glb_chunks": [
+    [
+     "JSON",
+     3500
+    ],
+    [
+     "BIN",
+     522864
+    ]
+   ],
+   "khronos_validator": {
+    "errors": 0,
+    "warnings": 0,
+    "codes": []
+   },
+   "threejs_r186_load": "ok (GLTFLoader in headless Chromium, clips found, no console errors)"
+  },
+  "preview": "assets/previews/models/extra_mg.jpg",
+  "preview_kind": "Blender 4.1 EEVEE render of the delivered GLB; Preview shows the glTF axes at the origin: +X red, +Y green, +Z blue."
+ },
+ {
+  "file": "assets/models/weapons/knife.glb",
+  "category": "weapon",
+  "name": "M9 Bayonet (combat knife)",
+  "source_url": "https://poly.pizza/m/bmQwC8leii",
+  "author": "AdamKokrito",
+  "license": "CC0 1.0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "size_bytes": 52336,
+  "sha1": "561a3de2b3d1bfcebedcf0bd2c1c58fb4adc82a1",
+  "triangles": 736,
+  "bbox": {
+   "min": [
+    -0.0615,
+    -0.0344,
+    -0.0149
+   ],
+   "max": [
+    0.2456,
+    0.0474,
+    0.0149
+   ],
+   "size": [
+    0.3071,
+    0.0818,
+    0.0298
+   ],
+   "space": "model units, rest pose, after all node transforms (skinned meshes skinned on the CPU)"
+  },
+  "forward_axis": "+X (blade tip)",
+  "up_axis": "+Y (spine / saw teeth; cutting edge faces -Y)",
+  "scale_to_m": 1.0,
+  "size_m": [
+   0.307,
+   0.082,
+   0.03
+  ],
+  "origin": "centre of the grip",
+  "skinned": false,
+  "joints": 0,
+  "meshes": 1,
+  "primitives": 3,
+  "materials": 3,
+  "textures": [],
+  "extensions_used": [],
+  "animations": [],
+  "notes": "Knife only, 736 tris, 3 flat materials. Re-exported through Blender: origin moved to the grip centre, flipped 180 deg about X so the edge faces down, scaled to the real 0.307 m length; blade metallic 0.9 / roughness 0.3, handle matte. See knife_fps.glb for arms with slash animations.",
+  "validation": {
+   "glb_magic": true,
+   "json_chunk_parsed": true,
+   "glb_chunks": [
+    [
+     "JSON",
+     3092
+    ],
+    [
+     "BIN",
+     49216
+    ]
+   ],
+   "khronos_validator": {
+    "errors": 0,
+    "warnings": 0,
+    "codes": []
+   },
+   "threejs_r186_load": "ok (GLTFLoader in headless Chromium, clips found, no console errors)"
+  },
+  "preview": "assets/previews/models/extra_knife.jpg",
+  "preview_kind": "Blender 4.1 EEVEE render of the delivered GLB; Preview shows the glTF axes at the origin: +X red, +Y green, +Z blue."
+ },
+ {
+  "file": "assets/models/weapons/knife_fps.glb",
+  "category": "weapon",
+  "name": "FPS arms + M9 bayonet (Idle/Draw/Slash/Stab/Holster)",
+  "source_url": "https://opengameart.org/content/pirate-sword-animated",
+  "extra_sources": [
+   "https://poly.pizza/m/bmQwC8leii"
+  ],
+  "author": "Lucian Pavel (arms rig + animations); AdamKokrito (M9 bayonet)",
+  "license": "CC0 1.0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "size_bytes": 1170672,
+  "sha1": "b3459d1a2cac27a45f0f7eb0bd0a265b52edf663",
+  "triangles": 10484,
+  "bbox": {
+   "min": [
+    -0.5273,
+    -0.5481,
+    -0.4235
+   ],
+   "max": [
+    0.5673,
+    -0.041,
+    0.1512
+   ],
+   "size": [
+    1.0946,
+    0.507,
+    0.5748
+   ],
+   "space": "model units, rest pose, after all node transforms (skinned meshes skinned on the CPU)"
+  },
+  "forward_axis": "-Z (three.js camera forward): the rig is authored in camera space",
+  "up_axis": "+Y",
+  "scale_to_m": 1.0,
+  "size_m": [
+   1.095,
+   0.507,
+   0.575
+  ],
+  "origin": "the eye point: add as a child of the camera with identity transform",
+  "skinned": true,
+  "joints": 50,
+  "meshes": 2,
+  "primitives": 4,
+  "materials": 4,
+  "textures": [
+   "Arms_NRM (image/jpeg)",
+   "Arms (image/jpeg)"
+  ],
+  "extensions_used": [],
+  "animations": [
+   {
+    "name": "Idle",
+    "duration": 4.167
+   },
+   {
+    "name": "Draw",
+    "duration": 0.542
+   },
+   {
+    "name": "Slash",
+    "duration": 1.458
+   },
+   {
+    "name": "Stab",
+    "duration": 1.0
+   },
+   {
+    "name": "Holster",
+    "duration": 0.75
+   }
+  ],
+  "translation_channels": {
+   "Idle": {
+    "node": "Pirate Sword",
+    "net_xyz": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "range_xyz": [
+     0.0149,
+     0.0165,
+     0.0094
+    ]
+   },
+   "Draw": {
+    "node": "Pirate Sword",
+    "net_xyz": [
+     0.0673,
+     0.2181,
+     -0.5032
+    ],
+    "range_xyz": [
+     0.0673,
+     0.2203,
+     0.5032
+    ]
+   },
+   "Slash": {
+    "node": "Arm.R",
+    "net_xyz": [
+     0.1763,
+     0.0463,
+     -0.0898
+    ],
+    "range_xyz": [
+     0.1763,
+     0.0519,
+     0.1055
+    ]
+   },
+   "Stab": {
+    "node": "Arm.R",
+    "net_xyz": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "range_xyz": [
+     0.2753,
+     0.1142,
+     0.0711
+    ]
+   },
+   "Holster": {
+    "node": "Arm.R",
+    "net_xyz": [
+     -0.0679,
+     -0.1655,
+     -0.0306
+    ],
+    "range_xyz": [
+     0.0679,
+     0.1655,
+     0.0306
+    ]
+   }
+  },
+  "nodes": {
+   "Knife": "the M9 mesh, child of the 'Pirate Sword' joint",
+   "Wrist.R": "right hand joint"
+  },
+  "camera_offset": {
+   "parent": "camera",
+   "scale": 1.0,
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "position": [
+    0,
+    0,
+    0
+   ],
+   "fov_deg": 70,
+   "near": 0.01,
+   "note": "Verified by rendering from a simulated three.js camera (origin, looking -Z, vertical FOV 70, 16:9): knife hand lower-right in Idle, the Slash sweeps right-to-left across the lower middle, cut upper arms stay behind the camera plane. Push it forward and the open shoulder ends show."
+  },
+  "notes": "Bare forearms/hands (skin texture 1024 px + normal map) from the CC0 'Pirate Sword (Animated)' FPS rig, with the sword replaced by the M9 bayonet: the knife is parented to the sword bone and seated in the fist (handle through the fingers, guard above the index finger). 10.5k tris, 50-joint rig with IK baked. Clips (24 fps): Idle 4.17 s (knife raised, left hand forward in a guard stance), Draw 0.54 s, Slash 1.46 s (big diagonal right-to-left swing: hit window ~0.45-0.60 of the clip), Stab 1.0 s (thrust; hit ~0.7), Holster 0.75 s. Slash and Holster do not end on the Idle pose: crossfade back. Style differs from the existing J-Toastie arms (bare skin, no sleeves or gloves).",
+  "validation": {
+   "glb_magic": true,
+   "json_chunk_parsed": true,
+   "glb_chunks": [
+    [
+     "JSON",
+     184400
+    ],
+    [
+     "BIN",
+     986244
+    ]
+   ],
+   "khronos_validator": {
+    "errors": 0,
+    "warnings": 2,
+    "codes": [
+     "W:MESH_PRIMITIVE_GENERATED_TANGENT_SPACE",
+     "W:NODE_SKINNED_MESH_NON_ROOT"
+    ]
+   },
+   "threejs_r186_load": "ok (GLTFLoader in headless Chromium, clips found, no console errors)"
+  },
+  "preview": "assets/previews/models/extra_knife_fps.jpg",
+  "preview_kind": "Blender 4.1 EEVEE render of the delivered GLB; simulated three.js camera view"
+ },
+ {
+  "file": "assets/models/weapons/m4.glb",
+  "category": "weapon",
+  "name": "Assault Rifle (M4-style carbine)",
+  "source_url": "https://poly.pizza/m/Bgvuu4CUMV",
+  "source_pack": "Quaternius, Ultimate Guns Pack",
+  "author": "Quaternius",
+  "license": "CC0 1.0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "size_bytes": 133980,
+  "sha1": "b33e88001c0788198ddde58f948360158b0697f3",
+  "triangles": 1930,
+  "bbox": {
+   "min": [
+    -1.5596,
+    -0.7185,
+    -0.1715
+   ],
+   "max": [
+    3.6092,
+    1.072,
+    0.1749
+   ],
+   "size": [
+    5.1688,
+    1.7905,
+    0.3464
+   ],
+   "space": "model units, rest pose, after all node transforms (skinned meshes skinned on the CPU)"
+  },
+  "forward_axis": "+X (muzzle)",
+  "up_axis": "+Y",
+  "scale_to_m": 0.162,
+  "size_m": [
+   0.837,
+   0.29,
+   0.056
+  ],
+  "origin": "in the pistol grip",
+  "skinned": false,
+  "joints": 0,
+  "meshes": 1,
+  "primitives": 3,
+  "materials": 3,
+  "textures": [],
+  "extensions_used": [],
+  "animations": [],
+  "notes": "Low-poly M4A1 look (collapsible stock, flat-top rail with front sight post, curved STANAG mag), 1.9k tris, 3 dark flat materials. Byte-identical to poly.pizza. 5.17 units long, so x0.162 gives 0.84 m (stock extended), the same factor as rifle_ak.glb. poly.pizza FBX conversions ship every material with metallicFactor 0.4; set material.metalness = 0 on load unless you want the sheen.",
+  "validation": {
+   "glb_magic": true,
+   "json_chunk_parsed": true,
+   "glb_chunks": [
+    [
+     "JSON",
+     4356
+    ],
+    [
+     "BIN",
+     129596
+    ]
+   ],
+   "khronos_validator": {
+    "errors": 0,
+    "warnings": 0,
+    "codes": []
+   },
+   "threejs_r186_load": "ok (GLTFLoader in headless Chromium, clips found, no console errors)"
+  },
+  "preview": "assets/previews/models/extra_m4.jpg",
+  "preview_kind": "Blender 4.1 EEVEE render of the delivered GLB; Preview shows the glTF axes at the origin: +X red, +Y green, +Z blue."
+ },
+ {
+  "file": "assets/models/weapons/deagle.glb",
+  "category": "weapon",
+  "name": "Desert Eagle",
+  "source_url": "https://opengameart.org/content/desert-eagle-0",
+  "author": "SirDraco65",
+  "license": "CC0 1.0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "size_bytes": 1737776,
+  "sha1": "e313e5b4c93f241891f2f861cfa98338861b7beb",
+  "triangles": 17651,
+  "bbox": {
+   "min": [
+    -0.0565,
+    -0.0796,
+    -0.0177
+   ],
+   "max": [
+    0.2135,
+    0.0789,
+    0.0176
+   ],
+   "size": [
+    0.27,
+    0.1584,
+    0.0353
+   ],
+   "space": "model units, rest pose, after all node transforms (skinned meshes skinned on the CPU)"
+  },
+  "forward_axis": "+X (muzzle)",
+  "up_axis": "+Y",
+  "scale_to_m": 1.0,
+  "size_m": [
+   0.27,
+   0.158,
+   0.035
+  ],
+  "origin": "upper grip (web of the hand)",
+  "skinned": false,
+  "joints": 0,
+  "meshes": 7,
+  "primitives": 12,
+  "materials": 6,
+  "textures": [
+   "Frame (image/jpeg)",
+   "Desert Eagle 6_Frame_BaseColor (image/jpeg)",
+   "Desert Eagle 6_Frame_Metallic-Desert Eagle 6_Frame_Roughness (image/jpeg)",
+   "BarrelBevelBake (image/jpeg)",
+   "Desert Eagle 6_Barrel_BaseColor (image/jpeg)",
+   "Desert Eagle 6_Barrel_Metallic-Desert Eagle 6_Barrel_Roughness (image/jpeg)",
+   "Accessories Bevel Bake (image/png)",
+   "Desert Eagle 6_Accessories_BaseColor (image/jpeg)",
+   "Desert Eagle 6_Accessories_Metallic-Desert Eagle 6_Accessories_Roughness (image/jpeg)",
+   "Grip Bevel Bake (image/jpeg)",
+   "Desert Eagle 6_Grip_BaseColor (image/jpeg)",
+   "Desert Eagle 6_Grip_Roughness (image/jpeg)",
+   "Magazine Bevel Bake (image/jpeg)",
+   "Desert Eagle 6_Magazine_BaseColor (image/jpeg)",
+   "Desert Eagle 6_Magazine_Metallic-Desert Eagle 6_Magazine_Roughness (image/jpeg)",
+   "Slide Bevel Bake (image/png)",
+   "Desert Eagle 6_Slide_BaseColor (image/jpeg)",
+   "Desert Eagle 6_Slide_Metallic-Desert Eagle 6_Slide_Roughness (image/jpeg)"
+  ],
+  "extensions_used": [],
+  "animations": [],
+  "nodes": {
+   "Slide": "moves back along -X on recoil (child: Safety)",
+   "Hammer": "pivot at its pin, rotates about Z",
+   "Trigger": "pivot at its pin",
+   "SlideStop": "slide lock lever",
+   "Magazine": "drops along -(0.192, 0.981, 0) (down the grip)",
+   "Frame": "static"
+  },
+  "notes": "Realistic silver .50 AE Desert Eagle with PBR textures (base colour, metal/roughness and baked-bevel normal maps; 1024 px on slide/frame/barrel, 512 px on small parts). 17.7k tris, 12 primitives (draw calls). Converted from the author's rigged .blend: baked the 'Auto Smooth' geometry nodes and the 7-bone rig into a plain node hierarchy with pivots at the original bone heads, dropped the 9.8k-tri cartridge stack hidden inside the magazine and the height/bump maps (kept the normal maps), scaled to the real 0.270 m length.",
+  "validation": {
+   "glb_magic": true,
+   "json_chunk_parsed": true,
+   "glb_chunks": [
+    [
+     "JSON",
+     14244
+    ],
+    [
+     "BIN",
+     1723504
+    ]
+   ],
+   "khronos_validator": {
+    "errors": 0,
+    "warnings": 12,
+    "codes": [
+     "W:MESH_PRIMITIVE_GENERATED_TANGENT_SPACE"
+    ]
+   },
+   "threejs_r186_load": "ok (GLTFLoader in headless Chromium, clips found, no console errors)"
+  },
+  "preview": "assets/previews/models/extra_deagle.jpg",
+  "preview_kind": "Blender 4.1 EEVEE render of the delivered GLB; Preview shows the glTF axes at the origin: +X red, +Y green, +Z blue."
+ },
+ {
+  "file": "assets/models/weapons/autosniper.glb",
+  "category": "weapon",
+  "name": "Semi-auto marksman rifle with scope (SR-25 / M110 style)",
+  "source_url": "https://poly.pizza/m/kwJawENuvA",
+  "extra_sources": [
+   "https://poly.pizza/m/98ocxnqLFf"
+  ],
+  "author": "Pichuliru",
+  "license": "CC0 1.0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "size_bytes": 447664,
+  "sha1": "6e584d3f1398c2bad1c9441f75447c709afcdc5c",
+  "triangles": 4118,
+  "bbox": {
+   "min": [
+    -0.2513,
+    -0.1092,
+    -0.0327
+   ],
+   "max": [
+    0.7096,
+    0.1536,
+    0.0461
+   ],
+   "size": [
+    0.9609,
+    0.2628,
+    0.0788
+   ],
+   "space": "model units, rest pose, after all node transforms (skinned meshes skinned on the CPU)"
+  },
+  "forward_axis": "+X (muzzle)",
+  "up_axis": "+Y",
+  "scale_to_m": 1.0,
+  "size_m": [
+   0.961,
+   0.263,
+   0.079
+  ],
+  "origin": "top of the pistol grip",
+  "skinned": true,
+  "joints": 14,
+  "meshes": 2,
+  "primitives": 12,
+  "materials": 12,
+  "textures": [],
+  "extensions_used": [],
+  "animations": [],
+  "nodes": {
+   "Attach_Muzzle": "muzzle point (x=0.665) for flash/tracers",
+   "Magazine": "magazine joint",
+   "Bolt": "bolt joint",
+   "Scope": "scope subtree"
+  },
+  "notes": "AR-10-pattern rifle ('Sniper Rifle West') with the same author's 'Rifle Scope' mounted at the rifle's own 'Attach_Scope' joint: both are parts of one CC0 modular kit. 4.1k tris, 12 flat materials, 0.96 m long, already in metres. The rifle keeps its 14-joint skin (Magazine, Bolt, Trigger, Safety, sights and Attach_* joints, no clips) so parts can be animated. Scope merged at the GLB level and the whole thing wrapped in an 'AutoSniper' node that turns the muzzle from -Z to +X and puts the origin at the grip. poly.pizza FBX conversions ship every material with metallicFactor 0.4; set material.metalness = 0 on load unless you want the sheen.",
+  "validation": {
+   "glb_magic": true,
+   "json_chunk_parsed": true,
+   "glb_chunks": [
+    [
+     "JSON",
+     22456
+    ],
+    [
+     "BIN",
+     425180
+    ]
+   ],
+   "khronos_validator": {
+    "errors": 0,
+    "warnings": 2,
+    "codes": [
+     "W:NODE_SKINNED_MESH_NON_ROOT",
+     "W:NODE_SKINNED_MESH_LOCAL_TRANSFORMS"
+    ]
+   },
+   "threejs_r186_load": "ok (GLTFLoader in headless Chromium, clips found, no console errors)"
+  },
+  "preview": "assets/previews/models/extra_autosniper.jpg",
+  "preview_kind": "Blender 4.1 EEVEE render of the delivered GLB; Preview shows the glTF axes at the origin: +X red, +Y green, +Z blue."
+ },
+ {
+  "file": "assets/models/weapons/bow.glb",
+  "category": "weapon",
+  "name": "Compound bow (authored placeholder)",
+  "source_url": "(authored for this project)",
+  "author": "Original, modelled procedurally in Blender 4.1 for this project",
+  "license": "CC0 1.0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "size_bytes": 179628,
+  "sha1": "3703e1e06502ee58077c65471cdbfd7493c7fb63",
+  "triangles": 3188,
+  "bbox": {
+   "min": [
+    -0.2116,
+    -0.469,
+    -0.034
+   ],
+   "max": [
+    0.33,
+    0.469,
+    0.031
+   ],
+   "size": [
+    0.5416,
+    0.938,
+    0.065
+   ],
+   "space": "model units, rest pose, after all node transforms (skinned meshes skinned on the CPU)"
+  },
+  "forward_axis": "+X (arrow flight direction)",
+  "up_axis": "+Y",
+  "scale_to_m": 1.0,
+  "size_m": [
+   0.542,
+   0.938,
+   0.065
+  ],
+  "origin": "centre of the grip",
+  "skinned": true,
+  "joints": 4,
+  "meshes": 5,
+  "primitives": 15,
+  "materials": 9,
+  "textures": [],
+  "extensions_used": [
+   "KHR_materials_emissive_strength"
+  ],
+  "animations": [
+   {
+    "name": "Idle",
+    "duration": 1.0
+   },
+   {
+    "name": "Draw",
+    "duration": 0.792
+   },
+   {
+    "name": "Hold",
+    "duration": 1.0
+   },
+   {
+    "name": "Release",
+    "duration": 0.292
+   }
+  ],
+  "translation_channels": {
+   "Draw": {
+    "node": "Nock",
+    "net_xyz": [
+     -0.55,
+     0.0,
+     0.0
+    ],
+    "range_xyz": [
+     0.55,
+     0.0,
+     0.0
+    ]
+   },
+   "Release": {
+    "node": "Nock",
+    "net_xyz": [
+     0.55,
+     0.0,
+     0.0
+    ],
+    "range_xyz": [
+     0.562,
+     0.0,
+     0.0
+    ]
+   }
+  },
+  "nodes": {
+   "Nock": "bone at the nocking point, pulled back 0.55 m by Draw",
+   "ArrowNockPoint": "empty at the nock (follows the string): parent the arrow here while drawing",
+   "CamTop/CamBottom": "cam bones (rotate with the draw)"
+  },
+  "notes": "No free compound bow exists on poly.pizza or OpenGameArt (only recurve/longbows), so this one was modelled from primitives: machined riser with a centre-shot window, split limbs, cams with modules, cables with cable guard, 3-pin sight, drop-away rest, stabilizer, peep sight and D-loop. 3.2k tris, 0.85 m axle to axle, 0.15 m brace height. The string is skinned to a 'Nock' bone so it bends into a V. Clips: Idle 1 s, Draw 0.79 s (nock back 0.55 m, cams roll ~170 deg), Hold 1 s (full draw), Release 0.29 s (snap forward with a small overshoot). Uses KHR_materials_emissive_strength for the glowing sight pins (three.js supports it).",
+  "validation": {
+   "glb_magic": true,
+   "json_chunk_parsed": true,
+   "glb_chunks": [
+    [
+     "JSON",
+     24184
+    ],
+    [
+     "BIN",
+     155416
+    ]
+   ],
+   "khronos_validator": {
+    "errors": 0,
+    "warnings": 1,
+    "codes": [
+     "W:NODE_SKINNED_MESH_NON_ROOT"
+    ]
+   },
+   "threejs_r186_load": "ok (GLTFLoader in headless Chromium, clips found, no console errors)"
+  },
+  "preview": "assets/previews/models/extra_bow.jpg",
+  "preview_kind": "Blender 4.1 EEVEE render of the delivered GLB; Preview shows the glTF axes at the origin: +X red, +Y green, +Z blue."
+ },
+ {
+  "file": "assets/models/weapons/arrow.glb",
+  "category": "weapon",
+  "name": "Carbon arrow (authored placeholder)",
+  "source_url": "(authored for this project)",
+  "author": "Original, modelled procedurally in Blender 4.1 for this project",
+  "license": "CC0 1.0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "size_bytes": 12832,
+  "sha1": "d1621c2e73c3bdede996ac390ac474364e6a881e",
+  "triangles": 204,
+  "bbox": {
+   "min": [
+    0.0,
+    -0.0113,
+    -0.013
+   ],
+   "max": [
+    0.758,
+    0.0125,
+    0.0108
+   ],
+   "size": [
+    0.758,
+    0.0238,
+    0.0238
+   ],
+   "space": "model units, rest pose, after all node transforms (skinned meshes skinned on the CPU)"
+  },
+  "forward_axis": "+X (tip)",
+  "up_axis": "+Y (odd white cock vane)",
+  "scale_to_m": 1.0,
+  "size_m": [
+   0.758,
+   0.024,
+   0.024
+  ],
+  "origin": "the nock throat (rear end): parent it to bow.glb's 'ArrowNockPoint'",
+  "skinned": false,
+  "joints": 0,
+  "meshes": 1,
+  "primitives": 5,
+  "materials": 5,
+  "textures": [],
+  "extensions_used": [],
+  "animations": [],
+  "notes": "0.74 m carbon shaft with three vanes (one white, two orange), green nock and a three-blade broadhead. 204 tris, one mesh with 5 materials.",
+  "validation": {
+   "glb_magic": true,
+   "json_chunk_parsed": true,
+   "glb_chunks": [
+    [
+     "JSON",
+     4092
+    ],
+    [
+     "BIN",
+     8712
+    ]
+   ],
+   "khronos_validator": {
+    "errors": 0,
+    "warnings": 0,
+    "codes": []
+   },
+   "threejs_r186_load": "ok (GLTFLoader in headless Chromium, clips found, no console errors)"
+  },
+  "preview": "assets/previews/models/extra_arrow.jpg",
+  "preview_kind": "Blender 4.1 EEVEE render of the delivered GLB; Preview shows the glTF axes at the origin: +X red, +Y green, +Z blue."
+ },
+ {
+  "file": "assets/models/weapons/grenade.glb",
+  "category": "weapon",
+  "name": "Mk2 hand grenade",
+  "source_url": "https://opengameart.org/content/mk2-grenade",
+  "author": "LonesomeDucky",
+  "license": "CC0 1.0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "size_bytes": 552080,
+  "sha1": "4315c0900325fc7149a1935ef55bbcdedde22945",
+  "triangles": 2568,
+  "bbox": {
+   "min": [
+    -0.0358,
+    -0.0604,
+    -0.0358
+   ],
+   "max": [
+    0.0497,
+    0.0797,
+    0.0358
+   ],
+   "size": [
+    0.0855,
+    0.1401,
+    0.0716
+   ],
+   "space": "model units, rest pose, after all node transforms (skinned meshes skinned on the CPU)"
+  },
+  "forward_axis": "n/a (lever / spoon on the +X side)",
+  "up_axis": "+Y (fuse up)",
+  "scale_to_m": 1.0,
+  "size_m": [
+   0.086,
+   0.14,
+   0.072
+  ],
+  "origin": "centre of the body",
+  "skinned": false,
+  "joints": 0,
+  "meshes": 5,
+  "primitives": 5,
+  "materials": 1,
+  "textures": [
+   "NormalsLow (image/jpeg)",
+   "OcclusionLow-RoughnessLow-MetalnessLow (image/jpeg)",
+   "BaseColorLow (image/jpeg)"
+  ],
+  "extensions_used": [],
+  "animations": [],
+  "nodes": {
+   "GrenadeBody": "root",
+   "GrenadeTop": "fuse",
+   "GrenadePin": "pin (child: GrenadeRing)",
+   "GrenadeRing": "pull ring",
+   "GrenadeSwitch": "spoon / lever"
+  },
+  "notes": "WW2 'pineapple' (F1-style silhouette), low-poly PBR version from the author's pack: 2.6k tris, 1024 px base colour, ORM and normal maps (re-encoded PNG -> JPEG, 2.7 MB -> 0.54 MB). The pin, ring and lever are separate nodes, so you can pull the pin and flip the spoon off in code. Already in metres but 0.14 m tall with the fuse (about 20 % over a real Mk2's 0.114 m): scale 0.85 for true size.",
+  "validation": {
+   "glb_magic": true,
+   "json_chunk_parsed": true,
+   "glb_chunks": [
+    [
+     "JSON",
+     6100
+    ],
+    [
+     "BIN",
+     545952
+    ]
+   ],
+   "khronos_validator": {
+    "errors": 0,
+    "warnings": 0,
+    "codes": []
+   },
+   "threejs_r186_load": "ok (GLTFLoader in headless Chromium, clips found, no console errors)"
+  },
+  "preview": "assets/previews/models/extra_grenade.jpg",
+  "preview_kind": "Blender 4.1 EEVEE render of the delivered GLB; Preview shows the glTF axes at the origin: +X red, +Y green, +Z blue."
+ },
+ {
+  "file": "assets/models/vehicles/bike.glb",
+  "category": "vehicle",
+  "name": "Motorcycle (adventure / street bike)",
+  "source_url": "https://poly.pizza/m/0lBe-ApqJs4",
+  "author": "jeremy",
+  "license": "CC-BY 3.0",
+  "license_url": "https://creativecommons.org/licenses/by/3.0/",
+  "size_bytes": 115248,
+  "sha1": "27d25bea7d4d4f4803f249da48bc71a03460218b",
+  "triangles": 2092,
+  "bbox": {
+   "min": [
+    -1.0575,
+    -0.0001,
+    -0.3807
+   ],
+   "max": [
+    1.058,
+    1.3325,
+    0.3807
+   ],
+   "size": [
+    2.1155,
+    1.3326,
+    0.7613
+   ],
+   "space": "model units, rest pose, after all node transforms (skinned meshes skinned on the CPU)"
+  },
+  "forward_axis": "+X (front wheel)",
+  "up_axis": "+Y",
+  "scale_to_m": 1.0,
+  "size_m": [
+   2.115,
+   1.333,
+   0.761
+  ],
+  "origin": "on the ground, midway between the axles",
+  "skinned": false,
+  "joints": 0,
+  "meshes": 3,
+  "primitives": 10,
+  "materials": 6,
+  "textures": [],
+  "extensions_used": [],
+  "animations": [],
+  "nodes": {
+   "WheelFront": "axle at (0.752, 0.306, 0)",
+   "WheelRear": "axle at (-0.752, 0.312, 0)",
+   "Body": "everything else"
+  },
+  "notes": "Low-poly black/grey adventure-style bike with a blue screen, 2.1k tris, 6 flat materials. Scaled x0.134 to metres (1.50 m wheelbase, 2.12 m long, 1.33 m tall, 0.61 m wheels). I split the source's single mesh (face soup) into Body + two wheel nodes (tyre, rim, spokes, hub) with origins on the axles: spin with wheel.rotation.z -= speed * dt / 0.306 when riding forward (+X). Fork and swingarm stay in Body; the bike stands upright (no side stand).",
+  "validation": {
+   "glb_magic": true,
+   "json_chunk_parsed": true,
+   "glb_chunks": [
+    [
+     "JSON",
+     7412
+    ],
+    [
+     "BIN",
+     107808
+    ]
+   ],
+   "khronos_validator": {
+    "errors": 0,
+    "warnings": 0,
+    "codes": []
+   },
+   "threejs_r186_load": "ok (GLTFLoader in headless Chromium, clips found, no console errors)"
+  },
+  "preview": "assets/previews/models/extra_bike.jpg",
+  "preview_kind": "Blender 4.1 EEVEE render of the delivered GLB; Preview shows the glTF axes at the origin: +X red, +Y green, +Z blue."
+ },
+ {
+  "file": "assets/models/vehicles/drone.glb",
+  "category": "vehicle",
+  "name": "Personal one-seat multicopter (Jetson ONE style, authored placeholder)",
+  "source_url": "(authored for this project)",
+  "author": "Original, modelled procedurally in Blender 4.1 for this project",
+  "license": "CC0 1.0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "size_bytes": 425692,
+  "sha1": "110d382dde0bc0862aea93534dc91a27e6991b12",
+  "triangles": 8580,
+  "bbox": {
+   "min": [
+    -1.334,
+    0.013,
+    -1.214
+   ],
+   "max": [
+    1.384,
+    1.0603,
+    1.214
+   ],
+   "size": [
+    2.718,
+    1.0473,
+    2.428
+   ],
+   "space": "model units, rest pose, after all node transforms (skinned meshes skinned on the CPU)"
+  },
+  "forward_axis": "+X (nose)",
+  "up_axis": "+Y",
+  "scale_to_m": 1.0,
+  "size_m": [
+   2.718,
+   1.047,
+   2.428
+  ],
+  "origin": "on the ground (skid bottoms) under the cockpit",
+  "skinned": false,
+  "joints": 0,
+  "meshes": 9,
+  "primitives": 35,
+  "materials": 13,
+  "textures": [],
+  "extensions_used": [
+   "KHR_materials_emissive_strength"
+  ],
+  "animations": [],
+  "nodes": {
+   "Rotor_FL_Top/Bottom, Rotor_FR_*, Rotor_RL_*, Rotor_RR_*": "8 rotors, origin at each hub; spin about local +Y, top and bottom of a pair counter-rotate",
+   "SeatPoint": "empty at the seat cushion (-0.2, 0.43, 0) for seating a player",
+   "Frame": "hull, seat, sticks, arms, motor pods, guards, skids, lights"
+  },
+  "notes": "No free one-person passenger multicopter model exists on poly.pizza or OpenGameArt (only small camera/toy quadcopters), so this was modelled from primitives: white open tub hull with seat, headrest, twin control sticks and windscreen, four carbon arms with coaxial motor pods (8 two-blade props with orange tips), prop guard rings, aluminium skids, red/green/white nav lights. 2.72 m x 2.43 m footprint, 1.05 m tall. 8.6k tris, 13 materials / 35 primitives (draw calls). Windscreen uses alpha BLEND (opacity 0.35); nav lights use KHR_materials_emissive_strength.",
+  "validation": {
+   "glb_magic": true,
+   "json_chunk_parsed": true,
+   "glb_chunks": [
+    [
+     "JSON",
+     22632
+    ],
+    [
+     "BIN",
+     403032
+    ]
+   ],
+   "khronos_validator": {
+    "errors": 0,
+    "warnings": 0,
+    "codes": []
+   },
+   "threejs_r186_load": "ok (GLTFLoader in headless Chromium, clips found, no console errors)"
+  },
+  "preview": "assets/previews/models/extra_drone.jpg",
+  "preview_kind": "Blender 4.1 EEVEE render of the delivered GLB; Preview shows the glTF axes at the origin: +X red, +Y green, +Z blue."
+ }
+]
