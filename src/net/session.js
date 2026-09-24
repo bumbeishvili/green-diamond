@@ -1,6 +1,8 @@
 import { signaling } from './signaling.js';
 import { Peer } from './peer.js';
 import { NetSim } from './netsim.js';
+import { Relay } from './relay.js';
+import { URLFLAGS } from '../config.js';
 
 // A match of up to 4 players joined by a shared password, in a star: the first one in hosts and
 // the others connect to the host only. The server is only used for the handshake.
@@ -12,6 +14,7 @@ export const TICK_HZ = 30;
 export const MAX_PLAYERS = 4;
 const ANSWER_WAIT = 16000;      // a client's offer unanswered this long: the host is gone (server: 15 s)
 const GHOST_MS = 30000;         // a member who never sent an offer is dropped after this
+const RELAY_AFTER = 4000;       // (Cloudflare) no direct link this long after the host answered: use the relay
 const IDLE_CLOSE_MS = 30 * 60 * 1000;   // a host alone in a background tab this long closes the room
 
 export const MESSAGES = {
@@ -19,6 +22,7 @@ export const MESSAGES = {
   hostLeft: 'The host left, so the match is over.',
   lost: 'The connection to the host was lost.',
   ended: 'This room has ended.',
+  unreachableRelay: 'Couldn\'t connect to the host, not even through the relay. Check your connection and try again.',
   idle: 'Room closed: nobody joined in the 30 minutes the game was in the background. Create a new one when you\'re ready.',
 };
 
@@ -80,6 +84,7 @@ export class Session {
   }
 
   reset() {
+    if (this.relay) this.closeRelay();
     this.state = 'idle';         // idle | joining | connecting | connected | ended
     this.role = null;            // 'host' | 'client'
     this.room = this.id = this.hostId = this.password = null;
@@ -131,8 +136,10 @@ export class Session {
   enter(r) {
     Object.assign(this, { room: r.room, id: r.id, slot: r.slot, role: r.role, hostId: r.hostId, ice: r.iceServers });
     this.bellOk = !!r.bell;
+    this.relayOk = !!r.relay;   // (Cloudflare: the room's server can carry the game when a direct link can't be made)
     this.roster = [{ id: r.id, slot: r.slot }];
     this.startTimers();
+    if (this.role === 'host' && this.relayOk) this.openRelay();
     if (this.role === 'host') {
       this.state = 'connected';
       this.message = 'You\'re hosting. Send your friends the link (or the password).';
@@ -148,6 +155,7 @@ export class Session {
 
   fail(message) {
     this.stopTimers();
+    this.closeRelay();
     for (const p of this.peers.values()) { p.onclose = null; p.close(); }
     this.peers.clear();
     if (this.room && this.id) signaling.leave(this.room, this.id);
@@ -167,6 +175,11 @@ export class Session {
     for (const p of this.peers.values()) { p.onclose = null; setTimeout(() => p.close(), 50); }
     this.peers.clear();
     this.stopTimers();
+    // (the relay last, once the goodbye has gone out through it)
+    const relay = this.relay;
+    this.relay = null;
+    clearTimeout(this.relayTimer); clearTimeout(this.relayGiveUp); this.viaRelayStarted = false;
+    if (relay) setTimeout(() => relay.close(), 150);
     this.room = null;
     this.state = 'idle';
     this.message = '';
@@ -239,6 +252,8 @@ export class Session {
   // ---- client ----
 
   async connectToHost(gen) {
+    // (?relay: straight to the relay, no direct attempt)
+    if (this.relayOk && URLFLAGS.relay) { this.viaRelay(null, gen); return; }
     const p = this.link(this.hostId);
     try {
       const offer = await p.offer();
@@ -254,9 +269,55 @@ export class Session {
       await p.accept(answer);
       this.message = 'Connecting to the host…';
       this.changed();
+      if (this.relayOk) this.relayTimer = setTimeout(() => { if (this.gen === gen && !p.open) this.viaRelay(p, gen); }, RELAY_AFTER);
     } catch (e) {
       if (this.gen === gen) this.fail(e.gone ? MESSAGES.ended : e.message || MESSAGES.unreachable);
     }
+  }
+
+  // ---- the relay (Cloudflare) ----
+
+  openRelay() {
+    if (this.relay) return this.relay;
+    this.relay = new Relay(this.room, this.id);
+    if (this.role === 'host') this.relay.onhello = (from) => this.relayClient(from);
+    return this.relay;
+  }
+
+  closeRelay() {
+    clearTimeout(this.relayTimer); clearTimeout(this.relayGiveUp);
+    if (this.relay) { this.relay.close(); this.relay = null; }
+    this.viaRelayStarted = false;
+  }
+
+  // client: the direct link to the host can't be made; talk through the room's server instead
+  viaRelay(p, gen = this.gen) {
+    if (this.viaRelayStarted || this.gen !== gen) return;
+    this.viaRelayStarted = true;
+    clearTimeout(this.relayTimer);
+    if (p && !p.closed) { p.onclose = null; p.close(); }
+    this.peers.delete(this.hostId);
+    this.message = 'No direct connection from here: connecting through the relay…';
+    this.changed();
+    const relay = this.openRelay();
+    const l = this.link(this.hostId, relay.link(this.hostId, this.sim.lane()));
+    // (knock until the host's relay socket answers: it may still be connecting)
+    relay.ready.then(() => {
+      if (this.gen !== gen || l.closed) return;
+      l.hello();
+      const knock = setInterval(() => { if (l.open || l.closed || this.gen !== gen) clearInterval(knock); else l.hello(); }, 2000);
+    });
+    this.relayGiveUp = setTimeout(() => { if (this.gen === gen && !l.open) this.fail(MESSAGES.unreachableRelay); }, 12000);
+  }
+
+  // host: a client that couldn't reach us directly knocks on the relay; take it that way
+  relayClient(from) {
+    if (!this.relay) return;
+    const old = this.peers.get(from);
+    if (old && old.relayed && old.open) { this.relay.send(from, 'ctl', 'ok'); return; }
+    if (old) { old.onclose = null; old.close(); this.peers.delete(from); }
+    const l = this.link(from, this.relay.link(from, this.sim.lane()));
+    l.accept();
   }
 
   // the host never answered: it closed its tab without saying so. Start the room over (the server
@@ -283,8 +344,8 @@ export class Session {
 
   // ---- links ----
 
-  link(id) {
-    const p = new Peer(id, this.ice, this.sim.lane());
+  link(id, made = null) {
+    const p = made || new Peer(id, this.ice, this.sim.lane());
     p.meter = new Meter();
     p.rtt = 0;
     p.pings = new Map();
@@ -327,8 +388,10 @@ export class Session {
       this.changed();
       return;
     }
+    // (the direct link couldn't be made: the relay, if this server has one)
+    if (reason === 'unreachable' && this.relayOk && !p.relayed && !this.viaRelayStarted) { this.viaRelay(null); return; }
     // a client without its host has no match
-    this.fail(reason === 'unreachable' ? MESSAGES.unreachable : this.hostLeft ? MESSAGES.hostLeft : reason === 'lost' ? MESSAGES.lost : MESSAGES.hostLeft);
+    this.fail(reason === 'unreachable' ? (p.relayed ? MESSAGES.unreachableRelay : MESSAGES.unreachable) : this.hostLeft ? MESSAGES.hostLeft : reason === 'lost' ? MESSAGES.lost : MESSAGES.hostLeft);
   }
 
   sendRoster() {
@@ -397,8 +460,8 @@ export class Session {
     this.timers = [
       ticker.every(1000 / TICK_HZ, () => {
         if (!this.peers.size) return;
-        const s = JSON.stringify({ t: 'hb', s: seq++ });
-        for (const p of this.peers.values()) p.send('unrel', s);
+        const n2 = seq++, s = JSON.stringify({ t: 'hb', s: n2 });
+        for (const p of this.peers.values()) if (!p.relayed || n2 % 3 === 0) p.send('unrel', s);
       }),
       ticker.every(1000, () => {
         const now = performance.now();
@@ -413,7 +476,7 @@ export class Session {
           for (const p of this.peers.values()) {
             if (!p.open) continue;
             // loss: both directions of the link, averaged
-            table[p.id] = { ping: Math.round(p.rtt), loss: (p.meter.loss + (p.remote ? p.remote.loss : p.meter.loss)) / 2, hz: p.remote ? p.remote.hz : 0, up: p.meter.hz };
+            table[p.id] = { ping: Math.round(p.rtt), loss: (p.meter.loss + (p.remote ? p.remote.loss : p.meter.loss)) / 2, hz: p.remote ? p.remote.hz : 0, up: p.meter.hz, relay: !!p.relayed };
           }
           this.table = table;
           this.broadcast('rel', { t: 'table', table });
@@ -435,7 +498,7 @@ export class Session {
   get local() {
     if (this.role === 'client') {
       const h = this.peers.get(this.hostId);
-      return h && h.open ? { ping: Math.round(h.rtt), loss: h.meter.loss, hz: h.meter.hz } : null;
+      return h && h.open ? { ping: Math.round(h.rtt), loss: h.meter.loss, hz: h.meter.hz, relay: !!h.relayed } : null;
     }
     return this.role === 'host' ? { ping: 0, loss: 0, hz: TICK_HZ } : null;
   }

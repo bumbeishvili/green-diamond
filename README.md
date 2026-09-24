@@ -81,7 +81,7 @@ npx wrangler deploy                              # then once: npx wrangler secre
 
 | Key | Action |
 |---|---|
-| WASD, Shift, Space, C | move, sprint, jump, crouch |
+| WASD, Shift, Space, Ctrl | move, sprint, jump, crouch (Ctrl on Mac too) |
 | Click | shoot (hold the trackpad button for automatic guns; hold and release to draw and loose the bow) |
 | E (or hold right-click) | aim down the sights / scope |
 | Shift while scoped | hold your breath to steady the scope |
@@ -97,7 +97,7 @@ npx wrangler deploy                              # then once: npx wrangler secre
 | Esc | pause |
 
 Driving a car or riding a motorbike: W/S throttle and brake (hold S to reverse), A/D steer, Space handbrake. The camera looks down on you from above and behind, and your guns are put away: you run the dead down instead. Nothing can touch you inside a car; on the bike they can only grab you once you slow to a crawl. Handling is roughly true to life: the wheel turns in progressively, you can't corner harder than the tyres grip (so the faster you go, the wider you turn), scraping a wall slides you along it, and the bike leans into corners.
-Drone: WASD to move where you look, Space to climb, C or Shift to descend, and you can shoot from it. Land on a roof and step out.
+Drone: WASD to move where you look, Space to climb, Ctrl or Shift to descend, and you can shoot from it. Land on a roof and step out.
 
 ### How it plays
 

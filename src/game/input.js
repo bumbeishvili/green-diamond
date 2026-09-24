@@ -13,6 +13,9 @@ export class Input {
       this.keys.add(e.code);
       this.pressed.add(e.code);
       if (['Space', 'Tab'].includes(e.code)) e.preventDefault();
+      // Ctrl is crouch: while you play, Ctrl+R, Ctrl+S, Ctrl+F... are the game's, not the browser's
+      // (the few it keeps for itself, like Ctrl+W, it keeps anyway)
+      if ((e.ctrlKey || e.metaKey) && this.locked) e.preventDefault();
     });
     addEventListener('keyup', (e) => this.keys.delete(e.code));
     addEventListener('blur', () => { this.keys.clear(); this.mouse.left = this.mouse.right = false; });
@@ -34,13 +37,14 @@ export class Input {
     this.wheelAcc = 0; this.wheelT = 0;
     addEventListener('wheel', (e) => {
       if (!this.locked) return;
+      if (e.ctrlKey) e.preventDefault();   // (crouched: the wheel switches weapons, it doesn't zoom the page)
       this.wheelAcc += e.deltaY;
       const now = performance.now();
       if (Math.abs(this.wheelAcc) > 60 && now - this.wheelT > 300) {
         this.mouse.wheel += Math.sign(this.wheelAcc);
         this.wheelAcc = 0; this.wheelT = now;
       }
-    }, { passive: true });
+    }, { passive: false });
     addEventListener('contextmenu', (e) => e.preventDefault());
     document.addEventListener('pointerlockchange', () => {
       this.locked = document.pointerLockElement === this.canvas;

@@ -15,14 +15,14 @@ export const SNAP_EVERY = 2;            // snapshots at 30 Hz
 export const INPUT_REDUNDANCY = 5;      // ticks repeated in each input packet
 export const MAX_SNAP_ZOMBIES = 72;
 
-export const MSG = { INPUT: 1, SNAP: 2 };
+export const MSG = { INPUT: 1, SNAP: 2, VOICE: 3 };
 
 // keyboard state of one tick
 // (jump: Space pressed this tick; space: Space held, the handbrake or the drone's climb)
 export const BTN = { fwd: 1, back: 2, left: 4, right: 8, jump: 16, crouch: 32, sprint: 64, space: 128 };
 const CODE_BITS = {
   KeyW: BTN.fwd, ArrowUp: BTN.fwd, KeyS: BTN.back, ArrowDown: BTN.back, KeyA: BTN.left, ArrowLeft: BTN.left,
-  KeyD: BTN.right, ArrowRight: BTN.right, Space: BTN.space, KeyC: BTN.crouch, ShiftLeft: BTN.sprint,
+  KeyD: BTN.right, ArrowRight: BTN.right, Space: BTN.space, ControlLeft: BTN.crouch, ControlRight: BTN.crouch, ShiftLeft: BTN.sprint,
 };
 
 // What Player.update() reads from an input, replayed from a recorded tick.
@@ -42,7 +42,7 @@ export function bitsFrom(input, jump) {
   if (input.down('KeyS') || input.down('ArrowDown')) b |= BTN.back;
   if (input.down('KeyA') || input.down('ArrowLeft')) b |= BTN.left;
   if (input.down('KeyD') || input.down('ArrowRight')) b |= BTN.right;
-  if (input.down('KeyC')) b |= BTN.crouch;
+  if (input.down('ControlLeft') || input.down('ControlRight')) b |= BTN.crouch;
   if (input.down('ShiftLeft')) b |= BTN.sprint;
   if (input.down('Space')) b |= BTN.space;
   if (jump) b |= BTN.jump;

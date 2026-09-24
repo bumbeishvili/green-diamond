@@ -232,3 +232,9 @@ canvas#game { position: fixed; inset: 0; width: 100vw; height: 100vh; display: b
 #mp-invite { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); flex-wrap: wrap; justify-content: center; }
 #mp-invite #mp-link { width: 330px; background: #101214; color: #9fe0b4; border: 1px solid #2f4a38; padding: 7px 9px; font: 12px ui-monospace, Menlo, Consolas, monospace; }
 #mp .mp-title.invited { color: #9fe0b4; }
+/* voice chat */
+#net .net-voice { margin-top: 6px; display: flex; gap: 6px; align-items: center; }
+#net .net-voice select { background: #16181b; color: inherit; border: 1px solid #3a3d42; font: inherit; padding: 1px 4px; }
+#net .net-voice i { font-style: normal; color: #9cc3ff; }
+#net tr[data-slot] { cursor: pointer; }
+#team .talk { font-size: 11px; }

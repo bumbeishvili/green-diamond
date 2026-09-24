@@ -495,7 +495,7 @@ export class Vehicles {
     if (v.type !== 'drone') this.headlights(v, true);
     this.startEngine(v.hero ? HEROES[v.hero].sound : v.type);
     const name = v.hero ? HEROES[v.hero].name : v.type === 'bike' ? 'Motorbike' : 'Car';
-    g.hud.notice(v.type === 'drone' ? 'Drone: WASD move, Space up, C down, F to get out' : `${name}: WASD drive, Space handbrake, F to get out`);
+    g.hud.notice(v.type === 'drone' ? 'Drone: WASD move, Space up, Ctrl down, F to get out' : `${name}: WASD drive, Space handbrake, F to get out`);
   }
 
   // the flashlight becomes the headlights while you drive (same light, so nothing recompiles)
@@ -656,7 +656,7 @@ export class Vehicles {
     const alt = v.type === 'drone' ? ` · ${Math.max(0, v.pos.y - g.hm.atWorld(v.pos.x, v.pos.z)).toFixed(0)} m up` : '';
     this.hud.textContent = `${kmh} km/h${alt}`;
     this.hud.classList.add('on');
-    g.hud.prompt(v.type === 'drone' ? 'Space up · C down · <b>F</b> get out' : 'Space handbrake · <b>F</b> get out');
+    g.hud.prompt(v.type === 'drone' ? 'Space up · Ctrl down · <b>F</b> get out' : 'Space handbrake · <b>F</b> get out');
   }
 
   // Driving. What the tyres hold is a bicycle model: the front wheel sets how the car turns, and at
@@ -1139,7 +1139,7 @@ export class Vehicles {
     const yaw = p.yaw;
     const f = (input.down('KeyW') ? 1 : 0) - (input.down('KeyS') ? 1 : 0);
     const r = (input.down('KeyD') ? 1 : 0) - (input.down('KeyA') ? 1 : 0);
-    const u = (input.down('Space') ? 1 : 0) - (input.down('KeyC') || input.down('ShiftLeft') ? 1 : 0);
+    const u = (input.down('Space') ? 1 : 0) - (input.down('ControlLeft') || input.down('ControlRight') || input.down('KeyC') || input.down('ShiftLeft') ? 1 : 0);
     const fwdX = -Math.sin(yaw), fwdZ = -Math.cos(yaw), rtX = Math.cos(yaw), rtZ = -Math.sin(yaw);
     const ax = (fwdX * f + rtX * r) * s.accel, az = (fwdZ * f + rtZ * r) * s.accel;
     v.vel.x += ax * dt; v.vel.z += az * dt;

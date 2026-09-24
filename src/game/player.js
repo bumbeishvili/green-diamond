@@ -131,7 +131,7 @@ export class Player {
     }
     const len = Math.hypot(fx, fz);
     if (len > 0) { fx /= len; fz /= len; }
-    const wantCrouch = allowControl && input.down('KeyC');
+    const wantCrouch = allowControl && (input.down('ControlLeft') || input.down('ControlRight'));   // (Ctrl, Mac or PC)
     this.crouch = THREE.MathUtils.damp(this.crouch, wantCrouch ? 1 : 0, 12, dt);
     this.sprinting = allowControl && input.down('ShiftLeft') && fz < 0 && this.crouch < 0.3 && this.ads < 0.3;
     this.inWater = this.pools.some((pl) => this.pos.y < pl.water - 0.3 && pointInPoly(this.pos.x, -this.pos.z, pl.pts));

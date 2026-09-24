@@ -23,6 +23,7 @@ import { Stairs } from './game/stairs.js';
 import { Pickups } from './game/pickups.js';
 import { Underground } from './world/underground.js';
 import { NetUI } from './net/ui.js';
+import { Voice } from './net/voice.js';
 import { Host, Client } from './net/netgame.js';
 import { ticker } from './net/session.js';
 import { DEFS } from './game/weapons.js';
@@ -229,14 +230,14 @@ class Game {
     sens.value = settings.sens; vol.value = settings.vol; q.value = settings.quality;
     sens.oninput = () => { settings.sens = +sens.value; saveSettings(); };
     vol.oninput = () => { settings.vol = +vol.value; this.audio.setVolume(settings.vol); saveSettings(); };
-    q.onchange = () => { settings.quality = q.value; saveSettings(); location.reload(); };
+    q.onchange = () => { settings.quality = q.value; saveSettings(); this.reload(); };
     $('play').onclick = () => this.beginPlay();
     $('resume').onclick = () => { $('pause').classList.add('hidden'); this.input.lock(); this.state = 'playing'; };
     // leaving a co-op match: tell the others (the host leaving ends it for everyone)
-    const leave = () => { this.netui?.session.leave(); location.reload(); };
-    $('quit').onclick = () => (this.mode === 'solo' ? location.reload() : leave());
-    $('retry').onclick = () => (this.mode === 'host' && this.net ? this.net.start() : location.reload());
-    $('go-menu').onclick = () => (this.mode === 'solo' ? location.reload() : leave());
+    const leave = () => { this.netui?.session.leave(); this.reload(); };
+    $('quit').onclick = () => (this.mode === 'solo' ? this.reload() : leave());
+    $('retry').onclick = () => (this.mode === 'host' && this.net ? this.net.start() : this.reload());
+    $('go-menu').onclick = () => (this.mode === 'solo' ? this.reload() : leave());
     $('clicktoplay').onclick = () => this.input.lock();
     this.input.onLockChange = (locked) => {
       if (!locked && this.state === 'playing' && !URLFLAGS.autostart && !URLFLAGS.nolock) { this.state = 'paused'; $('pause').classList.remove('hidden'); }
@@ -266,6 +267,9 @@ class Game {
 
   // ---------------------------------------------------------------- co-op
   // the lobby connected us to a room (or we left it): the match controller for our role
+  // (our own reloads: no "leave the game?" question for those)
+  reload() { this.leaving = true; location.reload(); }
+
   attachSession(s) {
     // (not before the game has loaded: the controller says hello to the host when it's ready)
     if (!this.ready) return;
@@ -278,6 +282,7 @@ class Game {
     } else if ((s.state === 'idle' || s.state === 'ended') && this.net) {
       const inMatch = this.net.inMatch;
       this.net = null;
+      this.voice?.reset();
       if (inMatch && s.state === 'ended') this.netEnded(s.message);
     }
   }
@@ -345,7 +350,7 @@ class Game {
     $('go-sub').textContent = message || 'The connection to the match was lost.';
     $('retry').textContent = 'Back to the menu';
     $('retry').disabled = false;
-    $('retry').onclick = () => location.reload();
+    $('retry').onclick = () => this.reload();
     this.mode = 'solo';
   }
 
@@ -410,7 +415,7 @@ class Game {
     const n = this.net;
     this.hud.matchClock(n.role === 'host' ? n.msLeft() : n.msLeft);
     this.teamT = (this.teamT || 0) - dt;
-    if (this.teamT <= 0) { this.teamT = 0.2; this.hud.teamPanel(n.teamStates()); }
+    if (this.teamT <= 0) { this.teamT = 0.2; this.hud.teamPanel(n.teamStates(), this.voice ? this.voice.talkingSlots(this.localSlot ?? 0) : null); }
     this.hud.down(this.player.dead && this.state !== 'over' ? Math.max(1, n.localRespawnLeft) : 0);
     this.hud.el.hud.classList.toggle('down-state', this.player.dead);
     $('clicktoplay').classList.toggle('hidden', this.state !== 'playing' || this.input.locked || !!URLFLAGS.nolock);
@@ -521,6 +526,8 @@ class Game {
     const coop = this.mode !== 'solo' && this.net && this.net.inMatch;
     if (coop) this.net.frame(dt);
     if (this.mode === 'client') this.vehicles.update(dt, this.input, playing && !debugCam);
+    // voice chat: hold T (in a room, playing)
+    if (this.voice) this.voice.update(this.input, playing && !!this.net);
     if (playing || coop) {
       if (this.mode === 'solo') this.worldStep(dt);
       const armed = !this.vehicles.hidesWeapons;   // guns away while you drive a car or ride a bike
@@ -573,7 +580,15 @@ class Game {
 
 const game = new Game();
 window.__game = game;
-// co-op: the lobby in the menu and the network overlay
+// co-op: voice chat, the lobby in the menu and the network overlay
+game.voice = new Voice(game);
+// Crouch is Ctrl, and on Windows Ctrl+W closes the tab, which no page can stop: one careless W while
+// crouched. So while you're in a game, the browser asks before the page goes.
+addEventListener('beforeunload', (e) => {
+  if (game.leaving || !(game.state === 'playing' || (game.net && game.net.inMatch))) return;
+  e.preventDefault();
+  e.returnValue = '';
+});
 game.netui = new NetUI(game);
 window.__net = game.netui.session;
 game.load().then(() => game.start()).catch((e) => {

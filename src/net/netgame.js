@@ -124,6 +124,8 @@ export class Host {
     session.onPeerOpen = (id) => this.onJoin(id);
     session.onPeerClose = (id) => this.onLeave(id);
     session.sendAll('rel', { t: 'who' });   // anyone already connected: say hello when you're loaded
+    // our voice: to every client (our slot in it)
+    if (game.voice) game.voice.send = (buf) => { new Uint8Array(buf)[1] = this.slot; this.s.sendAll('unrel', buf); };
   }
 
   get slot() { return this.s.slot ?? 0; }
@@ -221,7 +223,9 @@ export class Host {
   // ---- messages from clients ----
   onMessage(id, kind, data) {
     if (data instanceof ArrayBuffer) {
-      if (kindOf(data) === MSG.INPUT) this.remotes.get(id)?.push(decodeInputs(data));
+      const k = kindOf(data);
+      if (k === MSG.INPUT) this.remotes.get(id)?.push(decodeInputs(data));
+      else if (k === MSG.VOICE) this.voiceIn(id, data);
       return;
     }
     const m = data, g = this.g, r = this.remotes.get(id);
@@ -266,6 +270,15 @@ export class Host {
       case 'exit': this.vehicleExit(r); break;
       default: break;
     }
+  }
+
+  // ---- voice: a client talks; we hear it and pass it on (its slot stamped in, not taken on trust) ----
+  voiceIn(id, buf) {
+    const r = this.remotes.get(id);
+    if (!r || buf.byteLength < 7) return;
+    new Uint8Array(buf)[1] = r.slot;
+    this.g.voice?.receive(buf);
+    for (const [rid] of this.remotes) if (rid !== id) this.s.sendTo(rid, 'unrel', buf);
   }
 
   // ---- vehicles: the host says who sits where ----
@@ -362,7 +375,8 @@ export class Host {
     g.worldStep(TICK);
     g.zombies.record(this.tick);
     this.lifeAndDeath(TICK);
-    if (this.tick % SNAP_EVERY === 0) this.snapshot();
+    // (30 a second; 20 to players on the relay, which counts every message)
+    if (this.tick % SNAP_EVERY === 0 || this.tick % 3 === 0) this.snapshot();
     this.scoreT -= TICK;
     if (this.scoreT <= 0) { this.scoreT = 1; this.scores(); }
   }
@@ -428,7 +442,12 @@ export class Host {
     const all = g.zombies.list.map((zb) => g.zombies.netState(zb));
     const vehicles = g.vehicles.list.filter((v) => v.driver != null || v.coasting).map(vehSnap);
     const flags = (d.state === 'intermission' ? SF.intermission : 0) | (this.match.over ? SF.over : 0);
+    // (effects go out with each player's snapshots, however often those are)
+    for (const r of this.remotes.values()) if (this.fx.length) (r.fxq || (r.fxq = [])).push(...this.fx);
+    this.fx = [];
     for (const r of this.remotes.values()) {
+      const link = this.s.peers.get(r.id);
+      if (this.tick % (link && link.relayed ? 3 : SNAP_EVERY)) continue;
       let zs = all;
       if (all.length > MAX_SNAP_ZOMBIES) {
         const p = r.player.pos;
@@ -436,8 +455,8 @@ export class Host {
       }
       const buf = encodeSnapshot({ tick: this.tick, ack: r.lastSeq, msLeft: this.msLeft(), wave: d.wave, flags, players, zombies: zs, vehicles });
       this.s.sendTo(r.id, 'unrel', buf);
+      if (r.fxq && r.fxq.length) { this.s.sendTo(r.id, 'unrel', { t: 'fx', l: r.fxq }); r.fxq = []; }
     }
-    if (this.fx.length) { this.s.sendAll('unrel', { t: 'fx', l: this.fx }); this.fx = []; }
   }
 
   scores() {
@@ -512,6 +531,8 @@ export class Client {
     this.team = [];
     this.msLeft = MATCH_MS;
     this.pendingStairs = null;
+    // our voice: to the host, who passes it on
+    if (game.voice) game.voice.send = (buf) => { new Uint8Array(buf)[1] = this.slot; this.s.sendTo(this.s.hostId, 'unrel', buf); };
     this.names = new Map();
     this.vstates = new Map();       // other players' vehicles: vid -> recent states
     session.onGame = (id, kind, data) => this.onMessage(kind, data);
@@ -523,7 +544,9 @@ export class Client {
 
   onMessage(kind, data) {
     if (data instanceof ArrayBuffer) {
-      if (kindOf(data) === MSG.SNAP && this.match) this.onSnapshot(decodeSnapshot(data));
+      const k = kindOf(data);
+      if (k === MSG.SNAP && this.match) this.onSnapshot(decodeSnapshot(data));
+      else if (k === MSG.VOICE) this.g.voice?.receive(data);
       return;
     }
     const m = data, g = this.g;
@@ -609,7 +632,9 @@ export class Client {
       this.simulate(cmd);
       this.hist.push({ cmd, x: p.pos.x, y: p.pos.y, z: p.pos.z, veh: this.vehOf(p) });
       if (this.hist.length > 240) this.hist.shift();
-      this.s.sendTo(this.s.hostId, 'unrel', encodeInputs(this.hist.slice(-INPUT_REDUNDANCY).map((h) => h.cmd)));
+      // (every tick; every other one over the relay: each packet carries the last 5 anyway)
+      const link = this.s.peers.get(this.s.hostId);
+      if (!(link && link.relayed) || cmd.seq % 2 === 0) this.s.sendTo(this.s.hostId, 'unrel', encodeInputs(this.hist.slice(-INPUT_REDUNDANCY).map((h) => h.cmd)));
     }
     if (n === 6) this.acc = 0;
     // the camera: between the last two ticks, plus what's left of a correction

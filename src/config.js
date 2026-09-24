@@ -19,6 +19,7 @@ export const URLFLAGS = {
   mpstart: params.has('mpstart') ? parseInt(params.get('mpstart'), 10) || 1 : null,
   nolock: params.has('nolock'),
   mptime: params.has('mptime') ? parseFloat(params.get('mptime')) : null,   // match length (s)
+  relay: params.has('relay'),   // co-op: through the server's relay from the start (Cloudflare), no direct attempt
 };
 
 export const QUALITY = {

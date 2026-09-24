@@ -297,19 +297,19 @@ export class HUD {
   nameOf(slot) { return (this.teamNames && this.teamNames.get(slot)) || `P${slot + 1}`; }
 
   // everyone's health and points, top left under the map (redrawn when something changes)
-  teamPanel(states) {
+  teamPanel(states, talking = null) {
     const el = document.getElementById('team');
     if (!el || !states) return;
     const rows = [...states].sort((a, b) => a.slot - b.slot).map((q) => {
       const sc = this.teamScores && this.teamScores.get(q.slot);
       const hp = Math.max(0, Math.round((q.health / (q.maxHealth || 100)) * 100));
-      return { slot: q.slot, me: q.me, dead: q.dead, hp, respawn: Math.ceil(q.respawn || 0), pts: sc ? sc[1] : null, kills: sc ? sc[2] : null };
+      return { slot: q.slot, me: q.me, dead: q.dead, hp, respawn: Math.ceil(q.respawn || 0), pts: sc ? sc[1] : null, kills: sc ? sc[2] : null, talk: !!(talking && talking.has(q.slot)) };
     });
     const key = JSON.stringify(rows);
     if (key === this.teamKey) return;
     this.teamKey = key;
     el.innerHTML = rows.map((r) => `<div class="mate${r.dead ? ' dead' : ''}${r.me ? ' me' : ''}"><i style="background:${SLOT_CSS[r.slot % 4]}"></i>`
-      + `<b>${esc(this.nameOf(r.slot))}${r.me ? ' (you)' : ''}</b>`
+      + `<b>${esc(this.nameOf(r.slot))}${r.me ? ' (you)' : ''}${r.talk ? ' <span class="talk">🔊</span>' : ''}</b>`
       + (r.dead ? `<span class="down">down · ${r.respawn}s</span>` : `<span class="hp"><em style="width:${r.hp}%"></em></span>`)
       + `<span class="pts">${r.pts ?? ''}</span></div>`).join('');
   }

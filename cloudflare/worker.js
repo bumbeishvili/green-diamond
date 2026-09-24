@@ -17,12 +17,13 @@ export default {
     setStore(new RoomStore(env));      // (the same bindings for every request in this isolate)
     const url = new URL(request.url);
     if (url.pathname === '/api/bell') return bell(request, env, url);
+    if (url.pathname === '/api/relay') return relay(request, env, url);
     const h = routes[url.pathname];
     if (!h) return env.ASSETS.fetch(request);
     const res = await h.fetch(request);
     if (url.pathname !== '/api/join' || res.status !== 200) return res;
-    // tell the players this server has a doorbell
-    return json({ ...(await res.json()), bell: true });
+    // tell the players this server has a doorbell, and a relay
+    return json({ ...(await res.json()), bell: true, relay: true });
   },
 };
 
@@ -30,6 +31,14 @@ function bell(request, env, url) {
   if (request.headers.get('Upgrade') !== 'websocket') return json({ error: 'WebSocket only' }, 426);
   const room = url.searchParams.get('room'), host = url.searchParams.get('host');
   if (!validKey(room) || !validId(host)) return json({ error: 'Bad request' }, 400);
+  return roomObject(env, room).fetch(request);
+}
+
+// a player's relay socket: to the room's object, which checks they're in the room
+function relay(request, env, url) {
+  if (request.headers.get('Upgrade') !== 'websocket') return json({ error: 'WebSocket only' }, 426);
+  const room = url.searchParams.get('room'), id = url.searchParams.get('id');
+  if (!validKey(room) || !validId(id)) return json({ error: 'Bad request' }, 400);
   return roomObject(env, room).fetch(request);
 }
 

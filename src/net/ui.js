@@ -70,9 +70,20 @@ export class NetUI {
         <label>Jitter <input data-sim="jitter" type="range" min="0" max="50" step="5" value="${sim.jitter}"><span data-f="jitter"></span></label>
         <label>Loss <input data-sim="loss" type="range" min="0" max="10" step="1" value="${Math.round(sim.loss * 100)}"><span data-f="lossPct"></span></label>
       </details>
-      <div class="net-foot">F8 hides this</div>`;
+      <div class="net-voice">Voice <select data-voice><option value="ptt">hold T to talk</option><option value="open">always on</option><option value="off">off</option></select><i data-f="voice"></i></div>
+      <div class="net-foot">F8 hides this · click a player to mute them</div>`;
     this.f = Object.fromEntries([...this.overlay.querySelectorAll('[data-f]')].map((e) => [e.dataset.f, e]));
     this.tbody = this.overlay.querySelector('tbody');
+    // voice: the mode, and muting a player by clicking their row
+    const vsel = this.overlay.querySelector('[data-voice]');
+    if (game.voice) vsel.value = game.voice.mode;
+    vsel.addEventListener('change', () => { game.voice?.setMode(vsel.value); this.render(); });
+    this.tbody.addEventListener('click', (e) => {
+      const tr = e.target.closest('tr[data-slot]');
+      if (!tr || !game.voice) return;
+      game.voice.toggleMute(+tr.dataset.slot);
+      this.render();
+    });
     this.overlay.addEventListener('input', (e) => {
       const k = e.target.dataset.sim;
       if (!k) return;
@@ -123,7 +134,7 @@ export class NetUI {
     f.tick.textContent = s.state !== 'connected' ? s.state
       : net && net.inMatch ? (net.role === 'host' ? `tick ${TICK_HZ} Hz · snap 30 Hz` : `snap ${Math.round(snaps)} Hz`)
         : `tick ${loc ? Math.round(loc.hz) : 30} Hz`;
-    f.ping.textContent = `ping ${loc && s.role === 'client' ? `${loc.ping} ms` : '—'}`;
+    f.ping.textContent = `ping ${loc && s.role === 'client' ? `${loc.ping} ms${loc.relay ? ' (relay)' : ''}` : '—'}`;
     f.loss.textContent = `loss ${loc && s.role === 'client' ? `${(loc.loss * 100).toFixed(1)}%` : '—'}`;
     f.sim.textContent = sim.on ? `on: +${sim.lag} ms ±${sim.jitter}, ${Math.round(sim.loss * 100)}% loss` : '';
     for (const inp of this.overlay.querySelectorAll('[data-sim]')) {
@@ -132,6 +143,8 @@ export class NetUI {
     f.lag.textContent = `${sim.lag} ms`;
     f.jitter.textContent = `±${sim.jitter} ms`;
     f.lossPct.textContent = `${Math.round(sim.loss * 100)}%`;
+    const v = g.voice;
+    f.voice.textContent = !v ? '' : v.state === 'unsupported' ? ' not in this browser' : v.state === 'denied' ? ' microphone blocked' : v.talking ? ' 🎙 talking' : v.state === 'asking' ? ' asking for the mic…' : '';
 
     const hostId = s.role === 'host' ? s.id : s.hostId;
     const players = s.roster.length ? s.roster : [{ id: s.id, slot: s.slot ?? 0 }];
@@ -146,9 +159,10 @@ export class NetUI {
       const t = s.table[p.id] || {};
       const isHost = p.id === hostId;
       const tags = [isHost ? 'host' : '', p.id === s.id ? 'you' : ''].filter(Boolean).join(' · ');
-      const ping = isHost ? '—' : t.ping != null ? `${t.ping} ms` : '…';
+      const ping = isHost ? '—' : t.ping != null ? `${t.ping} ms${t.relay ? ' ⇄' : ''}` : '…';
       const loss = isHost ? '—' : t.loss != null ? `${(t.loss * 100).toFixed(1)}%` : '…';
-      rows.push(`<tr class="${p.id === s.id ? 'me' : ''}"><td>P${slot + 1}</td><td>${tags}</td><td class="n">${ping}</td><td class="n">${loss}</td></tr>`);
+      const muted = g.voice && g.voice.muted.has(slot);
+      rows.push(`<tr class="${p.id === s.id ? 'me' : ''}"${p.id === s.id ? '' : ` data-slot="${slot}"`}><td>P${slot + 1}</td><td>${tags}${muted ? ' 🔇' : ''}</td><td class="n">${ping}</td><td class="n">${loss}</td></tr>`);
     }
     this.tbody.innerHTML = rows.join('');
   }
