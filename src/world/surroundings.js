@@ -108,7 +108,9 @@ export async function buildSurroundings(level, scene, atmo, backdropSites) {
   towers.forEach(([x, y, w, d, ang, lv], i) => {
     const h = lv * 3.1 + 1.5;
     e.set(0, ang, 0); q.setFromEuler(e);
-    m4.compose(p.set(x, terrainH(x, y) - 1, -y), q, s.set(w, h, d));
+    // (neighbours that share a wall would flicker where their faces coincide: none quite the same size)
+    const k = 1 + (((i * 7919) % 9) - 4) * 0.006;
+    m4.compose(p.set(x, terrainH(x, y) - 1, -y), q, s.set(w * k, h, d * (2 - k)));
     sky.setMatrixAt(i, m4);
     sky.setColorAt(i, c.setHex(cols[(i * 7919) % cols.length]).convertSRGBToLinear());
   });
@@ -166,9 +168,11 @@ export async function buildSurroundings(level, scene, atmo, backdropSites) {
     const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
   })();
   const turfMat = new THREE.MeshStandardMaterial({ map: turf, roughness: 0.95 });
-  const lineMat = new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: 0.8, polygonOffset: true, polygonOffsetFactor: -2 });
-  const lotMat = new THREE.MeshStandardMaterial({ color: 0x5c5d60, roughness: 0.95 });
-  const sportsMat = new THREE.MeshStandardMaterial({ color: 0xa9a8a2, roughness: 0.95 });
+  // (these lie centimetres over the ground and the streets: each drawn a fixed step behind what's
+  // on top of it, or far off they flicker through each other)
+  const lineMat = new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: 0.8, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -3 });
+  const lotMat = new THREE.MeshStandardMaterial({ color: 0x5c5d60, roughness: 0.95, polygonOffset: true, polygonOffsetFactor: 0.5, polygonOffsetUnits: 1 });
+  const sportsMat = new THREE.MeshStandardMaterial({ color: 0xa9a8a2, roughness: 0.95, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 2 });
   const fieldG = { turf: [], line: [], lot: [], sports: [] };
   const poles = [];
   for (const f of level.surroundings.features) {

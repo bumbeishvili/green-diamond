@@ -1,4 +1,4 @@
-import { DEFS, CATS } from './weapons.js';
+import { DEFS, CATS, UPGRADES } from './weapons.js';
 
 const SLOT_CSS = ['#3fa7ff', '#5fd35f', '#ffa23a', '#c77dff'];
 
@@ -33,8 +33,9 @@ export class HUD {
 
   toggleKeys() { const k = document.getElementById('keys'); if (k) k.classList.toggle('off'); }
 
-  weapon(def, ammo) {
-    this.el.ammoName.textContent = def.name;
+  weapon(def, ammo, level = 0) {
+    this.el.ammoName.textContent = level ? `${def.name} ${UPGRADES[level - 1].name}` : def.name;
+    this.el.ammoName.classList.toggle('upgraded', level > 0);
     if (def.melee) {
       this.el.mag.textContent = '—';
       this.el.mag.classList.remove('low');
@@ -138,8 +139,15 @@ export class HUD {
     c.children[3].style.transform = `translateX(${px}px)`;
   }
 
-  health(h, max) {
+  health(h, max, armour = 0) {
     const f = Math.max(0, h / max);
+    // armour: a longer bar (more to lose) in steel blue, with a pip per level
+    if (this.lastMax !== max || this.lastArmour !== armour) {
+      this.lastMax = max; this.lastArmour = armour;
+      this.el.health.style.width = `${Math.round(220 * Math.max(1, max / 100) ** 0.85)}px`;
+      this.el.health.classList.toggle('armoured', armour > 0);
+      this.el.health.dataset.armour = armour ? '◆'.repeat(armour) : '';
+    }
     this.el.healthBar.style.width = `${f * 100}%`;
     this.el.health.classList.toggle('low', f < 0.35);
     this.el.lowhp.style.opacity = f < 0.5 ? (0.5 - f) * 1.8 : 0;
@@ -214,7 +222,8 @@ export class HUD {
     ctx.save();
     ctx.clearRect(0, 0, W, H);
     ctx.translate(W / 2, H / 2);
-    if (!big) ctx.rotate(player.yaw);
+    const yaw = player.mapYaw ?? player.yaw;   // (in a car: the way the car points)
+    if (!big) ctx.rotate(yaw);
     const px = player.pos.x, py = -player.pos.z;
     const k = scale / this.mapScale;
     if (big) {
@@ -259,7 +268,7 @@ export class HUD {
     if (big) {
       const [ax, az] = toMap(player.pos.x, player.pos.z);
       ctx.translate(ax, az);
-      ctx.rotate(-player.yaw);
+      ctx.rotate(-yaw);
     }
     ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = 'rgba(0,0,0,0.6)'; ctx.lineWidth = 1.5;

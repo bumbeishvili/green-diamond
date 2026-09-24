@@ -15,17 +15,19 @@ It has to be served over http. Opening `index.html` as a file won't work.
 
 ### Play with friends (co-op)
 
-Up to 4 players fight the waves together. Everyone opens the game, types their name and the same
-password under **Play with friends**, and presses **Join**. The first one in hosts. When everyone is
-in, the host presses **Start match**. Two players is enough, and friends can join a match that's
-already running (they turn up next to the team).
+Up to 4 players fight the waves together. Under **Play with friends**, type your name, leave the
+password empty and press **Create room**. Then press **Copy link** and send it to your friends: they
+open it, type their name and press **Join**. (Or everyone types the same password and presses
+**Join**; the first one in hosts.) When everyone is in, the host presses **Start match**. Two players
+is enough, and friends can join a match that's already running (they turn up next to the team).
 
 - **The match**: hold out for 10 minutes (the clock is at the top). The waves grow with the team.
 - **Going down**: you come back after 15 seconds, next to a teammate. If the whole team is down at
   once, it's over.
 - **Points and shops**: everyone has their own points, weapons and ammo. Power-ups (max ammo,
   insta-kill, double points, nuke) work for the whole team.
-- **In co-op, the cars, bikes and drones stay parked** (driving is single-player for now).
+- **Cars, motorbikes and drones**: one player per vehicle, and whoever gets in first has it. Your
+  teammates see you drive, and running zombies down earns you the points.
 - **Esc** opens the menu, but the match goes on around you. If the host leaves, the match ends
   for everyone.
 
@@ -47,7 +49,10 @@ How it works:
   second.
 - Your own movement is predicted on your screen; when the host disagrees, you take its position and
   replay the inputs it hasn't seen yet, blended in over a few frames. Zombies and teammates are
-  drawn 100 ms in the past, between two snapshots.
+  drawn 100 ms in the past, between two snapshots. Vehicles work the same way: the host drives
+  everyone's from their inputs, and you predict your own.
+- An invite link carries the room code after the `#`, which browsers never send to a server. A room
+  made with **Create room** gets a random 14-character code.
 - Lag compensation: shots are checked against where the zombies were on the shooter's screen, up
   to 300 ms back.
 - The server only introduces players to each other. On Vercel, `api/` holds four small functions
@@ -59,6 +64,18 @@ How it works:
 - The only outside service is Google's public STUN server. There is no relay (TURN), so a network
   that blocks direct connections gets a clear "can't connect from this network" message after
   about 15 seconds; a phone hotspot usually works.
+
+It also runs on Cloudflare, as one Worker (`wrangler.jsonc`, `cloudflare/`). The static files come
+straight from Workers static assets (`.assetsignore` lists what isn't served). The same four
+functions from `api/` run in the Worker, but each room lives in its own Durable Object instead of
+Blob, on the free plan. The room also works as a doorbell: the host keeps a WebSocket open to it,
+and any change to the room rings it. So the host doesn't poll, and a friend's offer is answered
+within milliseconds.
+
+```sh
+npx wrangler dev --persist-to /tmp/gd-wrangler   # local, http://127.0.0.1:8787 (keeps its state out of the folder it serves)
+npx wrangler deploy                              # then once: npx wrangler secret put ROOM_SECRET
+```
 
 ### Controls (laptop / trackpad friendly)
 
@@ -147,6 +164,7 @@ index.html, src/          the game (ES modules, no build step)
   game/                   player, weapons, zombies, vehicles, stairs, pickups, pathfinding, waves, HUD, audio
   net/                    multiplayer: WebRTC links, session, network simulator, lobby and overlay
 api/                      Vercel Functions for the multiplayer handshake (Vercel Blob storage)
+cloudflare/               the same on Cloudflare: Worker + one Durable Object per room (wrangler.jsonc)
 data/                     generated level, heightmap, terrain, skyline
 assets/                   models, textures, audio (see the CREDITS files)
 tools/build_level.py      OSM -> data/level.json + heightmap (python3, shapely)

@@ -113,10 +113,53 @@ export class Audio {
       p.positionX ? (p.positionX.value = opts.pos.x, p.positionY.value = opts.pos.y, p.positionZ.value = opts.pos.z)
         : p.setPosition(opts.pos.x, opts.pos.y, opts.pos.z);
       g.connect(p).connect(this.master);
+      g._panner = p;
     } else {
       g.connect(this.master);
     }
     return g;
+  }
+
+  // A sound that runs as long as something goes on (tyres squealing, metal scraping), louder or
+  // quieter as it does: .set(level 0..1, pos, speed), .stop()
+  loopSound(kind, pos) {
+    if (!this.ctx) return null;
+    const c = this.ctx, t = c.currentTime;
+    const out = this.route({ pos, vol: 1, ref: 5 });
+    const gain = c.createGain(); gain.gain.value = 0;
+    gain.connect(out);
+    const src = c.createBufferSource(); src.buffer = this.noise; src.loop = true;
+    const f = c.createBiquadFilter(); f.type = 'bandpass';
+    const nodes = [src];
+    let howl = null;
+    if (kind === 'screech') {
+      // rubber: a narrow band of noise plus a howling tone that wavers
+      f.frequency.value = 1500; f.Q.value = 9;
+      src.connect(f).connect(gain);
+      const o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 820;
+      const of = c.createBiquadFilter(); of.type = 'bandpass'; of.frequency.value = 1100; of.Q.value = 3;
+      const og = c.createGain(); og.gain.value = 0.18;
+      const lfo = c.createOscillator(); lfo.frequency.value = 7; const lg = c.createGain(); lg.gain.value = 45;
+      lfo.connect(lg).connect(o.frequency);
+      o.connect(of).connect(og).connect(gain);
+      o.start(t); lfo.start(t); nodes.push(o, lfo);
+      howl = o;
+    } else {
+      // metal dragging on concrete: gritty, band-limited noise
+      f.frequency.value = 2400; f.Q.value = 1.4;
+      const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 700;
+      src.connect(f).connect(hp).connect(gain);
+    }
+    src.start(t);
+    const pan = out._panner;
+    return {
+      set(level, p, speed) {
+        gain.gain.setTargetAtTime(level * (kind === 'screech' ? 0.55 : 0.7), c.currentTime, 0.05);
+        if (howl) { f.frequency.setTargetAtTime(1300 + Math.min(20, speed) * 25, c.currentTime, 0.1); howl.frequency.setTargetAtTime(700 + Math.min(20, speed) * 18, c.currentTime, 0.1); }
+        if (pan && p) { if (pan.positionX) { pan.positionX.value = p.x; pan.positionY.value = p.y; pan.positionZ.value = p.z; } else pan.setPosition(p.x, p.y, p.z); }
+      },
+      stop() { gain.gain.setTargetAtTime(0, c.currentTime, 0.05); setTimeout(() => { for (const n of nodes) { try { n.stop(); } catch { /* stopped */ } } out.disconnect(); }, 300); },
+    };
   }
 
   makeNoise() {
@@ -215,6 +258,37 @@ export class Audio {
       case 'clink': env(tone('triangle', 2100 + Math.random() * 400, 1800, 0.08), 0.001, 0.35, 0.08); break;
       case 'heal': env(tone('sine', 520, 880, 0.35), 0.01, 0.3, 0.35); env(tone('sine', 780, 1320, 0.3), 0.06, 0.18, 0.3); break;
       case 'cash': env(tone('square', 1320, 1318, 0.06), 0.002, 0.15, 0.06); env(tone('square', 1760, 1758, 0.12), 0.07, 0.15, 0.12); break;
+      // a car hitting something: a thump, crunching metal, a ring as the panels settle
+      case 'crash': {
+        env(tone('sine', 95, 38, 0.3), 0.002, 0.9, 0.3);
+        env(noise(1300, 0.9), 0.002, 1.0, 0.28);
+        env(noise(2600 + Math.random() * 900, 7, 'bandpass'), 0.004, 0.35, 0.5);
+        break;
+      }
+      case 'crashBig': {
+        env(tone('sine', 80, 26, 0.6), 0.002, 1.3, 0.6);
+        env(noise(900, 0.8), 0.002, 1.5, 0.55);
+        env(noise(2200, 1.5, 'bandpass'), 0.02, 0.7, 0.7);
+        for (let k = 0; k < 3; k++) {
+          const f = noise(1800 + Math.random() * 2600, 9, 'bandpass'), g = c.createGain(), t0 = t + 0.05 + k * 0.09 + Math.random() * 0.05;
+          g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.45, t0 + 0.005); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.45);
+          f.connect(g).connect(out);
+        }
+        break;
+      }
+      // glass going: a burst, then tinkling bits
+      case 'glass': {
+        env(noise(5200, 0.9, 'highpass'), 0.001, 0.8, 0.25);
+        for (let k = 0; k < 7; k++) {
+          const o = c.createOscillator(), g = c.createGain(), t0 = t + 0.04 + Math.random() * 0.6;
+          o.type = 'triangle'; o.frequency.value = 2600 + Math.random() * 3600;
+          g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.12 + Math.random() * 0.12, t0 + 0.003); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.09);
+          o.connect(g).connect(out); o.start(t0); o.stop(t0 + 0.12);
+        }
+        break;
+      }
+      // a piece of car landing
+      case 'clank': env(noise(1900 + Math.random() * 800, 5, 'bandpass'), 0.001, 0.6, 0.18); env(tone('triangle', 320, 180, 0.12), 0.001, 0.3, 0.12); break;
       case 'waveSoft': {
         env(tone('sine', 70, 38, 1.4), 0.01, 0.55, 1.4);
         const d = tone('sawtooth', 55, 52, 2.2); const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 180; d.connect(f); env(f, 0.35, 0.18, 1.8);

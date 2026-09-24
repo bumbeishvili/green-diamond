@@ -59,6 +59,8 @@ function mergeCar(scene) {
     if (g.index) g = g.toNonIndexed();
     const n = g.attributes.position.count;
     const col = new Float32Array(n * 3), paint = new Float32Array(n);
+    // (the wheels, so a crash can take one off: the models name their wheel meshes)
+    const wheel = new Float32Array(n).fill(/wheel|tire|tyre|rim/i.test(`${o.name} ${o.parent ? o.parent.name : ''} ${o.geometry.name || ''}`) ? 1 : 0);
     const groups = g.groups.length ? g.groups : [{ start: 0, count: n, materialIndex: 0 }];
     for (const gr of groups) {
       const m = mats[gr.materialIndex] || mats[0];
@@ -75,6 +77,7 @@ function mergeCar(scene) {
     if (!g.attributes.normal) g.computeVertexNormals();
     g.setAttribute('color', new THREE.BufferAttribute(col, 3));
     g.setAttribute('aPaint', new THREE.BufferAttribute(paint, 1));
+    g.setAttribute('aWheel', new THREE.BufferAttribute(wheel, 1));
     g.clearGroups();
     parts.push(g);
   });
@@ -129,6 +132,10 @@ export async function loadModels(onProgress = () => {}) {
     geo.scale(k, k, k);
     out.cars.push({ name, geometry: geo });
   }));
+  // in the catalogue's order, not the order they arrived in: a parked car is the same model (and
+  // drives the same way) on every screen in co-op
+  const order = Object.keys(CARS);
+  out.cars.sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name));
 
   const wr = await load('assets/models/cars/car_wrecked.glb');
   tick();

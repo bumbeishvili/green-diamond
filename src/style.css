@@ -102,6 +102,12 @@ canvas#game { position: fixed; inset: 0; width: 100vw; height: 100vh; display: b
 #health { position: absolute; left: 36px; bottom: 136px; width: 220px; height: 8px; background: rgba(0,0,0,.55); box-shadow: 0 0 0 1px rgba(255,255,255,.12); }
 #health-bar { height: 100%; width: 100%; background: linear-gradient(90deg, #d8d2c4, #fff); transition: width .15s; }
 #health.low #health-bar { background: linear-gradient(90deg, #7a0000, #e11); }
+#health { transition: width .4s; }
+#health.armoured { box-shadow: 0 0 0 1px rgba(120,180,255,.55), 0 0 8px rgba(90,160,255,.35); }
+#health.armoured #health-bar { background: linear-gradient(90deg, #8fb4e8, #e8f1ff); }
+#health.armoured.low #health-bar { background: linear-gradient(90deg, #7a0000, #e11); }
+#health::after { content: attr(data-armour); position: absolute; left: 0; top: -15px; font-size: 11px; letter-spacing: 3px; color: #9cc3ff; text-shadow: 0 1px 2px #000; }
+#ammo-name.upgraded { color: #ffd36b; }
 #ammo { position: absolute; right: 36px; bottom: 26px; display: flex; align-items: baseline; gap: 10px; text-shadow: 0 2px 0 #000; }
 #ammo-name { font-family: var(--body); font-size: 14px; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; margin-right: 6px; }
 #ammo-mag { font-size: 64px; color: #fff; }
@@ -222,3 +228,7 @@ canvas#game { position: fixed; inset: 0; width: 100vw; height: 100vh; display: b
 #go-stats.table span { text-align: right; }
 #go-stats.table span.n { text-align: left; font-weight: 600; }
 #gameover h2.win { color: #e8f5ea; text-shadow: 0 0 24px rgba(63, 208, 122, .45), 0 4px 0 #0b3d22; }
+#mp #mp-pass { width: 250px; }
+#mp-invite { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); flex-wrap: wrap; justify-content: center; }
+#mp-invite #mp-link { width: 330px; background: #101214; color: #9fe0b4; border: 1px solid #2f4a38; padding: 7px 9px; font: 12px ui-monospace, Menlo, Consolas, monospace; }
+#mp .mp-title.invited { color: #9fe0b4; }

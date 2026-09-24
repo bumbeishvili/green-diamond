@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { DEFS } from './weapons.js';
+import { DEFS, UPGRADES } from './weapons.js';
+import { ARMOUR } from './player.js';
 import { pointInPoly } from '../world/geom.js';
 
 // Rules of the survival mode: waves and what's in them, spawning, points, power-ups and the shops.
@@ -51,8 +52,9 @@ export class Director {
     add(byName('Assorti'), 'm4', 'M4A1 at Assorti', DEFS.m4.price);
     add(byName('Diamond'), 'deagle', 'Desert Eagle at the Diamond salon', DEFS.deagle.price);
     add(byName('Nikora'), 'shotgun', 'TOZ-194 shotgun at Nikora', DEFS.shotgun.price);
-    add(byName('Ori Nabiji'), 'ammo', 'Ammo and grenades at 2 Nabiji', 600);
-    add(byName('36.6'), 'health', 'Pharmacy 36.6: more health', 2500);
+    // (ammo is only at the crate by the pool house; the gunsmith's bench and the armour are shops of their own)
+    add(byName('Ori Nabiji'), 'upgrade', 'Gunsmith\'s bench behind 2 Nabiji', 0);
+    add(byName('36.6'), 'armour', 'Pharmacy 36.6: body armour', 0);
     add(byName('Format Fit'), 'stamina', 'Format Fit: faster legs', 2000);
     add(byName('TBC Bank'), 'double', 'TBC terminal: double points (30 s)', 1200);
     // the security booths: Gate 2 sells the Dragunov, Gate 1 the M60 (buy on the courtyard side)
@@ -65,7 +67,7 @@ export class Director {
     const poolHouse = L.buildings.find((b) => b.group === 'small' && L.court_mid && pointInPoly(...centroid(b.poly.outer), L.court_mid.outer));
     if (poolHouse) {
       const [cx, cy] = centroid(poolHouse.poly.outer);
-      S.push({ x: cx, z: -cy, item: 'ammo', label: 'Ammo crate by the pool house', cost: 750, crate: true });
+      S.push({ x: cx, z: -cy, item: 'ammo', label: 'Ammo crate by the pool house: every gun full, and grenades', cost: 750, crate: true });
     }
     // the compound bow: a crate at the south gate of the stadium
     const stadium = (L.sport || []).find((c) => c.kind === 'court_round');
@@ -151,34 +153,63 @@ export class Director {
 
   isGun(item) { return !!DEFS[item] && !DEFS[item].melee; }
 
+  // what it costs you now (null: nothing to buy here right now)
   cost(s) {
-    return this.isGun(s.item) && this.g.weapons.owned[s.item] ? Math.round(s.cost / 2) : s.cost;
+    const w = this.g.weapons, p = this.g.player;
+    if (s.item === 'upgrade') { const l = w.level(w.current); return w.canUpgrade(w.current) && l < UPGRADES.length ? UPGRADES[l].price : null; }
+    if (s.item === 'armour') return p.armour < ARMOUR.length ? ARMOUR[p.armour].price : null;
+    if (this.isGun(s.item) && w.owned[s.item]) return null;   // (you have it: ammo is at the crate)
+    if (s.item === 'stamina' && p.speedMul > 1) return null;
+    return s.cost;
+  }
+
+  // what the shop offers you, in words
+  offer(s) {
+    const w = this.g.weapons, p = this.g.player, def = DEFS[w.current];
+    if (s.item === 'upgrade') {
+      if (!w.canUpgrade(w.current)) return 'Gunsmith: take out a gun to upgrade it';
+      const l = w.level(w.current);
+      if (l >= UPGRADES.length) return `Gunsmith: the ${def.short} is fully upgraded (${UPGRADES[l - 1].name})`;
+      const more = Math.round((UPGRADES[l].dmg / (l ? UPGRADES[l - 1].dmg : 1) - 1) * 100);
+      return `Gunsmith: ${def.short} to ${UPGRADES[l].name} (+${more}% damage, more ammo)`;
+    }
+    if (s.item === 'armour') {
+      if (p.armour >= ARMOUR.length) return `Pharmacy 36.6: you have the best armour (${ARMOUR[ARMOUR.length - 1].name})`;
+      const a = ARMOUR[p.armour];
+      return `Pharmacy 36.6: body armour ${a.name}: ${a.max} health, ${Math.round((1 - a.take) * 100)}% less damage`;
+    }
+    if (this.isGun(s.item) && w.owned[s.item]) return `You have the ${DEFS[s.item].short}: ammo is at the crate by the pool house`;
+    if (s.item === 'stamina' && p.speedMul > 1) return 'Format Fit: already done';
+    return s.label;
   }
 
   tryBuy(s) {
     const g = this.g, w = g.weapons;
     const cost = this.cost(s);
-    // co-op: points are kept by the host; it says yes (buyOk) or no
-    if (g.mode === 'client') {
-      if (this.points < cost) { g.audio.play('empty'); return; }
-      g.net.buy(this.stations.indexOf(s), cost, !!(this.isGun(s.item) && w.owned[s.item]));
-      return;
-    }
-    if (s.item === 'health' && g.player.maxHealth >= 150) return g.hud.banner('Already bought', '');
-    if (s.item === 'stamina' && g.player.speedMul > 1) return g.hud.banner('Already bought', '');
+    if (cost == null) return;
     if (this.points < cost) { g.audio.play('empty'); return; }
+    // co-op: points are kept by the host; it says yes (buyOk) or no
+    if (g.mode === 'client') { g.net.buy(this.stations.indexOf(s), cost, !!(this.isGun(s.item) && w.owned[s.item]), w.current); return; }
     this.addPoints(-cost, true);
-    this.bought(s.item);
+    this.bought(s.item, { w: w.current });
     if (s.item === 'double') this.g.net?.teamDouble();
   }
 
   // what a purchase does for the local player (on a client, once the host said yes)
-  bought(item) {
+  bought(item, m = {}) {
     const g = this.g, w = g.weapons;
     g.audio.play('buy');
     if (this.isGun(item)) w.give(item);
     else if (item === 'ammo') w.refillAll();
-    else if (item === 'health') { g.player.maxHealth = 150; g.player.health = 150; }
+    else if (item === 'upgrade') {
+      const k = m.w || w.current;
+      w.upgrade(k);
+      g.hud.banner(`${DEFS[k].short} ${UPGRADES[w.level(k) - 1].name}`, `${Math.round(UPGRADES[w.level(k) - 1].dmg * 100 - 100)}% more damage, more ammo`);
+    } else if (item === 'armour') {
+      g.player.setArmour(g.player.armour + 1);
+      const a = ARMOUR[g.player.armour - 1];
+      g.hud.banner(`Body armour ${a.name}`, `${a.max} health, ${Math.round((1 - a.take) * 100)}% less damage from every hit`);
+    }
     else if (item === 'stamina') g.player.speedMul = 1.18;
     else if (item === 'double') this.double = 30;
   }
@@ -460,11 +491,12 @@ export class Director {
     const g = this.g;
     const s = this.nearestStation();
     if (s && !g.player.dead) {
-      const owned = this.isGun(s.item) && g.weapons.owned[s.item];
-      const cost = this.cost(s);
-      const what = owned ? `Ammo for the ${DEFS[s.item].name}` : s.label;
-      g.hud.prompt(`Press <b>F</b> — ${what} <b>[${cost}]</b>${this.points < cost ? ' <span style="color:#ff6b6b">not enough points</span>' : ''}`, 3);
-      if (g.input.hit('KeyF')) { g.input.pressed.delete('KeyF'); this.tryBuy(s); }
+      const cost = this.cost(s), what = this.offer(s);
+      if (cost == null) g.hud.prompt(what, 3);
+      else {
+        g.hud.prompt(`Press <b>F</b> — ${what} <b>[${cost}]</b>${this.points < cost ? ' <span style="color:#ff6b6b">not enough points</span>' : ''}`, 3);
+        if (g.input.hit('KeyF')) { g.input.pressed.delete('KeyF'); this.tryBuy(s); }
+      }
     }
     for (const m of this.stationMeshes) m.rotation.z += dt;
   }

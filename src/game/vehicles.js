@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { pointInPoly, polyCentroid } from '../world/geom.js';
+import { Crashes } from './crash.js';
 
 // Enterable vehicles: every parked car, a few motorbikes and personal drones.
 //  F        get in / out (stand next to it)
@@ -7,15 +8,23 @@ import { pointInPoly, polyCentroid } from '../world/geom.js';
 // Cars and bikes are driven from one high chase camera looking down on them, with your guns put
 // away: you run the dead down instead. Inside a car nothing can touch you; on a bike only once you
 // slow to a crawl. The drone is flown first-person and you can shoot from it.
+// Co-op: the host decides who sits where (enter/exit go through it) and drives every vehicle from
+// its driver's inputs; a client predicts its own vehicle the same way it predicts walking.
 
 // accel/brake in m/s², speeds in m/s; steer = most the front wheel turns (rad), steerRate = how fast
 // it gets there (rad/s); grip = most sideways acceleration the tyres hold (m/s²): at speed that,
 // not the wheel, limits how tight you can turn
+// Crashes: latGrip = how hard sliding tyres pull the sideways speed down (m/s²); spinFric and
+// spinDamp = how the tyres scrub away a spin (rad/s² and 1/s); inertia = the body's turning
+// inertia per unit mass (m², ~ (length² + width²) / 12); bounce = restitution against walls (the
+// crumple zone eats the rest); wallFric = how much a wall grabs a car sliding along it.
 const SPEC = {
   car: { accel: 4.2, brake: 10, reverse: 3, vmax: 20, vrev: 5.5, roll: 0.35, drag: 0.012, wheelbase: 2.7, steer: 0.5, steerRate: 1.2, grip: 7,
-    circles: [-1.45, 0, 1.45], radius: 0.95, hw: 2.2, hd: 0.92, seat: [0.05, 1.12, -0.38], step: 0.45, exitSide: 1.6, mass: 1 },
+    circles: [-1.45, 0, 1.45], radius: 0.95, hw: 2.2, hd: 0.92, seat: [0.05, 1.12, -0.38], step: 0.45, exitSide: 1.6, mass: 1,
+    latGrip: 8.5, spinFric: 2.4, spinDamp: 0.8, inertia: 1.9, bounce: 0.28, wallFric: 0.45 },
   bike: { accel: 5.5, brake: 12, reverse: 1.5, vmax: 24, vrev: 2.5, roll: 0.3, drag: 0.01, wheelbase: 1.45, steer: 0.38, steerRate: 1.7, grip: 8.5,
-    circles: [-0.6, 0.6], radius: 0.42, hw: 1.0, hd: 0.35, seat: [-0.15, 1.28, 0], step: 0.55, exitSide: 1.0, mass: 0.35 },
+    circles: [-0.6, 0.6], radius: 0.42, hw: 1.0, hd: 0.35, seat: [-0.15, 1.28, 0], step: 0.55, exitSide: 1.0, mass: 0.35,
+    latGrip: 7.5, spinFric: 4.5, spinDamp: 1.6, inertia: 0.35, bounce: 0.32, wallFric: 0.5 },
   drone: { accel: 10, vmax: 14, vUp: 6.5, radius: 1.35, hw: 1.3, hd: 1.3, seat: [0, 1.2, 0], ceiling: 90, exitSide: 1.8 },
 };
 
@@ -145,14 +154,19 @@ export class Vehicles {
   constructor(game) {
     this.g = game;
     this.list = [];      // bikes, drones and any car that has been driven
-    this.active = null;
+    this.active = null;  // the one we're in
+    this.nextVid = 0;    // network ids: in spawn order (the same everywhere); lot cars 1000 + index
     this.tmp = new THREE.Vector3();
     this.hud = document.getElementById('vhud');
     this.roofs = game.player.roofs;
+    this.crash = new Crashes(game);
+    this.kick = new THREE.Vector3();       // the chase camera's jolt after a crash
+    this.kickVel = new THREE.Vector3();
   }
 
   setup(models) {
     const g = this.g;
+    this.models = models;
     // parked car records come from the car lot (props.js)
     this.lot = g.props.cars;
     // bikes and drones on free spots near a few landmarks
@@ -193,11 +207,27 @@ export class Vehicles {
   }
 
   spawnHero(kind, src, x, z, heading) {
-    const g = this.g, spec = HEROES[kind];
+    const g = this.g;
     // whoever was parked there has gone
     for (const c of this.lot.cars) {
       if (!c.taken && Math.hypot(c.x - x, c.z - z) < 1.5) { c.taken = true; if (c.col) { c.col.walk = false; c.col.shoot = false; } }
     }
+    const h = this.heroMesh(kind, src);
+    g.scene.add(h.mesh);
+    const v = this.makeRecord('car', h.mesh, x, z, heading, {
+      hero: kind, wheels: h.wheels, front: h.front, wheelR: h.wheelR, lights: h.lights, vid: this.nextVid++, paint: h.paint,
+    });
+    this.park(v);
+    this.list.push(v);
+    this.heroes[kind] = v;
+    if (kind === 'prius') this.prius = v;
+    return v;
+  }
+
+  // One detailed car, ready to drive: clear-coated paint, glass, lamps that light, its plates,
+  // wheels that turn. (Also how a wrecked one is put back together for a new match.)
+  heroMesh(kind, src) {
+    const spec = HEROES[kind];
     const mesh = new THREE.Group();
     const car = src.clone(true);
     mesh.add(car);
@@ -206,6 +236,7 @@ export class Vehicles {
     car.traverse((o) => {
       if (!o.isMesh) return;
       o.castShadow = true; o.receiveShadow = true;
+      o.geometry.userData.shared = true;   // (the model's: never disposed with a piece that came off)
       const mats = Array.isArray(o.material) ? o.material : [o.material];
       const out = mats.map((m) => {
         if (upgraded.has(m)) return upgraded.get(m);
@@ -241,15 +272,8 @@ export class Vehicles {
     for (const w of wheels) w.rotation.order = 'YXZ';
     let wheelR = 0.31;
     if (wheels[0]) { const b = new THREE.Box3().setFromObject(wheels[0]); wheelR = Math.max(0.2, (b.max.y - b.min.y) / 2); }
-    g.scene.add(mesh);
-    const v = this.makeRecord('car', mesh, x, z, heading, {
-      hero: kind, wheels, front: wheels.filter((w) => /F[LR]$/.test(w.name)), wheelR, lights,
-    });
-    this.park(v);
-    this.list.push(v);
-    this.heroes[kind] = v;
-    if (kind === 'prius') this.prius = v;
-    return v;
+    const paint = [...upgraded.values()].find((m) => /paint/i.test(m.name || ''));
+    return { mesh, lights, wheels, front: wheels.filter((w) => /F[LR]$/.test(w.name)), wheelR, paint: paint ? paint.color.getHex() : 0x8a8f96 };
   }
 
   plateTexture(number, flip = { u: false, v: false }) {
@@ -266,8 +290,8 @@ export class Vehicles {
   // spinning/steering wheels, brake lights and headlights of a detailed car
   animateHero(v, dt, input) {
     if (!v.hero) return;
-    v.spin = (v.spin || 0) - (v.speed / v.wheelR) * dt;
-    for (const w of v.wheels) w.rotation.z = v.spin;
+    v.wheelTurn = (v.wheelTurn || 0) - (v.speed / v.wheelR) * dt;   // (how far round the wheels have gone)
+    for (const w of v.wheels) w.rotation.z = v.wheelTurn;
     for (const w of v.front) w.rotation.y = v.steer;
     const braking = input && ((input.down('KeyS') && v.speed > 0.3) || (input.down('KeyW') && v.speed < -0.3) || input.down('Space'));
     const night = this.g.atmo.lampLevel > 0.4;
@@ -289,7 +313,7 @@ export class Vehicles {
   openHeading(x, z) {
     const nav = this.g.nav;
     let best = 0, bestLen = -1;
-    const a0 = Math.random() * Math.PI * 2;
+    const a0 = ((Math.sin(x * 12.9898 + z * 78.233) * 43758.5453) % 1 + 1) % 1 * Math.PI * 2;   // (the same on every screen)
     for (let k = 0; k < 16; k++) {
       const h = a0 + (k / 16) * Math.PI * 2, fx = Math.cos(h), fz = -Math.sin(h);
       let len = 0;
@@ -339,7 +363,7 @@ export class Vehicles {
       rider.visible = false;
       frame.add(rider);
     }
-    const v = this.makeRecord(type, mesh, x, z, heading, { seat, wheelR, rider });
+    const v = this.makeRecord(type, mesh, x, z, heading, { seat, wheelR, rider, vid: this.nextVid++, paint: type === 'bike' ? 0x2a2d31 : 0xe9ebee });
     this.park(v);
     this.list.push(v);
     return v;
@@ -350,6 +374,10 @@ export class Vehicles {
     return Object.assign({
       type, spec: SPEC[type], mesh, pos: new THREE.Vector3(x, y, z), heading, speed: 0, steer: 0,
       vel: new THREE.Vector3(), fwdSign: 1, col: null, tilt: new THREE.Vector2(), lean: 0,
+      driver: null, who: null, smooth: new THREE.Vector3(),
+      slip: 0, spin: 0,                     // sliding sideways (m/s) and turning on its own (rad/s)
+      dmg: 0, lost: new Set(), hp: {},      // damage 0..100 (100: the engine's dead), parts gone, parts' strength left
+      fallen: false, coasting: false,       // a bike on its side; rolling on with nobody at the controls
     }, extra);
   }
 
@@ -368,7 +396,7 @@ export class Vehicles {
   }
 
   place(v) {
-    v.mesh.position.copy(v.pos);
+    v.mesh.position.copy(v.pos).add(v.smooth);
     v.mesh.rotation.set(0, v.heading, 0, 'YXZ');
     if (v.type !== 'drone') { v.mesh.rotation.z = v.tilt.x; v.mesh.rotation.x = v.tilt.y + (v.type === 'bike' ? v.lean : 0); }
     else { v.mesh.rotation.z = v.tilt.x; v.mesh.rotation.x = v.tilt.y; }
@@ -379,7 +407,7 @@ export class Vehicles {
     const p = this.g.player.pos;
     let best = null, bd = 3.3;
     for (const v of this.list) {
-      if (v === this.active) continue;
+      if (v === this.active || v.driver != null || v.coasting) continue;
       const d = Math.hypot(v.pos.x - p.x, v.pos.z - p.z);
       if (d < bd && Math.abs(v.pos.y - p.y) < 2) { bd = d; best = v; }
     }
@@ -397,40 +425,70 @@ export class Vehicles {
     c.taken = true;
     if (c.col) { c.col.walk = false; c.col.shoot = false; }
     const fleet = lot.fleet;
-    let mesh;
+    // (a group: a crash may cut bumpers and wheels off into pieces of their own)
+    const mesh = new THREE.Group();
+    let fwdSign = 1;
     if (fleet && fleet.length) {
       const model = fleet[c.v % fleet.length];
-      mesh = new THREE.InstancedMesh(model.geometry, lot.mat, 1);
-      mesh.setMatrixAt(0, new THREE.Matrix4());
-      mesh.setColorAt(0, new THREE.Color(c.color).convertSRGBToLinear());
-      mesh.castShadow = mesh.receiveShadow = true;
-      mesh.frustumCulled = false;
-      var fwdSign = model.name === 'car_van' ? -1 : 1;
+      model.geometry.userData.shared = true;
+      const body = new THREE.InstancedMesh(model.geometry, lot.mat, 1);
+      body.setMatrixAt(0, new THREE.Matrix4());
+      body.setColorAt(0, new THREE.Color(c.color).convertSRGBToLinear());
+      body.castShadow = body.receiveShadow = true;
+      body.frustumCulled = false;
+      mesh.add(body);
+      fwdSign = model.name === 'car_van' ? -1 : 1;
     } else {
-      mesh = new THREE.Mesh(new THREE.BoxGeometry(4.4, 1.4, 1.8).translate(0, 0.7, 0), new THREE.MeshStandardMaterial({ color: c.color }));
-      fwdSign = 1;
+      mesh.add(new THREE.Mesh(new THREE.BoxGeometry(4.4, 1.4, 1.8).translate(0, 0.7, 0), new THREE.MeshStandardMaterial({ color: c.color })));
     }
     this.g.scene.add(mesh);
-    const v = this.makeRecord('car', mesh, c.x, c.z, c.h, { fwdSign, y: c.ground });
+    const v = this.makeRecord('car', mesh, c.x, c.z, c.h, { fwdSign, y: c.ground, vid: 1000 + lot.cars.indexOf(c), paint: c.color, lotCar: c });
     this.list.push(v);
     this.g.nav.refreshArea(this.g.colliders, c.x - 3, c.z - 3, c.x + 3, c.z + 3); this.g.unav?.refreshArea(this.g.colliders, c.x - 3, c.z - 3, c.x + 3, c.z + 3);
     return v;
   }
 
-  enter(target) {
-    const g = this.g, p = g.player;
+  // a vehicle by network id (a lot car becomes drivable the first time it's asked for)
+  byVid(vid) {
+    const v = this.list.find((q) => q.vid === vid);
+    if (v || vid < 1000) return v || null;
+    const c = this.lot.cars[vid - 1000];
+    return c ? this.claimCar(c) : null;
+  }
+
+  vidOf(target) { return target.type ? target.vid : 1000 + this.lot.cars.indexOf(target); }
+
+  // Someone takes the wheel: the local player, or (on a co-op host) a client's player.
+  occupy(target, p, slot) {
     const v = target.type ? target : this.claimCar(target);
     if (target.type) this.unpark(v);
-    this.active = v;
+    v.driver = slot; v.who = p; v.moved = true;
     p.vehicle = v;
+    // a fallen bike is picked up again
+    if (v.fallen) { v.fallen = false; v.lean = 0; }
+    v.coasting = false; v.slip = 0; v.spin = 0;
+    p.vel.set(0, 0, 0);
+    v.speed = 0; v.vel.set(0, 0, 0); v.steer = 0;
+    if (v.rider) v.rider.visible = true;
+    return v;
+  }
+
+  enter(target) {
+    const g = this.g;
+    const v = this.occupy(target, g.player, g.localSlot ?? 0);
+    this.takeControls(v);
+    g.net?.vehicleTaken?.(v);
+  }
+
+  // our side of getting in: camera, lights, engine
+  takeControls(v) {
+    const g = this.g, p = g.player;
+    this.active = v;
     // drone: you look where you fly, starting along its nose; cars and bikes: the chase camera
     p.yaw = v.type === 'drone' ? v.heading - Math.PI / 2 : 0;
     p.pitch = -0.05;
-    p.vel.set(0, 0, 0);
-    v.speed = 0; v.vel.set(0, 0, 0);
     g.weapons.adsToggle = false;
     this.camYaw = null; this.camPos = null; this.lookAt = null;
-    if (v.rider) v.rider.visible = true;
     if (v.type !== 'drone') this.headlights(v, true);
     this.startEngine(v.hero ? HEROES[v.hero].sound : v.type);
     const name = v.hero ? HEROES[v.hero].name : v.type === 'bike' ? 'Motorbike' : 'Car';
@@ -457,38 +515,79 @@ export class Vehicles {
 
   get hidesWeapons() { return !!this.active && this.active.type !== 'drone'; }
 
-  exit() {
-    const g = this.g, p = g.player, v = this.active;
-    if (!v) return;
-    const s = v.spec;
-    // step out on the driver's side, else the other side, else behind
+  // where the driver can step out: their side, else the other side, else behind (null: no room)
+  exitSpot(v, p) {
+    const g = this.g, s = v.spec;
     const cos = Math.cos(v.heading), sin = Math.sin(v.heading);
     const fwd = { x: cos, z: -sin }, right = { x: sin, z: cos };
     const tries = [[-s.exitSide, 0], [s.exitSide, 0], [0, -(s.hw + 1)], [0, s.hw + 1]];
-    let out = null;
     for (const [side, back] of tries) {
       const x = v.pos.x + right.x * side + fwd.x * back, z = v.pos.z + right.z * side + fwd.z * back;
       const probe = { x, z };
       const y = Math.max(g.groundAt(x, z, v.pos.y + 0.6), p.roofAt(x, z) <= v.pos.y + 0.6 ? p.roofAt(x, z) : -Infinity);
-      if (!g.colliders.resolve(probe, 0.35, y + 0.3, y + 1.7, 1) && Math.abs(y - v.pos.y) < 1.2 || v.type === 'drone') { out = { x, z, y }; break; }
+      if (!g.colliders.resolve(probe, 0.35, y + 0.3, y + 1.7, 1) && Math.abs(y - v.pos.y) < 1.2 || v.type === 'drone') {
+        return { x, z, y: Math.max(y, v.type === 'drone' ? v.pos.y : y), yaw: v.type === 'drone' ? p.yaw : v.heading - Math.PI / 2 + (v.fwdSign < 0 ? Math.PI : 0) + p.yaw };
+      }
     }
-    if (!out) { g.hud.notice('No room to get out here'); return; }
-    this.active = null;
+    return null;
+  }
+
+  // The driver gets out at spot; the vehicle parks where it stands.
+  release(v, p, spot, park = true) {
     p.vehicle = null;
-    const exitYaw = v.type === 'drone' ? p.yaw : v.heading - Math.PI / 2 + (v.fwdSign < 0 ? Math.PI : 0) + p.yaw;
-    p.pos.set(out.x, Math.max(out.y, v.type === 'drone' ? v.pos.y : out.y), out.z);
-    p.viewY = p.pos.y;
-    p.yaw = exitYaw;
+    v.driver = null; v.who = null;
+    if (spot) {
+      p.pos.set(spot.x, spot.y, spot.z);
+      p.viewY = p.pos.y;
+      if (spot.yaw != null) p.yaw = spot.yaw;
+    }
     p.vel.set(0, 0, 0);
     p.onGround = false;
-    v.speed = 0; v.vel.set(0, 0, 0);
+    v.speed = 0; v.vel.set(0, 0, 0); v.smooth.set(0, 0, 0);
     if (v.type === 'drone') this.settleDrone(v);
     if (v.rider) v.rider.visible = false;
+    if (v.hero) this.animateHero(v, 0, null);
+    if (park) this.park(v);
+  }
+
+  exit() {
+    const g = this.g, p = g.player, v = this.active;
+    if (!v) return;
+    const spot = this.exitSpot(v, p);
+    if (!spot) { g.hud.notice('No room to get out here'); return; }
+    this.dropControls(v);
+    this.release(v, p, spot);
+    g.net?.vehicleLeft?.(v, null);
+  }
+
+  // our side of getting out
+  dropControls(v) {
+    if (this.active !== v) return;
+    this.active = null;
     if (v.type !== 'drone') this.headlights(v, false);
-    if (v.hero) { v.speed = 0; this.animateHero(v, 0, null); }
-    this.park(v);
     this.stopEngine();
-    g.weapons.ignoreItems = null;
+    this.g.weapons.ignoreItems = null;
+  }
+
+  // everyone out and parked (a new match)
+  clearDrivers() {
+    for (const v of this.list) {
+      if (v.driver == null) continue;
+      if (v === this.active) this.dropControls(v);
+      const who = v.who;
+      if (who) who.vehicle = null;
+      this.release(v, who || { vel: new THREE.Vector3(), pos: new THREE.Vector3() }, null);
+    }
+  }
+
+  // One tick of driving for whoever's in it (the host for everyone, a client for itself):
+  // the physics, the wheels, where the driver sits; the host (or solo) also runs zombies over.
+  driveTick(v, dt, input) {
+    if (v.type === 'drone') this.flyDrone(v, dt, input); else this.drive(v, dt, input);
+    this.animateHero(v, dt, input);
+    this.place(v);
+    if (this.g.mode !== 'client') this.runOver(v);
+    if (v.who) this.seat(v, v.who);
   }
 
   settleDrone(v) {
@@ -507,30 +606,43 @@ export class Vehicles {
     // spin the parked drones' rotors down, idle bikes still
     for (const v of this.list) {
       if (v.type === 'drone' && v.mesh.userData.rotors) {
-        v.rotorSpin = THREE.MathUtils.damp(v.rotorSpin || 0, v === this.active ? 40 : 0, 2, dt);
+        v.rotorSpin = THREE.MathUtils.damp(v.rotorSpin || 0, v === this.active || v.driver != null ? 40 : 0, 2, dt);
         v.mesh.userData.rotors.forEach((r, i) => { r.rotation.y += v.rotorSpin * dt * (/bottom/i.test(r.name) || i % 2 ? -1 : 1); });
       }
     }
     this.flashBeacons(this.g.time || 0);
+    this.crash.update(dt);
+    this.smoke(dt);
+    // (the fallen bike sliding on: moved where the world is simulated for real)
+    if (g.mode !== 'client') for (const v of this.list) if (v.coasting) this.coastTick(v, dt);
+    this.kickVel.addScaledVector(this.kick, -90 * dt).multiplyScalar(Math.exp(-9 * dt));
+    this.kick.addScaledVector(this.kickVel, dt);
     if (!playing) return;
-    // (co-op: the cars stay parked for now; driving is single-player)
-    if (!this.active && this.g.mode && this.g.mode !== 'solo') { this.hud.classList.remove('on'); return; }
+    const client = g.mode === 'client';
     if (!this.active) {
       const near = !p.dead && this.nearest();
       if (near && !g.director.nearestStation() && !g.stairs?.near()) {
         const label = near.type === 'bike' ? 'ride the motorbike' : near.type === 'drone' ? 'fly the drone' : 'get in the car';
         g.hud.prompt(`Press <b>F</b> — ${label}`);
-        if (input.hit('KeyF')) { this.enter(near); input.pressed.delete('KeyF'); }
+        if (input.hit('KeyF')) {
+          input.pressed.delete('KeyF');
+          // (co-op client: the host says who gets it)
+          if (client) g.net.enterVehicle(this.vidOf(near)); else this.enter(near);
+        }
       }
       this.hud.classList.remove('on');
       return;
     }
     const v = this.active;
-    if (input.hit('KeyF')) { input.pressed.delete('KeyF'); this.exit(); return; }
-    if (v.type === 'drone') this.flyDrone(v, dt, input); else this.drive(v, dt, input);
+    if (input.hit('KeyF')) { input.pressed.delete('KeyF'); if (client) g.net.exitVehicle(); else this.exit(); return; }
+    // (a co-op client drives in its input ticks, predicted; here it only looks after the view)
+    if (!client) {
+      if (v.type === 'drone') this.flyDrone(v, dt, input); else this.drive(v, dt, input);
+      this.runOver(v);
+    }
+    v.smooth.multiplyScalar(Math.exp(-dt * 10));
     this.animateHero(v, dt, input);
     this.place(v);
-    this.runOver(v);
     this.seatPlayer(v, dt);
     g.weapons.ignoreItems = null;
     this.updateEngine(v);
@@ -541,23 +653,34 @@ export class Vehicles {
     g.hud.prompt(v.type === 'drone' ? 'Space up · C down · <b>F</b> get out' : 'Space handbrake · <b>F</b> get out');
   }
 
-  // Bicycle-model driving with collision circles along the body. The wheel turns in at a limited
-  // rate, and at speed the tyres' grip (not the wheel) sets how tight you can go; hitting something
-  // at an angle slides you along it, head-on stops you.
+  // Driving. What the tyres hold is a bicycle model: the front wheel sets how the car turns, and at
+  // speed their grip (not the wheel) limits how tight. What they can't hold is two more motions:
+  // sliding sideways (slip, m/s) and turning on its own (spin, rad/s). A spin keeps the car's
+  // momentum going the old way while the body turns, and sliding tyres pull both down with
+  // friction until they bite again, so a spin-out slides on, slows and snaps straight - not the
+  // steady slowing of a linear fade. Collisions are impulses at the point of contact, with the
+  // body's turning inertia: a car hit at a corner spins, glances off a wall at an angle, bounces
+  // back a little from one head-on, and scrapes along one it slides into.
   drive(v, dt, input) {
-    const g = this.g, s = v.spec;
+    const g = this.g, s = v.spec, bike = v.type === 'bike';
+    const lost = v.lost, gone = ['wheelFL', 'wheelFR', 'wheelRL', 'wheelRR'].map((w) => lost.has(w));
+    const wheelsGone = gone.filter(Boolean).length;
+    const dead = v.dmg >= 100 || v.fallen;
     const throttle = (input.down('KeyW') ? 1 : 0) - (input.down('KeyS') ? 1 : 0);
     const handbrake = input.down('Space');
+    const power = dead ? 0 : (1 - v.dmg / 250) * (wheelsGone ? 0.45 : 1);
+    const vmax = s.vmax * (wheelsGone ? 0.5 : 1) * (1 - v.dmg / 400);
     const v0 = v.speed;
     if (throttle > 0) {
       if (v.speed < -0.3) v.speed = Math.min(0, v.speed + s.brake * dt);
-      else v.speed += s.accel * Math.pow(Math.max(0, 1 - v.speed / s.vmax), 0.6) * dt;
+      else if (power > 0) v.speed += s.accel * power * Math.pow(Math.max(0, 1 - v.speed / vmax), 0.6) * dt;
     } else if (throttle < 0) {
       if (v.speed > 0.3) v.speed = Math.max(0, v.speed - s.brake * dt);
-      else v.speed = Math.max(-s.vrev, v.speed - s.reverse * dt);
+      else if (power > 0) v.speed = Math.max(-s.vrev, v.speed - s.reverse * power * dt);
     }
-    // rolling resistance and air
-    const coast = (s.roll + s.drag * v.speed * v.speed) * dt * (throttle ? 0.3 : 1);
+    // rolling resistance and air (a corner on its rim drags)
+    // (a bike on its side is metal and plastic sliding on asphalt: it stops quickly)
+    const coast = (s.roll * (1 + wheelsGone * 5) + s.drag * v.speed * v.speed + (v.fallen ? 5.5 : 0)) * dt * (throttle && !dead ? 0.3 : 1);
     v.speed = Math.abs(v.speed) <= coast ? 0 : v.speed - Math.sign(v.speed) * coast;
     if (handbrake) v.speed *= Math.exp(-2.4 * dt);
     // steering: turn in at a limited rate, back to centre a bit quicker
@@ -567,65 +690,341 @@ export class Vehicles {
     const target = steerIn * Math.min(s.steer, gripLimit);
     const rate = (steerIn === 0 || Math.sign(target) !== Math.sign(v.steer) ? 2.2 : 1) * s.steerRate * dt;
     v.steer += THREE.MathUtils.clamp(target - v.steer, -rate, rate);
-    const yawRate = (v.speed / s.wheelbase) * Math.tan(v.steer) * (handbrake && spd > 5 ? 1.25 : 1);
-    v.heading += yawRate * dt;
-    v.yawRate = yawRate;
+    // tyres that are sliding hardly steer
+    const hold = 1 / (1 + (v.slip * v.slip) / 6 + Math.abs(v.spin) * 0.8);
+    let yawSteer = (v.speed / s.wheelbase) * Math.tan(v.steer) * hold;
+    // a wheel gone: that corner drags on its rim and pulls the car round
+    if (wheelsGone) yawSteer += ((gone[0] ? 1 : 0) + (gone[2] ? 1 : 0) - (gone[1] ? 1 : 0) - (gone[3] ? 1 : 0)) * Math.min(1, spd / 8) * 0.3;
+    // handbrake at speed: the rear lets go and the tail comes round
+    const drifting = handbrake && spd > 6 && !bike;
+    if (drifting) v.spin += (yawSteer * 1.3 - v.spin * 0.3) * 3 * dt;
+    // the tyres fight the slide and the spin: friction, so it slows hard and then snaps back
+    const grip = s.latGrip * (drifting ? 0.35 : 1) * (wheelsGone ? 0.7 : 1) * (v.fallen ? 0.8 : 1);
+    v.slip = Math.abs(v.slip) <= grip * dt ? 0 : v.slip - Math.sign(v.slip) * grip * dt;
+    v.spin = Math.abs(v.spin) <= s.spinFric * dt ? 0 : v.spin - Math.sign(v.spin) * s.spinFric * dt;
+    v.spin *= Math.exp(-s.spinDamp * dt);
+    // the body turns on its own, the car's momentum doesn't: speed turns into slip and back
+    if (v.spin) {
+      const a = v.spin * dt, c = Math.cos(a), sn = Math.sin(a), sp = v.speed, sl = v.slip;
+      v.speed = sp * c - sl * sn;
+      v.slip = sl * c + sp * sn;
+    }
+    v.heading += (yawSteer + v.spin) * dt;
+    v.yawRate = yawSteer + v.spin;
     const cos = Math.cos(v.heading), sin = Math.sin(v.heading);
-    const fx = cos * v.fwdSign, fz = -sin * v.fwdSign;
-    const nx = v.pos.x + fx * v.speed * dt, nz = v.pos.z + fz * v.speed * dt;
+    const fx = cos * v.fwdSign, fz = -sin * v.fwdSign, rx = -fz, rz = fx;
+    let vx = fx * v.speed + rx * v.slip, vz = fz * v.speed + rz * v.slip;
+    const nx = v.pos.x + vx * dt, nz = v.pos.z + vz * dt;
     const G = (x, z) => g.groundAt(x, z, v.pos.y + 0.6);
-    // curbs and steps: too high blocks like a wall
+
+    // --- what we hit: each touching collision circle is a contact (point from the centre, normal) ---
+    const contacts = [];
+    let pushX = 0, pushZ = 0, hits = 0;
     const dirS = Math.sign(v.speed || 1);
     const frontY = G(nx + fx * s.hw * dirS, nz + fz * s.hw * dirS);
-    const blocked = frontY - v.pos.y > s.step;
-    let pushX = 0, pushZ = 0, hits = 0;
-    if (!blocked) {
+    const blocked = frontY - v.pos.y > s.step;   // a kerb or step too high: a wall across the nose (or tail)
+    if (blocked) contacts.push({ ox: fx * s.hw * dirS, oz: fz * s.hw * dirS, nx: -fx * dirS, nz: -fz * dirS });
+    else {
       for (const off of s.circles) {
         const c = { x: nx + fx * off, z: nz + fz * off };
         const ox = c.x, oz = c.z;
-        if (g.colliders.resolve(c, s.radius, v.pos.y + 0.12, v.pos.y + 1.4, 2)) { hits++; pushX += c.x - ox; pushZ += c.z - oz; }
+        if (!g.colliders.resolve(c, s.radius, v.pos.y + 0.12, v.pos.y + 1.4, 2)) continue;
+        const dx = c.x - ox, dz = c.z - oz, d = Math.hypot(dx, dz) || 1e-6;
+        contacts.push({ ox: fx * off - (dx / d) * s.radius, oz: fz * off - (dz / d) * s.radius, nx: dx / d, nz: dz / d });
+        pushX += dx; pushZ += dz; hits++;
       }
     }
-    if (blocked) {
-      if (spd > 4) this.bump(v, spd);
-      v.speed = spd > 6 ? -v.speed * 0.1 : 0;
-    } else if (hits) {
-      // slide along what we hit: lose the part of the speed going into it
-      const px = pushX / hits, pz = pushZ / hits, pl = Math.hypot(px, pz) || 1;
-      const into = Math.abs((fx * px + fz * pz) / pl);   // 1 = head-on, 0 = scraping along
-      if (spd * into > 3) this.bump(v, spd * into);
-      v.speed *= Math.max(0, 1 - into * 1.1);
-      if (into > 0.85 && spd > 6) v.speed = -Math.sign(v0) * spd * 0.12;
-      v.pos.x = nx + px; v.pos.z = nz + pz;
-    } else { v.pos.x = nx; v.pos.z = nz; }
+    // --- impulses at the contacts (unit mass; turning inertia s.inertia) ---
+    const preSpeed = Math.hypot(vx, vz);
+    let omega = yawSteer + v.spin, J = 0, hit = null, scraping = 0;
+    for (const ct of contacts) {
+      const cvx = vx + omega * ct.oz, cvz = vz - omega * ct.ox;   // the contact point's velocity
+      const vn = cvx * ct.nx + cvz * ct.nz;
+      const tx = -ct.nz, tz = ct.nx, vt = cvx * tx + cvz * tz;
+      scraping = Math.max(scraping, Math.abs(vt));
+      if (vn >= -0.05) continue;
+      const rn = ct.oz * ct.nx - ct.ox * ct.nz, rt = ct.oz * tx - ct.ox * tz;
+      // harder hits bounce less: the crumple zone takes it
+      const e = s.bounce * (vn < -8 ? 0.55 : 1);
+      const jn = (-(1 + e) * vn) / (1 + (rn * rn) / s.inertia);
+      let jt = -vt / (1 + (rt * rt) / s.inertia);
+      jt = THREE.MathUtils.clamp(jt, -s.wallFric * jn, s.wallFric * jn);
+      const Jx = ct.nx * jn + tx * jt, Jz = ct.nz * jn + tz * jt;
+      vx += Jx; vz += Jz;
+      omega += (ct.oz * Jx - ct.ox * Jz) / s.inertia;
+      if (jn > J) { J = jn; hit = ct; }
+    }
+    if (contacts.length) {
+      v.speed = vx * fx + vz * fz;
+      v.slip = vx * rx + vz * rz;
+      const newSteer = (v.speed / s.wheelbase) * Math.tan(v.steer) * hold;
+      v.spin = THREE.MathUtils.clamp(omega - newSteer, -9, 9);
+    }
+    if (!blocked) { v.pos.x = nx + (hits ? pushX / hits : 0); v.pos.z = nz + (hits ? pushZ / hits : 0); }
+    if (hit && J > 2.2 && !v.replaying) this.crashed(v, hit, J, preSpeed);
+
     // ride the ground: pitch and roll from the terrain under the wheels, plus a little body
-    // movement from braking/accelerating and cornering
+    // movement from braking/accelerating and cornering, and a corner down where a wheel's gone
     const hF = G(v.pos.x + fx * s.hw * 0.8, v.pos.z + fz * s.hw * 0.8), hB = G(v.pos.x - fx * s.hw * 0.8, v.pos.z - fz * s.hw * 0.8);
-    const rx = -fz, rz = fx;
     const hL = G(v.pos.x - rx * s.hd, v.pos.z - rz * s.hd), hR = G(v.pos.x + rx * s.hd, v.pos.z + rz * s.hd);
     v.pos.y = THREE.MathUtils.damp(v.pos.y, Math.max(hF, hB, (hF + hB) / 2), 14, dt);
-    const accel = (v.speed - v0) / Math.max(dt, 1e-3), lateral = v.speed * yawRate;
+    const accel = (v.speed - v0) / Math.max(dt, 1e-3), lateral = v.speed * yawSteer;
     const bodyPitch = v.type === 'car' ? THREE.MathUtils.clamp(-accel * 0.006, -0.035, 0.035) : 0;
-    const bodyRoll = v.type === 'car' ? THREE.MathUtils.clamp(-lateral * 0.008, -0.05, 0.05) : 0;
-    v.tilt.x = THREE.MathUtils.damp(v.tilt.x, Math.atan2(hF - hB, s.hw * 1.6) * v.fwdSign + bodyPitch * v.fwdSign, 8, dt);
-    v.tilt.y = THREE.MathUtils.damp(v.tilt.y, Math.atan2(hR - hL, s.hd * 2) + bodyRoll, 6, dt);
-    if (v.type === 'bike') {
-      // lean into the turn as a real bike must: tan(lean) = v * yaw rate / g
-      v.lean = THREE.MathUtils.damp(v.lean, -THREE.MathUtils.clamp(Math.atan(lateral / 9.81), -0.7, 0.7), 7, dt);
-      if (v.mesh.userData.wheels) for (const w of v.mesh.userData.wheels) w.rotation.z -= (v.speed / (v.wheelR || 0.39)) * dt;
+    const bodyRoll = v.type === 'car' ? THREE.MathUtils.clamp(-lateral * 0.008 - v.slip * 0.01, -0.07, 0.07) : 0;
+    const droopP = ((gone[2] || gone[3] ? 1 : 0) - (gone[0] || gone[1] ? 1 : 0)) * 0.07;
+    const droopR = ((gone[1] || gone[3] ? 1 : 0) - (gone[0] || gone[2] ? 1 : 0)) * 0.09;
+    v.tilt.x = THREE.MathUtils.damp(v.tilt.x, Math.atan2(hF - hB, s.hw * 1.6) * v.fwdSign + (bodyPitch + droopP) * v.fwdSign, 8, dt);
+    v.tilt.y = THREE.MathUtils.damp(v.tilt.y, Math.atan2(hR - hL, s.hd * 2) + bodyRoll + droopR, 6, dt);
+    if (bike) {
+      // lean into the turn as a real bike must: tan(lean) = v * yaw rate / g; down on its side if it fell
+      const want = v.fallen ? (v.fallSide || 1) * 1.45 : -THREE.MathUtils.clamp(Math.atan(lateral / 9.81), -0.7, 0.7);
+      v.lean = THREE.MathUtils.damp(v.lean, want, v.fallen ? 5 : 7, dt);
+      if (v.mesh.userData.wheels && !v.fallen) for (const w of v.mesh.userData.wheels) w.rotation.z -= (v.speed / (v.wheelR || 0.39)) * dt;
     }
-    v.vel.set(fx * v.speed, 0, fz * v.speed);
+    v.vel.set(vx, 0, vz);
+
+    // tyre marks and squeal, sparks off the rims and wherever metal meets the road
+    if (!v.replaying) {
+      const slide = Math.abs(v.slip) + Math.abs(v.spin) * 2.2 + (handbrake && spd > 4 ? spd * 0.35 : 0) + (throttle && Math.sign(throttle) !== Math.sign(v.speed) && spd > 9 ? 2 : 0);
+      let grind = hits && scraping > 1.5 ? scraping : 0;
+      const hs = Math.hypot(vx, vz);
+      if (hits && scraping > 2) this.crash.scrape(new THREE.Vector3(v.pos.x + contacts[0].ox, v.pos.y + 0.45, v.pos.z + contacts[0].oz), new THREE.Vector3(-vx, 0, -vz).normalize(), scraping);
+      if ((wheelsGone || v.fallen) && hs > 1.2) {
+        grind = Math.max(grind, hs);
+        for (let k = 0; k < 4; k++) {
+          if (!gone[k] && !(v.fallen && k === 0)) continue;
+          const ox = (k < 2 ? 1 : -1) * s.wheelbase * 0.5 * v.fwdSign, oz = (k % 2 ? 1 : -1) * (s.hd - 0.15) * (bike ? 0 : 1);
+          this.crash.scrape(new THREE.Vector3(v.pos.x + fx * ox * v.fwdSign + rx * oz, v.pos.y + 0.1, v.pos.z + fz * ox * v.fwdSign + rz * oz), new THREE.Vector3(-vx / hs, 0.2, -vz / hs), hs * 0.6);
+          if (v.fallen) break;
+        }
+      }
+      this.crash.tyres(v, slide, grind, dt);
+    }
   }
+
+  // A hit hard enough to feel (j: the impulse, m/s): the thump, sparks and bits everywhere; on
+  // the host (or alone) also the damage: dents, parts off, the engine, the driver.
+  crashed(v, ct, j, before) {
+    const g = this.g;
+    const now = g.time || performance.now() / 1000;
+    const p = new THREE.Vector3(v.pos.x + ct.ox, v.pos.y + (v.type === 'bike' ? 0.6 : 0.55), v.pos.z + ct.oz);
+    const n = new THREE.Vector3(ct.nx, 0, ct.nz);
+    // the same wall touched every tick of a scrape is one crash, not sixty
+    if (v.lastCrash && now - v.lastCrash.t < 0.25 && j < v.lastCrash.j * 1.5) return;
+    v.lastCrash = { t: now, j };
+    const mine = v === this.active;
+    this.crash.impactFx(v, p, n, j, { local: mine });
+    if (g.mode === 'client') return;           // (the host decides what breaks, and tells everyone)
+    const e = this.damageFrom(v, ct, j);
+    this.applyDamage(v, e);
+    g.net?.vehicleCrash?.(v, e);
+    // the driver: a car's crumple zone and belts take most of it; a bike throws you off
+    const who = v.who;
+    if (!who) return;
+    if (v.type === 'bike' && j > 6.5) this.throwRider(v, j, before);
+    else if (j > 9) {
+      const hurt = Math.min(60, (j - 9) * 3.5);
+      who.damage(hurt, p.x + n.x * 3, p.z + n.z * 3);
+      if (who !== g.player) g.net?.hurt?.(who, hurt, p.x, p.z);
+    }
+  }
+
+  // What one hit does (worked out where the car is simulated for real: alone, or the host).
+  // Point and direction in the car's own frame, so every screen puts the dent in the same place.
+  damageFrom(v, ct, j) {
+    const s = v.spec, c = Math.cos(v.heading), sn = Math.sin(v.heading);
+    // world -> car frame (model x forward-ish, z to the right)
+    const lx = ct.ox * c - ct.oz * sn, lz = ct.ox * sn + ct.oz * c;
+    const ly = v.type === 'bike' ? 0.6 : 0.6;
+    const dnx = -(ct.nx * c - ct.nz * sn), dnz = -(ct.nx * sn + ct.nz * c);   // into the car
+    const e = { p: [+lx.toFixed(3), ly, +lz.toFixed(3)], d: [+dnx.toFixed(3), +dnz.toFixed(3)], j: +j.toFixed(2), parts: [], dmg: 0 };
+    e.dmg = Math.min(100, v.dmg + Math.max(0, j - 3) * 3.2);
+    if (v.type !== 'car') return e;
+    // bumpers and wheels have so much strength; each hit near one takes some away
+    const hp = v.hp, front = lx * v.fwdSign > s.hw - 0.9, rear = lx * v.fwdSign < -(s.hw - 0.9);
+    const hitPart = (name, amount, max) => {
+      if (v.lost.has(name)) return;
+      hp[name] = (hp[name] ?? max) - amount;
+      if (hp[name] <= 0) e.parts.push(name);
+    };
+    if (front && j > 4) hitPart('bumperF', j, 11);
+    if (rear && j > 4) hitPart('bumperR', j, 11);
+    // wheels: a hit at a corner
+    const wx = s.wheelbase / 2;
+    for (const [name, sx, sz] of [['wheelFL', 1, -1], ['wheelFR', 1, 1], ['wheelRL', -1, -1], ['wheelRR', -1, 1]]) {
+      const ax = sx * wx * v.fwdSign, az = sz * s.hd * v.fwdSign;
+      if (Math.hypot(lx - ax, lz - az) < 1.05 && j > 6) hitPart(name, j * 0.8, 15);
+    }
+    return e;
+  }
+
+  // Everyone applies the same damage: the dent, the parts that come off, the running total.
+  applyDamage(v, e, fx = false) {
+    const g = this.g;
+    if (fx) {
+      // (for the other screens: the bang they didn't simulate themselves)
+      const c = Math.cos(v.heading), sn = Math.sin(v.heading);
+      const wx = e.p[0] * c + e.p[2] * sn, wz = -e.p[0] * sn + e.p[2] * c;
+      const n = new THREE.Vector3(-(e.d[0] * c + e.d[1] * sn), 0, -(-e.d[0] * sn + e.d[1] * c));
+      this.crash.impactFx(v, new THREE.Vector3(v.pos.x + wx, v.pos.y + e.p[1], v.pos.z + wz), n, e.j, { local: v === this.active });
+    }
+    v.dmg = Math.max(v.dmg, e.dmg || 0);
+    if (v.type === 'car' && e.j > 3.5) {
+      this.crash.dent(v, new THREE.Vector3(e.p[0], e.p[1], e.p[2]), new THREE.Vector3(e.d[0], 0, e.d[1]).normalize(), Math.min(0.3, 0.035 * (e.j - 2)));
+      (v.dents || (v.dents = [])).push([e.p[0], e.p[1], e.p[2], e.d[0], e.d[1], e.j]);
+      if (v.dents.length > 16) v.dents.shift();
+    }
+    for (const name of e.parts || []) this.losePart(v, name, e);
+    if (e.dmg >= 100 && !v.deadNoted) { v.deadNoted = true; if (v === this.active) g.hud.notice('The engine\'s gone. Get out and find another ride.'); }
+  }
+
+  losePart(v, name, e) {
+    if (v.lost.has(name)) return;
+    v.lost.add(name);
+    const c = Math.cos(v.heading), sn = Math.sin(v.heading);
+    const out = new THREE.Vector3(-(e.d[0] * c + e.d[1] * sn), 0, -(-e.d[0] * sn + e.d[1] * c)).multiplyScalar(1.5 + e.j * 0.25);
+    this.crash.detach(v, name, out);
+    if (v.hero && /wheel/.test(name)) {
+      const k = { wheelFL: 'Wheel_FL', wheelFR: 'Wheel_FR', wheelRL: 'Wheel_RL', wheelRR: 'Wheel_RR' }[name];
+      v.wheels = v.wheels.filter((w) => w.name !== k); v.front = v.front.filter((w) => w.name !== k);
+    }
+    if (/bumperF/.test(name) && v.lights) for (const m of v.lights.head) m.emissiveIntensity = 0, (m.userData.broken = true);
+    if (/bumperR/.test(name) && v.lights) for (const m of v.lights.tail) m.userData.broken = true;
+  }
+
+  // Off the bike: the rider flies on the way the bike was going, the bike goes down and slides.
+  throwRider(v, j, before) {
+    const g = this.g, p = v.who;
+    if (!p) return;
+    const seat = this.seat(v, p).clone();
+    const dir = new THREE.Vector3(Math.cos(v.heading) * v.fwdSign, 0, -Math.sin(v.heading) * v.fwdSign);
+    const thrown = dir.multiplyScalar(Math.max(2, before * 0.55)).add(new THREE.Vector3(0, 3.6 + Math.min(3, j * 0.2), 0));
+    const hurt = Math.min(45, (j - 5) * 4.5);
+    const slot = v.driver;
+    if (v === this.active) this.dropControls(v);
+    // the bike: on its side, sliding on with what's left of its speed, turning
+    v.fallen = true; v.fallSide = Math.random() < 0.5 ? -1 : 1;
+    v.driver = null; v.who = null;
+    if (v.rider) v.rider.visible = false;
+    p.vehicle = null;
+    p.pos.set(seat.x, seat.y - 0.9, seat.z);
+    p.viewY = p.pos.y;
+    p.vel.copy(thrown);
+    p.onGround = false;
+    p.tumble = 1;
+    this.startCoasting(v);
+    p.damage(hurt, seat.x - thrown.x, seat.z - thrown.z);
+    if (p === g.player) { p.shake = 1; g.hud.notice('Thrown off the bike!'); }
+    else g.net?.hurt?.(p, hurt, seat.x - thrown.x, seat.z - thrown.z);
+    g.net?.riderThrown?.(v, p, slot, thrown);
+  }
+
+  // A vehicle nobody's driving that's still moving (a fallen bike): it slides on until it stops.
+  startCoasting(v) {
+    v.coasting = true;
+    v.speed *= 0.6; v.spin += (Math.random() - 0.5) * 3;
+  }
+
+  coastTick(v, dt) {
+    const none = { down: () => false };
+    this.drive(v, dt, none);
+    this.place(v);
+    if (Math.abs(v.speed) < 0.15 && Math.abs(v.slip) < 0.15 && Math.abs(v.spin) < 0.1) {
+      v.coasting = false; v.speed = 0; v.slip = 0; v.spin = 0;
+      this.park(v);
+      this.g.net?.vehicleStopped?.(v);
+    }
+  }
+
+  // Damaged engines smoke: grey, then black; more the worse it is (only those near the camera).
+  smoke(dt) {
+    const g = this.g, cam = g.camera.position;
+    for (const v of this.list) {
+      if (v.dmg < 35 || v.type === 'drone') continue;
+      if (Math.abs(v.pos.x - cam.x) > 70 || Math.abs(v.pos.z - cam.z) > 70) continue;
+      const k = (v.dmg - 35) / 65;
+      v.smokeT = (v.smokeT || 0) - dt;
+      if (v.smokeT > 0) continue;
+      v.smokeT = 0.32 - k * 0.24;
+      const f = v.type === 'bike' ? 0.3 : 1.45 * v.fwdSign, c = Math.cos(v.heading), sn = Math.sin(v.heading);
+      const p = new THREE.Vector3(v.pos.x + c * f, v.pos.y + (v.type === 'bike' ? 0.7 : 1.0), v.pos.z - sn * f);
+      const grey = 0.55 - k * 0.45;
+      g.effects.emit(p, 1 + Math.round(k * 2), { color: [grey, grey * 0.97, grey * 0.94], speed: 0.6, spread: 0.5, up: 1.4, life: 2.2 + k * 1.5, size: 0.9 + k * 0.9, gravity: -0.9 });
+      if (v.dmg >= 100 && Math.random() < 0.35) g.effects.emit(p, 1, { color: [1, 0.45, 0.1], speed: 0.8, spread: 0.3, up: 1.2, life: 0.35, size: 0.35, gravity: -2 });
+    }
+  }
+
+  // A late joiner catches up: the damage a vehicle already has (no flying debris, it's history).
+  restoreDamage(v, d) {
+    if (d.dmg) v.dmg = d.dmg;
+    if (v.type !== 'car') return;
+    for (const e of d.dents || []) {
+      this.crash.dent(v, new THREE.Vector3(e[0], e[1], e[2]), new THREE.Vector3(e[3], 0, e[4]).normalize(), Math.min(0.3, 0.035 * (e[5] - 2)));
+      (v.dents || (v.dents = [])).push(e);
+    }
+    for (const name of d.lost || []) {
+      if (v.lost.has(name)) continue;
+      v.lost.add(name);
+      this.crash.remove(v, name);
+      if (v.hero && /wheel/.test(name)) {
+        const k = { wheelFL: 'Wheel_FL', wheelFR: 'Wheel_FR', wheelRL: 'Wheel_RL', wheelRR: 'Wheel_RR' }[name];
+        v.wheels = v.wheels.filter((w) => w.name !== k); v.front = v.front.filter((w) => w.name !== k);
+      }
+    }
+  }
+
+  // A new match: every vehicle back as it was (dents out, parts back on, engines fixed).
+  repairAll() {
+    this.crash.clear();
+    for (const v of this.list) {
+      if (!v.dmg && !v.lost.size && !v.fallen && !v.pieces) continue;
+      if (v.pieces || v.dentable) this.rebuild(v);
+      Object.assign(v, { dmg: 0, hp: {}, slip: 0, spin: 0, fallen: false, coasting: false, deadNoted: false, dents: [], pieces: null, dentable: null, lastCrash: null });
+      v.lost = new Set();
+      v.lean = 0; v.tilt.set(0, 0);
+      this.place(v);
+    }
+  }
+
+  // a fresh body for a car that was cut up and dented
+  rebuild(v) {
+    const g = this.g, old = v.mesh;
+    let fresh;
+    if (v.hero) {
+      const h = this.heroMesh(v.hero, this.models.vehicles[v.hero]);
+      fresh = h.mesh;
+      Object.assign(v, { wheels: h.wheels, front: h.front, lights: h.lights });
+    } else if (v.lotCar) {
+      const lot = this.lot, model = lot.fleet && lot.fleet[v.lotCar.v % lot.fleet.length];
+      fresh = new THREE.Group();
+      if (model) {
+        const body = new THREE.InstancedMesh(model.geometry, lot.mat, 1);
+        body.setMatrixAt(0, new THREE.Matrix4());
+        body.setColorAt(0, new THREE.Color(v.lotCar.color).convertSRGBToLinear());
+        body.castShadow = body.receiveShadow = true;
+        body.frustumCulled = false;
+        fresh.add(body);
+      }
+    } else return;
+    old.removeFromParent();
+    old.traverse((o) => { if (o.isMesh && o.geometry && !o.geometry.userData.shared) o.geometry.dispose(); });
+    g.scene.add(fresh);
+    v.mesh = fresh;
+  }
+
+  // the chase camera jolts with a crash (a spring back to where it was)
+  kickCamera(k) { this.kickVel.add(k.multiplyScalar(9)); }
 
   bump(v, speed) {
     const g = this.g;
+    if (v.replaying) return;
     g.audio.play('metal', { pos: v.pos, vol: Math.min(1, speed / 12) });
-    g.player.shake = Math.min(1, g.player.shake + speed / 16);
+    if (!v.who || v.who === g.player) g.player.shake = Math.min(1, g.player.shake + speed / 16);
   }
 
   // Personal drone: moves relative to where you look.
   flyDrone(v, dt, input) {
-    const g = this.g, s = v.spec, p = g.player;
+    const g = this.g, s = v.spec, p = v.who || g.player;
     const yaw = p.yaw;
     const f = (input.down('KeyW') ? 1 : 0) - (input.down('KeyS') ? 1 : 0);
     const r = (input.down('KeyD') ? 1 : 0) - (input.down('KeyA') ? 1 : 0);
@@ -658,8 +1057,8 @@ export class Vehicles {
 
   // Cars and bikes knock zombies down; slow ones just shove them aside.
   runOver(v) {
-    if (v.type === 'drone') return;
-    const g = this.g, s = v.spec;
+    if (v.type === 'drone' || this.g.mode === 'client') return;
+    const g = this.g, s = v.spec, by = v.driver ?? g.localSlot ?? 0, who = v.who || g.player;
     const c = Math.cos(v.heading), sn = Math.sin(v.heading);
     const spd = Math.abs(v.speed);
     for (const zb of g.zombies.list) {
@@ -673,12 +1072,13 @@ export class Vehicles {
         const dmg = spd * spd * 3.2 * (v.type === 'bike' ? 0.6 : 1);
         const dir = new THREE.Vector3(v.vel.x, 0.3, v.vel.z).normalize();
         const hitPoint = zb.pos.clone(); hitPoint.y += 1;
-        const killed = g.zombies.damage(zb, dmg, hitPoint, dir, false, 'vehicle');
-        if (g.weapons.onHit) g.weapons.onHit(zb, killed, false);
+        const killed = g.zombies.damage(zb, dmg, hitPoint, dir, false, 'vehicle', by);
+        if (g.weapons.onHit) g.weapons.onHit(zb, killed, false, by);
+        g.weapons.credit(by, killed, false);
         g.audio.play('flesh', { pos: zb.pos, vol: 1 });
         v.speed *= v.type === 'bike' ? 0.75 : 0.9;
         if (!killed) { zb.pos.x += v.vel.x * 0.12; zb.pos.z += v.vel.z * 0.12; zb.hitT = 0.8; }
-        if (v.type === 'bike' && spd > 12) g.player.damage(5, zb.pos.x, zb.pos.z);
+        if (v.type === 'bike' && spd > 12) { who.damage(5, zb.pos.x, zb.pos.z); if (who !== g.player) g.net?.hurt?.(who, 5, zb.pos.x, zb.pos.z); }
       } else {
         // push out of the body along the shallow axis
         const px = ex - Math.abs(lx), pz = ez - Math.abs(lz);
@@ -690,16 +1090,22 @@ export class Vehicles {
     }
   }
 
-  // Put the player in the seat and the camera where it belongs.
-  seatPlayer(v, dt) {
-    const g = this.g, p = g.player, s = v.spec, cam = g.camera;
+  // The driver sits in the seat (their feet 1.1 m under it).
+  seat(v, p) {
     v.mesh.updateMatrixWorld(true);
-    const st = v.seat || s.seat;
+    const st = v.seat || v.spec.seat;
     const seat = this.tmp.set(st[0], st[1], st[2]);
     if (v.fwdSign < 0) { seat.x = -seat.x; seat.z = -seat.z; }
     seat.applyMatrix4(v.mesh.matrixWorld);
     p.pos.set(seat.x, seat.y - 1.1, seat.z);
     p.viewY = p.pos.y;
+    return seat;
+  }
+
+  // Put the player in the seat and the camera where it belongs.
+  seatPlayer(v, dt) {
+    const g = this.g, p = g.player, cam = g.camera;
+    const seat = this.seat(v, p);
     v.mesh.visible = true;
     if (v.type !== 'drone') {
       p.yaw = 0; p.pitch = 0;   // (you get out facing the way the vehicle points)
@@ -737,7 +1143,7 @@ export class Vehicles {
     this.camTarget = (this.camTarget || new THREE.Vector3()).set(cx, cy, cz);
     if (!this.camPos) this.camPos = this.camTarget.clone();
     else this.camPos.lerp(this.camTarget, 1 - Math.exp(-(hit ? 20 : 6) * dt));
-    cam.position.copy(this.camPos);
+    cam.position.copy(this.camPos).add(this.kick);
     const sh = g.player.shake;
     if (sh > 0.01) { const t = performance.now() / 1000; cam.position.x += Math.sin(t * 47) * 0.06 * sh; cam.position.y += Math.cos(t * 53) * 0.06 * sh; }
     const look = (this.lookTarget || (this.lookTarget = new THREE.Vector3())).set(ox + fx * ahead, v.pos.y + 0.6, oz + fz * ahead);

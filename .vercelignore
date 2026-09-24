@@ -7,3 +7,9 @@ assets/hdri
 start.command
 .env*
 .vercel
+# (Cloudflare only)
+cloudflare
+wrangler.jsonc
+.assetsignore
+.wrangler
+.dev.vars

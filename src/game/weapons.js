@@ -66,6 +66,16 @@ export const WHERE = {
 };
 
 export const MAX_GRENADES = 4;
+
+// Aimed down the sights, every gun (and the bow) hits twice as hard.
+export const AIMED_DAMAGE = 2;
+// The gunsmith's bench: the gun in your hands to Mk II, III, IV. Each level hits harder and
+// carries more spare ammo (the zombies get tougher every wave: so can your guns).
+export const UPGRADES = [
+  { name: 'Mk II', dmg: 1.6, ammo: 1.5, price: 2000 },
+  { name: 'Mk III', dmg: 2.3, ammo: 2, price: 4500 },
+  { name: 'Mk IV', dmg: 3.2, ammo: 2.5, price: 9000 },
+];
 const THROW_TIME = 0.6;
 const FWD = new THREE.Vector3(0, 0, -1);
 const NADE_SKIP = { playerOnly: true };
@@ -464,6 +474,8 @@ export class Weapons {
     this.onHit = null;
     this.onShoot = null;
     this.ignoreItems = null; // collider items bullets pass through (the car you're sitting in)
+    this.levels = {};          // our guns' upgrade levels (0: as bought)
+    this.slotLevels = new Map(); // co-op host: every other player's, by slot
     this.arrows = [];
     this.nades = [];
     this.projSeq = 0;          // ids for arrows and grenades (co-op: the same id on every screen)
@@ -707,7 +719,7 @@ export class Weapons {
     this.switching = instant ? 0 : (kind === 'mg' ? 0.6 : kind === 'knife' ? 0.2 : 0.35);
     this.cool = this.switching; // the last gun's cycle time doesn't carry over
     this.bloomNow = 0; this.burst = 0;
-    this.g.hud?.weapon(this.def, this.ammo);
+    this.hudWeapon();
     this.g.hud?.slots(this.owned, this.current);
     const v = this.views[kind];
     if (v && v.rig && !instant) this.rigPlay(v, 'draw', 0.3);
@@ -715,17 +727,47 @@ export class Weapons {
 
   give(kind) {
     const d = DEFS[kind];
-    if (!this.owned[kind]) this.owned[kind] = { mag: d.mag, reserve: d.reserve };
-    else { this.owned[kind].mag = d.mag; this.owned[kind].reserve = d.reserve; }
+    if (!this.owned[kind]) this.owned[kind] = { mag: d.mag, reserve: this.reserveCap(kind) };
+    else { this.owned[kind].mag = d.mag; this.owned[kind].reserve = this.reserveCap(kind); }
     this.equip(kind);
   }
 
   refillAll() {
-    for (const k of Object.keys(this.owned)) { if (DEFS[k].melee) continue; this.owned[k].mag = DEFS[k].mag; this.owned[k].reserve = DEFS[k].reserve; }
+    for (const k of Object.keys(this.owned)) { if (DEFS[k].melee) continue; this.owned[k].mag = DEFS[k].mag; this.owned[k].reserve = this.reserveCap(k); }
     this.grenades = MAX_GRENADES;
-    this.g.hud?.weapon(this.def, this.ammo);
+    this.hudWeapon();
     this.g.hud?.grenades(this.grenades);
   }
+
+  // --- upgrades ---
+  level(kind, slot = this.g.localSlot ?? 0) {
+    if (slot === (this.g.localSlot ?? 0)) return this.levels[kind] || 0;
+    return (this.slotLevels.get(slot) || {})[kind] || 0;
+  }
+  canUpgrade(kind) { const d = DEFS[kind]; return !!d && !d.melee; }
+  // how hard a shot hits: the gun's level, and twice that aimed
+  damageMult(kind, slot, aimed) {
+    const l = this.level(kind, slot);
+    return (l ? UPGRADES[l - 1].dmg : 1) * (aimed ? AIMED_DAMAGE : 1);
+  }
+  reserveCap(kind, slot) {
+    const l = this.level(kind, slot);
+    return Math.round(DEFS[kind].reserve * (l ? UPGRADES[l - 1].ammo : 1));
+  }
+  // one level up (for us, or on a co-op host for another player's gun)
+  upgrade(kind, slot = this.g.localSlot ?? 0) {
+    if (slot !== (this.g.localSlot ?? 0)) {
+      const m = this.slotLevels.get(slot) || {};
+      m[kind] = Math.min(UPGRADES.length, (m[kind] || 0) + 1);
+      this.slotLevels.set(slot, m);
+      return;
+    }
+    this.levels[kind] = Math.min(UPGRADES.length, (this.levels[kind] || 0) + 1);
+    // a fresh magazine and the bigger reserve, full
+    if (this.owned[kind]) { this.owned[kind].mag = DEFS[kind].mag; this.owned[kind].reserve = this.reserveCap(kind); }
+    if (this.current === kind) this.hudWeapon();
+  }
+  hudWeapon() { this.g.hud?.weapon(this.def, this.ammo, this.levels[this.current] || 0); }
 
   // An ammo box: a couple of magazines for every gun you carry, arrows and a grenade.
   topUp() {
@@ -734,11 +776,11 @@ export class Weapons {
       const d = DEFS[k], a = this.owned[k];
       if (d.melee) continue;
       const add = d.bow ? 6 : d.pump ? 14 : Math.max(d.mag * 2, 20);
-      const cap = d.reserve;
+      const cap = this.reserveCap(k);
       if (a.reserve < cap) { a.reserve = Math.min(cap, a.reserve + add); any = true; }
     }
     if (this.grenades < MAX_GRENADES) { this.grenades++; any = true; }
-    this.g.hud?.weapon(this.def, this.ammo);
+    this.hudWeapon();
     this.g.hud?.grenades(this.grenades);
     return any;
   }
@@ -834,7 +876,7 @@ export class Weapons {
           if (ammo.mag < def.mag && ammo.reserve > 0) {
             ammo.mag++; ammo.reserve--;
             this.g.audio.play('shellIn', { vol: 0.75 });
-            this.g.hud?.weapon(def, ammo);
+            this.hudWeapon();
             if (ammo.mag < def.mag && ammo.reserve > 0) this.reloading = def.shellTime;
             else { this.shellLoading = false; this.g.audio.play('pump', { vol: 0.8 }); this.cool = 0.35; }
           } else this.shellLoading = false;
@@ -844,7 +886,7 @@ export class Weapons {
         const cap = def.mag + (def.chamber && this.reloadWasTactical ? 1 : 0);
         const take = Math.min(cap - ammo.mag, ammo.reserve);
         ammo.mag += take; ammo.reserve -= take;
-        this.g.hud?.weapon(def, ammo);
+        this.hudWeapon();
       }
     }
     this.updateGrenades(dt);
@@ -860,7 +902,7 @@ export class Weapons {
     if (ammo.mag === 0 && ammo.reserve > 0 && this.nockT <= 0) this.nockT = 0.55;
     if (this.nockT > 0) {
       this.nockT -= dt;
-      if (this.nockT <= 0 && ammo.mag === 0 && ammo.reserve > 0) { ammo.mag = 1; ammo.reserve--; this.g.hud?.weapon(def, ammo); }
+      if (this.nockT <= 0 && ammo.mag === 0 && ammo.reserve > 0) { ammo.mag = 1; ammo.reserve--; this.hudWeapon(); }
     }
     const nocked = ammo.mag > 0;
     const canDraw = nocked && this.switching <= 0 && this.knifeT <= 0 && this.throwT <= 0 && !p.sprinting;
@@ -896,17 +938,17 @@ export class Weapons {
     const dir = fwd.clone().addScaledVector(right, Math.cos(a) * r).addScaledVector(up, Math.sin(a) * r).normalize();
     const speed = THREE.MathUtils.lerp(def.speedMin, def.speedMax, k);
     const pos = origin.clone().addScaledVector(up, -0.03);
-    const vel = dir.clone().multiplyScalar(speed), dmg = def.dmg * (0.2 + 0.8 * k * k), pierce = k > 0.85 ? 1 : 0;
     const slot = g.localSlot ?? 0, id = this.nextProjId(slot);
+    const vel = dir.clone().multiplyScalar(speed), dmg = def.dmg * (0.2 + 0.8 * k * k) * this.damageMult('bow', slot, p.ads > 0.5), pierce = k > 0.85 ? 1 : 0;
     // co-op: on a client the host flies the real arrow; this one is for show (and to pick up again)
     this.spawnArrow(pos, vel, { dmg, pierce, by: slot, id, mine: true, visual: g.mode === 'client' });
-    if (g.mode === 'client') g.net.arrow(id, pos, vel, dmg, pierce);
+    if (g.mode === 'client') g.net.arrow(id, pos, vel, def.dmg * (0.2 + 0.8 * k * k), pierce, p.ads > 0.5);
     else if (g.mode === 'host') g.net.arrowFx(id, pos, vel, slot);
     g.audio.play('bow', { vol: 0.9 });
     p.kick(0.25, (Math.random() - 0.5) * 0.2);
     this.kick = 0.3;
     this.nockT = 0.55;
-    g.hud?.weapon(def, ammo);
+    this.hudWeapon();
     if (this.onShoot) this.onShoot();
   }
 
@@ -946,7 +988,7 @@ export class Weapons {
           this.owned.bow.reserve++;
           g.audio.play('pickup', { vol: 0.25, rate: 1.6 });
           this.removeArrow(i);
-          if (this.current === 'bow') g.hud?.weapon(this.def, this.ammo);
+          if (this.current === 'bow') this.hudWeapon();
           continue;
         }
         if (a.t > 45) this.removeArrow(i);
@@ -1133,9 +1175,10 @@ export class Weapons {
       // co-op: the host decides what the bullets hit (it'll send the hit marker); the walls you
       // hit you see straight away
       for (const [k, dir] of dirs.entries()) this.worldImpact(origin, dir, def, k === 0);
-      g.net.shoot(this.current, origin, dirs);
+      g.net.shoot(this.current, origin, dirs, p.ads > 0.5);
     } else {
-      const r = this.resolveShot(this.current, origin, dirs, g.localSlot ?? 0, null, this.ignoreItems);
+      const slot = g.localSlot ?? 0;
+      const r = this.resolveShot(this.current, origin, dirs, slot, null, this.ignoreItems, this.damageMult(this.current, slot, p.ads > 0.5));
       if (r.hit) { g.hud?.hitmarker(r.kill, r.head); g.audio.play('hit', { vol: 0.45, jitter: 0 }); }
       if (g.mode === 'host') g.net.shotFx(g.localSlot ?? 0, this.current, origin, dirs);
     }
@@ -1162,7 +1205,7 @@ export class Weapons {
     const view = this.views[this.current];
     if (view.acts?.shoot) { const s = view.acts.shoot; s.reset(); s.play(); }
     if (view.slide) view.slideT = 0.09;
-    g.hud?.weapon(def, ammo);
+    this.hudWeapon();
     if (this.onShoot) this.onShoot();
   }
 
@@ -1170,7 +1213,7 @@ export class Weapons {
   // bodies (penCars), losing damage each time. Runs wherever the zombies are real (solo, the
   // host), for the host's own shots and every client's; rewind puts the zombies back where the
   // shooter saw them.
-  resolveShot(key, origin, dirs, slot = 0, rewind = null, ignore = null) {
+  resolveShot(key, origin, dirs, slot = 0, rewind = null, ignore = null, power = 1) {
     const def = DEFS[key], g = this.g;
     const out = { hit: false, kill: false, head: false };
     if (!def || def.melee || def.bow) return out;
@@ -1183,7 +1226,7 @@ export class Weapons {
           const zb = res.zombie;
           const dist = travelled + res.t;
           const fall = THREE.MathUtils.clamp(1 - (dist - def.falloff) / (def.range - def.falloff), 0.35, 1);
-          let dmg = def.dmg * fall * mult * (res.head ? def.head : 1);
+          let dmg = def.dmg * fall * mult * power * (res.head ? def.head : 1);
           if (this.instaKill > 0) dmg = 1e6;
           const killed = g.zombies.damage(zb, dmg, res.point, dir, res.head, key, slot);
           out.hit = true; out.kill = out.kill || killed; out.head = out.head || res.head;

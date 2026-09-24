@@ -70,13 +70,19 @@
     Survive as many waves as you can.</p>
   <button id="play" class="btn">Play</button>
   <div id="mp">
-    <div class="mp-title">Play with friends <span>co-op · up to 4 · same password, same match</span></div>
+    <div class="mp-title" id="mp-title">Play with friends <span>co-op · up to 4</span></div>
     <form id="mp-form" autocomplete="off">
-      <input id="mp-name" type="text" placeholder="Your name" maxlength="16" spellcheck="false">
-      <input id="mp-pass" type="password" placeholder="Match password" maxlength="128" spellcheck="false">
-      <button id="mp-join" class="btn ghost" type="submit">Join</button>
+      <!-- (plain text boxes, not a login: no "Save password?" from the browser or a password manager) -->
+      <input id="mp-name" type="text" placeholder="Your name" maxlength="16" spellcheck="false" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore data-form-type="other">
+      <input id="mp-pass" type="text" placeholder="Room password (empty: a new room)" maxlength="128" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" data-1p-ignore data-lpignore="true" data-bwignore data-form-type="other">
+      <button id="mp-join" class="btn ghost" type="submit">Create room</button>
       <button id="mp-leave" class="btn ghost hidden" type="button">Leave</button>
     </form>
+    <div id="mp-invite" class="hidden">
+      <span>Invite friends: send them this link</span>
+      <input id="mp-link" type="text" readonly spellcheck="false">
+      <button id="mp-copy" class="btn ghost" type="button">Copy link</button>
+    </div>
     <div id="mp-status"></div>
     <button id="mp-start" class="btn hidden" type="button">Start match</button>
   </div>

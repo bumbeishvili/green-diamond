@@ -23,6 +23,7 @@ export async function buildGround(level, scene, colliders) {
     soil: addMacroVariation(pbrMaterial(soil, { color: 0xd2c3ad, roughMap: false, roughness: 1.0 }), { freq: 0.04, amount: 0.2 }),
     wild: addMacroVariation(pbrMaterial(grass, { color: 0xd8dcb0, normalScale: 0.8, roughMap: false, roughness: 1.0 }),
       { freq: 0.03, amount: 0.25, tint: 0xc9b27a, tintAmount: 0.7, tintFreq: 0.02 }),
+    gravel: addMacroVariation(pbrMaterial(soil, { color: 0xd2c3ad, roughMap: false, roughness: 1.0 }), { freq: 0.04, amount: 0.2 }),
     pool: pbrMaterial(poolTiles, { color: 0xffffff, normalScale: 0.4 }),
     paint: new THREE.MeshStandardMaterial({ color: 0xe9e7df, roughness: 0.75, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
     wall: pbrMaterial(concrete, { color: 0xcfcac1, normalScale: 0.8, side: THREE.DoubleSide, roughMap: false, roughness: 0.92 }),
@@ -190,6 +191,12 @@ export async function buildGround(level, scene, colliders) {
   for (const hole of [...level.ramps.map((r) => r.poly), ...level.pools.map((p) => p.poly)]) {
     disc.holes.push(new THREE.Path(hole.outer.map(([x, y]) => new THREE.Vector2(x, y))));
   }
+  // The land out there is layers a few centimetres apart (this base, construction dirt, lots,
+  // streets). Far off, the depth buffer can't tell them apart and they flicker through each other,
+  // so each is drawn a fixed step further back than what lies on it (the base furthest).
+  const layer = (m, steps) => { m.polygonOffset = true; m.polygonOffsetFactor = steps / 2; m.polygonOffsetUnits = steps; };
+  layer(mats.wild, 6);
+  layer(mats.soil, 3);
   const base = new THREE.Mesh(new THREE.ShapeGeometry(disc, 48), mats.wild);
   base.rotation.x = -Math.PI / 2;
   base.position.y = -0.03;
@@ -215,7 +222,7 @@ export async function buildGround(level, scene, colliders) {
     group.add(m);
   }
   if (roadsOut.gravel.length) {
-    const m = new THREE.Mesh(mergeGeometries(roadsOut.gravel), mats.soil);
+    const m = new THREE.Mesh(mergeGeometries(roadsOut.gravel), mats.gravel);
     m.receiveShadow = true;
     group.add(m);
   }

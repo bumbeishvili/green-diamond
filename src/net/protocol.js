@@ -18,10 +18,11 @@ export const MAX_SNAP_ZOMBIES = 72;
 export const MSG = { INPUT: 1, SNAP: 2 };
 
 // keyboard state of one tick
-export const BTN = { fwd: 1, back: 2, left: 4, right: 8, jump: 16, crouch: 32, sprint: 64 };
+// (jump: Space pressed this tick; space: Space held, the handbrake or the drone's climb)
+export const BTN = { fwd: 1, back: 2, left: 4, right: 8, jump: 16, crouch: 32, sprint: 64, space: 128 };
 const CODE_BITS = {
   KeyW: BTN.fwd, ArrowUp: BTN.fwd, KeyS: BTN.back, ArrowDown: BTN.back, KeyA: BTN.left, ArrowLeft: BTN.left,
-  KeyD: BTN.right, ArrowRight: BTN.right, Space: BTN.jump, KeyC: BTN.crouch, ShiftLeft: BTN.sprint,
+  KeyD: BTN.right, ArrowRight: BTN.right, Space: BTN.space, KeyC: BTN.crouch, ShiftLeft: BTN.sprint,
 };
 
 // What Player.update() reads from an input, replayed from a recorded tick.
@@ -31,7 +32,7 @@ export class TickInput {
     this.mouse = { dx: 0, dy: 0, left: false, right: false, leftPressed: false, wheel: 0 };
   }
   set(bits) { this.bits = bits; return this; }
-  down(code) { const b = CODE_BITS[code]; return !!b && b !== BTN.jump && (this.bits & b) !== 0; }
+  down(code) { const b = CODE_BITS[code]; return !!b && (this.bits & b) !== 0; }
   hit(code) { return code === 'Space' && (this.bits & BTN.jump) !== 0; }
 }
 
@@ -43,6 +44,7 @@ export function bitsFrom(input, jump) {
   if (input.down('KeyD') || input.down('ArrowRight')) b |= BTN.right;
   if (input.down('KeyC')) b |= BTN.crouch;
   if (input.down('ShiftLeft')) b |= BTN.sprint;
+  if (input.down('Space')) b |= BTN.space;
   if (jump) b |= BTN.jump;
   return b;
 }
@@ -100,13 +102,18 @@ export function decodeInputs(buf) {
 const HEAD_BYTES = 1 + 4 + 4 + 4 + 2 + 1 + 1 + 2;
 const PLAYER_BYTES = 1 + 1 + 12 + 6 + 2 + 2 + 1 + 1 + 2 + 2 + 1 + 1 + 1 + 1;
 const ZOMBIE_BYTES = 2 + 1 + 1 + 1 + 6 + 1 + 1 + 1 + 1 + 1;
-export const PF = { dead: 1, onGround: 2, sprint: 4, inWater: 8, fire: 16, reload: 32, roof: 64 };
+export const PF = { dead: 1, onGround: 2, sprint: 4, inWater: 8, fire: 16, reload: 32, roof: 64, vehicle: 128 };
+// vehicle: u16 vid, u8 driver, u8 flags (VF), f32 x y z heading speed steer, i16 vx vy vz (cm/s), i8 tilt x y (1/100 rad),
+//          i8 lean (1/60 rad: a bike on its side leans ~1.45), i16 spin (mrad/s)
+const VEHICLE_BYTES = 2 + 1 + 1 + 24 + 6 + 3 + 2;
+export const VF = { fallen: 1, coasting: 2 };
 export const ZF = { hidden: 1, hit: 2, buff: 4, fuse: 8 };
 export const SF = { intermission: 1, over: 2 };
 
 export function encodeSnapshot(s) {
   const zs = s.zombies;
-  const buf = new ArrayBuffer(HEAD_BYTES + s.players.length * PLAYER_BYTES + zs.length * ZOMBIE_BYTES), v = new DataView(buf);
+  const vs = s.vehicles || [];
+  const buf = new ArrayBuffer(HEAD_BYTES + s.players.length * PLAYER_BYTES + zs.length * ZOMBIE_BYTES + 1 + vs.length * VEHICLE_BYTES), v = new DataView(buf);
   let o = 0;
   v.setUint8(o, MSG.SNAP); o += 1;
   v.setUint32(o, s.tick); o += 4;
@@ -144,6 +151,16 @@ export function encodeSnapshot(s) {
     v.setUint8(o, Math.max(0, Math.min(255, Math.round(z.scale * 100)))); o += 1;
     v.setUint8(o, z.flags); o += 1;
   }
+  v.setUint8(o, vs.length); o += 1;
+  for (const c of vs) {
+    v.setUint16(o, c.vid); o += 2;
+    v.setUint8(o, c.driver ?? 255); o += 1;
+    v.setUint8(o, c.flags || 0); o += 1;
+    for (const k of [c.x, c.y, c.z, c.heading, c.speed, c.steer]) { v.setFloat32(o, k); o += 4; }
+    v.setInt16(o, clamp16(c.vx * 100)); v.setInt16(o + 2, clamp16(c.vy * 100)); v.setInt16(o + 4, clamp16(c.vz * 100)); o += 6;
+    for (const k of [c.tx * 100, c.ty * 100, c.lean * 60]) { v.setInt8(o, Math.max(-127, Math.min(127, Math.round(k)))); o += 1; }
+    v.setInt16(o, clamp16((c.spin || 0) * 1000)); o += 2;
+  }
   return buf;
 }
 
@@ -180,6 +197,20 @@ export function decodeSnapshot(buf) {
     z.scale = v.getUint8(o) / 100; o += 1;
     z.flags = v.getUint8(o); o += 1;
     s.zombies.push(z);
+  }
+  s.vehicles = [];
+  if (o < buf.byteLength) {
+    const nv = v.getUint8(o); o += 1;
+    for (let i = 0; i < nv && o + VEHICLE_BYTES <= buf.byteLength; i++) {
+      const c = { vid: v.getUint16(o), driver: v.getUint8(o + 2), flags: v.getUint8(o + 3) };
+      o += 4;
+      [c.x, c.y, c.z, c.heading, c.speed, c.steer] = [0, 4, 8, 12, 16, 20].map((k) => v.getFloat32(o + k)); o += 24;
+      c.vx = v.getInt16(o) / 100; c.vy = v.getInt16(o + 2) / 100; c.vz = v.getInt16(o + 4) / 100; o += 6;
+      c.tx = v.getInt8(o) / 100; c.ty = v.getInt8(o + 1) / 100; c.lean = v.getInt8(o + 2) / 60; o += 3;
+      c.spin = v.getInt16(o) / 1000; o += 2;
+      if (c.driver === 255) c.driver = null;
+      s.vehicles.push(c);
+    }
   }
   return s;
 }

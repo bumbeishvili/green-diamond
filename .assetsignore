@@ -1,0 +1,14 @@
+# Cloudflare static assets: everything here is NOT served (the server code, local tools, secrets).
+.*
+node_modules
+reference
+tools
+api
+cloudflare
+wrangler.jsonc
+package.json
+package-lock.json
+start.command
+vercel.json
+assets/previews
+assets/hdri

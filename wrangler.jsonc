@@ -1,0 +1,14 @@
+// Cloudflare: the whole game as one Worker. The static files are served straight from Workers
+// static assets (see .assetsignore for what's left out); /api/* runs cloudflare/worker.js, with
+// one Durable Object per room (free plan: SQLite-backed). Deploy: npx wrangler deploy
+{
+  "name": "green-diamond",
+  "main": "cloudflare/worker.js",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": { "directory": ".", "binding": "ASSETS", "run_worker_first": ["/api/*"] },
+  "durable_objects": { "bindings": [{ "name": "ROOMS", "class_name": "Room" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
+  "alias": { "@vercel/blob": "./cloudflare/no-blob.js" },
+  "observability": { "enabled": true }
+}

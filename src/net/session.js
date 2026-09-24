@@ -12,12 +12,14 @@ export const TICK_HZ = 30;
 export const MAX_PLAYERS = 4;
 const ANSWER_WAIT = 16000;      // a client's offer unanswered this long: the host is gone (server: 15 s)
 const GHOST_MS = 30000;         // a member who never sent an offer is dropped after this
+const IDLE_CLOSE_MS = 30 * 60 * 1000;   // a host alone in a background tab this long closes the room
 
 export const MESSAGES = {
   unreachable: 'Can\'t connect from this network. A direct (peer-to-peer) connection to the host is blocked here, usually by a strict firewall or NAT. Try another network; a phone hotspot often works.',
   hostLeft: 'The host left, so the match is over.',
   lost: 'The connection to the host was lost.',
   ended: 'This room has ended.',
+  idle: 'Room closed: nobody joined in the 30 minutes the game was in the background. Create a new one when you\'re ready.',
 };
 
 // Timers from a worker keep running at full speed in a background tab, where the page's own
@@ -128,11 +130,12 @@ export class Session {
 
   enter(r) {
     Object.assign(this, { room: r.room, id: r.id, slot: r.slot, role: r.role, hostId: r.hostId, ice: r.iceServers });
+    this.bellOk = !!r.bell;
     this.roster = [{ id: r.id, slot: r.slot }];
     this.startTimers();
     if (this.role === 'host') {
       this.state = 'connected';
-      this.message = 'You\'re hosting. Friends who enter the same password join you.';
+      this.message = 'You\'re hosting. Send your friends the link (or the password).';
       this.changed();
       this.hostLoop(this.gen);
     } else {
@@ -173,24 +176,40 @@ export class Session {
 
   // ---- host ----
 
-  // look for new players while there's room; back off when nobody comes
+  // look for new players while there's room; back off when nobody comes. With a doorbell
+  // (Cloudflare) look when it rings, and otherwise only once a minute, in case a ring went missing.
   async hostLoop(gen) {
-    let wait = 1200;
-    while (this.gen === gen && this.role === 'host' && this.room) {
-      if (this.peers.size < MAX_PLAYERS - 1) {
-        try {
-          const box = await signaling.inbox(this.room, this.id, [...this.peers.keys()]);
-          if (this.gen !== gen) return;
-          this.members = box.players;
-          for (const o of box.offers) this.acceptClient(o.from, o.sdp);
-          const waitingFor = this.dropGhosts(box.players, box.offers);
-          wait = box.offers.length || waitingFor ? 1200 : Math.min(wait * 1.25, 5000);
-        } catch (e) {
-          if (e.gone) { this.fail(MESSAGES.ended); return; }
-          wait = 5000;
-        }
-      } else wait = 2000;
-      await sleep(wait);
+    let wait = 1200, alone = 0, rung = false, wake = null;
+    const bell = this.bellOk ? signaling.bell(this.room, this.id, () => { rung = true; if (wake) wake(); }) : null;
+    try {
+      while (this.gen === gen && this.role === 'host' && this.room) {
+        // every look is a Blob read on Vercel (the free plan has 10,000 a month): a room forgotten in
+        // a background tab with nobody in it closes after half an hour instead of polling all night
+        if (!this.peers.size && typeof document !== 'undefined' && document.hidden) {
+          if (!alone) alone = performance.now();
+          else if (performance.now() - alone > IDLE_CLOSE_MS) { this.fail(MESSAGES.idle); return; }
+        } else alone = 0;
+        rung = false;
+        let quiet = false;
+        if (this.peers.size < MAX_PLAYERS - 1) {
+          try {
+            const box = await signaling.inbox(this.room, this.id, [...this.peers.keys()]);
+            if (this.gen !== gen) return;
+            this.members = box.players;
+            for (const o of box.offers) this.acceptClient(o.from, o.sdp);
+            const waitingFor = this.dropGhosts(box.players, box.offers);
+            quiet = !box.offers.length && !waitingFor;
+            wait = quiet ? Math.min(wait * 1.25, 5000) : 1200;
+          } catch (e) {
+            if (e.gone) { this.fail(MESSAGES.ended); return; }
+            wait = 5000;
+          }
+        } else wait = 2000;
+        if (!rung) await Promise.race([sleep(quiet && bell && bell.open ? 60000 : wait), new Promise((r) => { wake = r; })]);
+        wake = null;
+      }
+    } finally {
+      if (bell) bell.close();
     }
   }
 

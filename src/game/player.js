@@ -4,6 +4,14 @@ import { pointInPoly } from '../world/geom.js';
 
 const PLAYER_SKIP = { pool: true }; // the pool edge only fences zombies
 
+// The pharmacy's body armour: max health, and the share of each hit that still gets through.
+export const ARMOUR = [
+  { name: 'I', max: 125, take: 0.88, price: 1500 },
+  { name: 'II', max: 150, take: 0.76, price: 3000 },
+  { name: 'III', max: 175, take: 0.65, price: 5000 },
+  { name: 'IV', max: 200, take: 0.55, price: 8000 },
+];
+
 // First-person controller: walking, sprinting, crouching, jumping, curb step-up,
 // collision against the static world, head bob and view punch.
 export class Player {
@@ -28,6 +36,8 @@ export class Player {
     this.punch = new THREE.Vector2();      // recoil / hit view kick (radians)
     this.punchVel = new THREE.Vector2();
     this.shake = 0;
+    this.tumble = 0;                       // thrown off a bike: no control, the view rolls, until you've landed and stopped
+    this.armour = 0;                       // body armour level (the pharmacy): more health, less damage taken
     this.stepDist = 0;
     this.onStep = null;        // footstep callback(surface)
     this.speedMul = 1;
@@ -109,9 +119,11 @@ export class Player {
       this.pitch = THREE.MathUtils.clamp(this.pitch, -1.5, 1.5);
     }
 
-    // movement intent
+    // movement intent (none while you tumble through the air, or slide along the road after)
+    const tumbling = this.tumble > 0.25;
+    if (this.tumble > 0) this.tumble = Math.max(0, this.tumble - dt * (this.onGround ? 1.1 : 0.3));
     let fx = 0, fz = 0;
-    if (allowControl && !this.dead) {
+    if (allowControl && !this.dead && !tumbling) {
       if (input.down('KeyW') || input.down('ArrowUp')) fz -= 1;
       if (input.down('KeyS') || input.down('ArrowDown')) fz += 1;
       if (input.down('KeyA') || input.down('ArrowLeft')) fx -= 1;
@@ -129,7 +141,7 @@ export class Player {
 
     const sin = Math.sin(this.yaw), cos = Math.cos(this.yaw);
     const wishX = fx * cos + fz * sin, wishZ = -fx * sin + fz * cos;
-    const accel = this.onGround ? 14 : 3;
+    const accel = this.onGround ? (tumbling ? 2.5 : 14) : (tumbling ? 0.25 : 3);
     this.vel.x = THREE.MathUtils.damp(this.vel.x, wishX * speed, accel, dt);
     this.vel.z = THREE.MathUtils.damp(this.vel.z, wishZ * speed, accel, dt);
 
@@ -162,6 +174,7 @@ export class Player {
     this.pos.y += this.vel.y * dt;
     if (this.pos.y <= ground) {
       if (!this.onGround && this.vel.y < -7) this.shake = Math.min(1, this.shake + 0.25);
+      if (!this.onGround && tumbling) { this.shake = 1; this.kick(-2.2, (Math.random() - 0.5) * 2); if (this.onLand && !this.quiet) this.onLand(); }
       // falling more than about two storeys hurts; off a 9-storey roof it kills
       if (!this.onGround && this.vel.y < -13 && !this.inWater) {
         const dmg = (-this.vel.y - 13) * 9;
@@ -227,7 +240,10 @@ export class Player {
     this.camera.rotation.order = 'YXZ';
     this.camera.rotation.y = this.yaw + this.punch.y + sx;
     this.camera.rotation.x = this.pitch + this.punch.x + sy;
-    this.camera.rotation.z = this.dead ? 0.45 : -bobX * 0.4;
+    // (thrown: the world turns over as you go)
+    const tb = this.tumble * this.tumble;
+    this.camera.rotation.z = this.dead ? 0.45 : -bobX * 0.4 + tb * 0.95 * Math.sin(t * 5.5);
+    if (tb > 0) this.camera.rotation.x += tb * 0.4 * Math.sin(t * 3.7);
     const fov = this.fovBase * (1 - this.ads * (this.adsZoom ?? 0.22)) * (this.sprinting ? 1.05 : 1);
     if (Math.abs(this.camera.fov - fov) > 0.01) {
       this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, fov, 0.25);
@@ -235,13 +251,29 @@ export class Player {
     }
   }
 
+  // Which way you face on the map: driving a car or riding a bike, the way it points (your own
+  // yaw is held at zero in there, so you get out facing forward).
+  get mapYaw() {
+    const v = this.vehicle;
+    return v && v.type !== 'drone' ? v.heading - Math.PI / 2 + (v.fwdSign < 0 ? Math.PI : 0) : this.yaw;
+  }
+
   kick(pitch, yaw) {
     this.punchVel.x += pitch;
     this.punchVel.y += yaw;
   }
 
+  // Body armour, level 0..4: every level more health and less of every hit.
+  setArmour(level) {
+    this.armour = Math.max(0, Math.min(ARMOUR.length, level));
+    this.maxHealth = this.armour ? ARMOUR[this.armour - 1].max : 100;
+    this.health = this.maxHealth;
+  }
+  get armourTake() { return this.armour ? ARMOUR[this.armour - 1].take : 1; }
+
   damage(amount, fromX, fromZ) {
     if (this.dead) return false;
+    amount *= this.armourTake;
     this.health -= amount;
     this.regenDelay = 4.0;
     this.shake = Math.min(1, this.shake + 0.35);

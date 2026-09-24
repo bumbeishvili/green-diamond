@@ -13,6 +13,8 @@ export class Conflict extends Error {}
 
 let memory = null;
 export function useMemoryStore() { memory = memory || new MemoryStore(); return memory; }
+// (on Cloudflare the Worker hands in a store backed by the rooms' Durable Objects)
+export function setStore(s) { memory = s; }
 
 export function store() { return memory || blobStore; }
 

@@ -164,11 +164,12 @@ function fromModel(model, color, rifleScene) {
   return { root, kind: 'model', mixer, actions, parts: { muzzle, chest, torso } };
 }
 
+const TAG_W = 384, TAG_H = 80;
 function nameTag() {
-  const c = document.createElement('canvas'); c.width = 256; c.height = 64;
+  const c = document.createElement('canvas'); c.width = TAG_W; c.height = TAG_H;
   const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
   const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false, depthWrite: false, transparent: true }));
-  sp.scale.set(1.1, 0.275, 1);
+  sp.center.set(0.5, 0);   // (it grows upwards from over the head, never down into the body)
   sp.renderOrder = 10;
   return { sp, c, tex, key: '' };
 }
@@ -202,9 +203,9 @@ export class Avatars {
     av.slot = slot;
     av.pos = new THREE.Vector3(); av.yaw = 0; av.pitch = 0; av.crouch = 0; av.speed = 0; av.phase = 0; av.dead = false; av.deadT = 0;
     av.placed = false; av.current = null; av.flashT = 0; av.name = `P${slot + 1}`;
+    // (the tag hangs in the scene, not on the body: it stays up over a car they're driving)
     av.tag = nameTag();
-    av.tag.sp.position.y = 2.15;
-    av.root.add(av.tag.sp);
+    this.g.scene.add(av.tag.sp);
     av.flash = muzzleFlash();
     this.g.scene.add(av.flash);
     this.g.scene.add(av.root);
@@ -217,6 +218,7 @@ export class Avatars {
     if (!av) return;
     this.g.scene.remove(av.root);
     this.g.scene.remove(av.flash);
+    this.g.scene.remove(av.tag.sp);
     this.list.delete(slot);
   }
 
@@ -257,6 +259,9 @@ export class Avatars {
     if (st.dead && !av.dead) { av.deadT = 0; this.play(av, 'death', 0.15); }
     if (!st.dead && av.dead) { av.deadT = 0; av.root.rotation.set(0, 0, 0); }
     av.dead = !!st.dead;
+    // (in a car or on a drone they're inside it: the bike shows its own rider)
+    av.hidden = !!st.hidden;
+    av.root.visible = !av.hidden;
     if (st.name) av.name = st.name;
     this.tag(av, st);
   }
@@ -268,18 +273,18 @@ export class Avatars {
     if (key === av.tag.key) return;
     av.tag.key = key;
     const x = av.tag.c.getContext('2d');
-    x.clearRect(0, 0, 256, 64);
-    x.font = 'bold 26px -apple-system, Segoe UI, Roboto, sans-serif';
+    x.clearRect(0, 0, TAG_W, TAG_H);
+    x.font = 'bold 36px -apple-system, Segoe UI, Roboto, sans-serif';
     x.textAlign = 'center';
-    x.lineWidth = 5; x.strokeStyle = 'rgba(0,0,0,0.75)';
+    x.lineWidth = 6; x.strokeStyle = 'rgba(0,0,0,0.75)';
     const label = st.dead ? `${av.name} ✝` : av.name;
-    x.strokeText(label, 128, 28);
+    x.strokeText(label, TAG_W / 2, 40);
     x.fillStyle = SLOT_CSS[av.slot % 4];
-    x.fillText(label, 128, 28);
+    x.fillText(label, TAG_W / 2, 40);
     if (!st.dead) {
-      x.fillStyle = 'rgba(0,0,0,0.6)'; x.fillRect(58, 40, 140, 12);
+      x.fillStyle = 'rgba(0,0,0,0.6)'; x.fillRect(TAG_W / 2 - 82, 54, 164, 16);
       x.fillStyle = hp > 7 ? '#5fd35f' : hp > 3 ? '#ffc23a' : '#ff4a3a';
-      x.fillRect(60, 42, (136 * hp) / 20, 8);
+      x.fillRect(TAG_W / 2 - 80, 56, (160 * hp) / 20, 12);
     }
     av.tag.tex.needsUpdate = true;
   }
@@ -292,6 +297,10 @@ export class Avatars {
   update(dt) {
     for (const av of this.list.values()) {
       av.root.position.copy(av.pos);
+      av.tag.sp.position.set(av.pos.x, av.pos.y + (av.hidden ? 2.2 : 1.95), av.pos.z);
+      // 30 cm tall up close; further off it stops shrinking, so you can still read who's in that car
+      const h = Math.max(0.3, this.g.camera.position.distanceTo(av.tag.sp.position) * 0.075);
+      av.tag.sp.scale.set(h * TAG_W / TAG_H, h, 1);
       av.root.rotation.y = av.yaw + Math.PI;   // players look down -Z, models face +Z
       if (av.dead) {
         av.deadT += dt;

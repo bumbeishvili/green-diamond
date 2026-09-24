@@ -45,7 +45,8 @@ class Game {
     setAnisotropy(Math.min(this.quality.anisotropy, this.renderer.capabilities.getMaxAnisotropy()));
 
     this.scene = new THREE.Scene();
-    this.camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.1, 20000);
+    // (near at 15 cm: half again the depth precision of 10 cm, and still inside the body's 34 cm radius)
+    this.camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.15, 20000);
     this.scene.add(this.camera);
     this.timer = new THREE.Timer();
     this.timer.connect(document);
@@ -247,7 +248,7 @@ class Game {
     this.hud.show(!URLFLAGS.nohud);
     this.hud.points(this.director.points);
     this.hud.wave(0, false);
-    this.hud.weapon(this.weapons.def, this.weapons.ammo);
+    this.weapons.hudWeapon();
     const hh = Math.floor(this.hour), mm = String(Math.round((this.hour - hh) * 60)).padStart(2, '0');
     this.hud.banner('Green Diamond', `Bob Walsh St 32 · Dighomi · ${hh}:${mm}`);
     this.hud.slots(this.weapons.owned, this.weapons.current);
@@ -290,7 +291,7 @@ class Game {
     this.hud.coop(true);
     this.hud.points(this.director.points);
     this.hud.wave(this.director.wave, false);
-    this.hud.weapon(this.weapons.def, this.weapons.ammo);
+    this.weapons.hudWeapon();
     this.hud.slots(this.weapons.owned, this.weapons.current);
     this.hud.grenades(this.weapons.grenades);
     if (mode === 'host') {
@@ -349,6 +350,8 @@ class Game {
   // everything back to the start, for the next match
   resetMatch() {
     const d = this.director, w = this.weapons, p = this.player;
+    this.vehicles.clearDrivers();
+    this.vehicles.repairAll();
     this.zombies.clear();
     for (const q of d.drops) d.dropGroup.remove(q.mesh);
     Object.assign(d, { drops: [], wave: 0, state: 'intermission', timer: 8, toSpawn: 0, total: 0, spawnT: 0, points: 500, kills: 0, headshots: 0, deaths: 0, double: 0, packs: [], roofT: 0, crowT: 0 });
@@ -359,8 +362,9 @@ class Game {
     w.arrows = []; w.nades = [];
     w.owned = { pistol: { mag: DEFS.pistol.mag, reserve: DEFS.pistol.reserve }, rifle: { mag: DEFS.rifle.mag, reserve: 90 }, knife: { mag: 0, reserve: 0 } };
     w.grenades = 2; w.instaKill = 0; w.stats = { shots: 0, hits: 0, heads: 0 };
+    w.levels = {}; w.slotLevels.clear();   // (upgrades and armour start over too)
     w.equip('pistol', true);
-    p.maxHealth = 100; p.health = 100; p.dead = false; p.speedMul = 1;
+    p.setArmour(0); p.dead = false; p.speedMul = 1;
     this.hour = URLFLAGS.time ?? START_HOUR; this.targetHour = null; this.atmo.setHour(this.hour);
     this.hud.points(500); this.hud.wave(0, false); this.hud.grenades(2);
     $('go-stats').className = '';
@@ -508,11 +512,13 @@ class Game {
       if (URLFLAGS.god) { this.player.health = this.player.maxHealth; this.player.dead = false; }
       if (playing && this.player.dead) this.gameOver();
     }
-    this.vehicles.update(dt, this.input, playing && !debugCam);
+    // (a co-op client moves its vehicle in its ticks: the view follows after them)
+    if (this.mode !== 'client') this.vehicles.update(dt, this.input, playing && !debugCam);
     this.stairs.update(dt, this.input, playing && !debugCam);
     // in a co-op match the world goes on while you're in the menu
     const coop = this.mode !== 'solo' && this.net && this.net.inMatch;
     if (coop) this.net.frame(dt);
+    if (this.mode === 'client') this.vehicles.update(dt, this.input, playing && !debugCam);
     if (playing || coop) {
       if (this.mode === 'solo') this.worldStep(dt);
       const armed = !this.vehicles.hidesWeapons;   // guns away while you drive a car or ride a bike
@@ -534,13 +540,15 @@ class Game {
     for (const s of this.systems) s.update?.(dt, this.time, this.camera);
     this.effects.update(dt);
     this.hud.update(dt);
-    this.hud.health(this.player.health, this.player.maxHealth);
+    this.hud.health(this.player.health, this.player.maxHealth, this.player.armour);
     if ((this.frameCount || 0) % 2 === 0) this.hud.drawMap(this.player, this.zombies.list, [...this.stairs.markers(), ...this.pickups.markers(), ...this.director.markers()], this.net && this.net.inMatch ? this.net.teamStates() : []);
     this.atmo.follow(debugCam ? (this.camera.position.y > 30 ? new THREE.Vector3(0, 0, 0) : this.camera.position) : this.player.pos);
     if (this.audio.ctx) this.audio.setListener(this.camera.position, this.player.forward(new THREE.Vector3()));
 
+    // (screenshot tests: a spectator's view of the world going on, {pos: [x,y,z], look: [x,y,z]})
+    if (this.specCam) { this.camera.position.fromArray(this.specCam.pos); this.camera.up.set(0, 1, 0); this.camera.lookAt(...this.specCam.look); }
     this.renderer.render(this.scene, this.camera);
-    if (!debugCam && !this.vehicles.hidesWeapons && !this.player.dead) this.weapons.render(this.renderer, this.atmo);
+    if (!debugCam && !this.specCam && !this.vehicles.hidesWeapons && !this.player.dead) this.weapons.render(this.renderer, this.atmo);
     this.input.endFrame();
 
     const st = this.stats;

@@ -7,7 +7,8 @@ import { store, Conflict } from './store.js';
 // The key is a keyed hash of the password; the plaintext password is never stored or logged.
 
 export const MAX_PLAYERS = 4;
-export const STALE_MS = 2 * 60 * 60 * 1000;   // a room untouched for 2 hours starts over
+export const STALE_MS = 8 * 60 * 60 * 1000;   // a room untouched for 8 hours starts over (a long
+                                              // session with nobody joining or leaving isn't abandoned)
 export const HOST_TIMEOUT_MS = 15000;         // an offer unanswered this long: the host is gone
 export const ICE_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }];
 
