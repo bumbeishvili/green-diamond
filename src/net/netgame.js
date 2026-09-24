@@ -240,7 +240,7 @@ export class Host {
         const at = Math.max(this.tick - MAX_REWIND_TICKS, Math.min(this.tick, +m.rt || this.tick));
         const rewind = at < this.tick && !this.noRewind ? (zb) => g.zombies.rewindOffset(zb, at) : null;
         const dirs = m.d.slice(0, 12).map(v3).map((d) => d.normalize());
-        const res = g.weapons.resolveShot(m.w, v3(m.o), dirs, r.slot, rewind, null, g.weapons.damageMult(m.w, r.slot, !!m.a));
+        const res = g.weapons.resolveShot(m.w, v3(m.o), dirs, r.slot, rewind, null, g.weapons.damageMult(m.w, r.slot, !!m.a), p.vehicle);
         if (res.hit) this.s.sendTo(id, 'rel', { t: 'hit', k: res.kill, h: res.head });
         this.shotFx(r.slot, m.w, v3(m.o), dirs, id);
         break;
@@ -665,6 +665,7 @@ export class Client {
     const myVeh = s.vehicles.find((c) => c.driver === this.slot) || null;
     for (const c of s.vehicles) {
       if (c.driver === this.slot) continue;
+      if (c.flags & VF.coasting) { const v = this.g.vehicles.byVid(c.vid); if (v && !v.coasting) { v.coasting = true; this.g.vehicles.unpark(v); } }
       let b = this.vstates.get(c.vid);
       if (!b) this.vstates.set(c.vid, b = []);
       b.push({ tick: s.tick, ...c });

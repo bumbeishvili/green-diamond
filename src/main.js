@@ -161,6 +161,8 @@ class Game {
       this.audio.play(src === 'bloater' ? 'burst' : 'explosion', { pos: p, vol: 1.3, ref: 10 });
       this.net?.boom?.(x, y, z, r, src);
     };
+    // (and every car and bike near a blast takes it: dents, glass, parts, a shove)
+    this.zombies.onBlastVehicles = (x, y, z, r, power) => this.vehicles?.blast(x, y, z, r, power);
 
     // flashlight (always in the scene so shaders never recompile)
     this.flashlight = new THREE.SpotLight(0xfff2dd, 0, 38, 0.42, 0.45, 1.4);

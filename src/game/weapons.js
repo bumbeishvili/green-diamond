@@ -1178,7 +1178,7 @@ export class Weapons {
       g.net.shoot(this.current, origin, dirs, p.ads > 0.5);
     } else {
       const slot = g.localSlot ?? 0;
-      const r = this.resolveShot(this.current, origin, dirs, slot, null, this.ignoreItems, this.damageMult(this.current, slot, p.ads > 0.5));
+      const r = this.resolveShot(this.current, origin, dirs, slot, null, this.ignoreItems, this.damageMult(this.current, slot, p.ads > 0.5), p.vehicle);
       if (r.hit) { g.hud?.hitmarker(r.kill, r.head); g.audio.play('hit', { vol: 0.45, jitter: 0 }); }
       if (g.mode === 'host') g.net.shotFx(g.localSlot ?? 0, this.current, origin, dirs);
     }
@@ -1213,15 +1213,16 @@ export class Weapons {
   // bodies (penCars), losing damage each time. Runs wherever the zombies are real (solo, the
   // host), for the host's own shots and every client's; rewind puts the zombies back where the
   // shooter saw them.
-  resolveShot(key, origin, dirs, slot = 0, rewind = null, ignore = null, power = 1) {
+  resolveShot(key, origin, dirs, slot = 0, rewind = null, ignore = null, power = 1, selfV = null) {
     const def = DEFS[key], g = this.g;
     const out = { hit: false, kill: false, head: false };
     if (!def || def.melee || def.bow) return out;
     for (const [k, dir] of dirs.entries()) {
       const exclude = [], skip = new Set(ignore || []);
       let o = origin.clone(), range = def.range, mult = 1, travelled = 0;
+      let passV = selfV;
       for (let pass = 0; pass < 6; pass++) {
-        const res = this.trace(o, dir, range, exclude, skip, rewind);
+        const res = this.trace(o, dir, range, exclude, skip, rewind, false, passV);
         if (res.zombie) {
           const zb = res.zombie;
           const dist = travelled + res.t;
@@ -1237,7 +1238,13 @@ export class Weapons {
         } else if (res.point) {
           g.effects.impact(res.point, res.normal, res.surface);
           if (k === 0 || Math.random() < 0.3) g.audio.play(res.surface === 'metal' ? 'metal' : 'concrete', { pos: res.point, vol: 0.5 });
-          if (def.penCars && res.item && res.item.kind === 'car' && mult > 0.4) { skip.add(res.item); mult *= 0.6; }
+          // a car or bike: it takes the hit like a crash, a bit at a time
+          if (res.vehicle && g.vehicles) {
+            const fall = THREE.MathUtils.clamp(1 - (travelled + res.t - def.falloff) / (def.range - def.falloff), 0.35, 1);
+            g.vehicles.bulletHit(res.vehicle, res.point, dir, def.dmg * fall * mult * power);
+          }
+          if (def.penCars && res.vehicle && !res.item && mult > 0.4) { passV = res.vehicle; mult *= 0.6; }
+          else if (def.penCars && res.item && res.item.kind === 'car' && mult > 0.4) { skip.add(res.item); mult *= 0.6; }
           else break;
         } else break;
         travelled += res.t; range -= res.t;
@@ -1249,7 +1256,7 @@ export class Weapons {
 
   // the dust (and the sound) where a bullet meets the world, zombies aside
   worldImpact(origin, dir, def, loud = true) {
-    const res = this.trace(origin, dir, def.range, null, new Set(this.ignoreItems || []), null, true);
+    const res = this.trace(origin, dir, def.range, null, new Set(this.ignoreItems || []), null, true, this.g.player.vehicle);
     if (!res.point) return;
     this.g.effects.impact(res.point, res.normal, res.surface);
     if (loud || Math.random() < 0.3) this.g.audio.play(res.surface === 'metal' ? 'metal' : 'concrete', { pos: res.point, vol: 0.5 });
@@ -1266,9 +1273,11 @@ export class Weapons {
   }
 
   // Hitscan: zombies vs static world vs ground.
-  trace(o, d, range, exclude = null, skip = null, rewind = null, noZombies = false) {
+  trace(o, d, range, exclude = null, skip = null, rewind = null, noZombies = false, selfV = null) {
     const g = this.g;
     const zh = noZombies ? null : g.zombies.raycast(o, d, range, exclude, rewind);
+    // (cars and bikes on the move have no collider: tested on their own, the shooter's own excepted)
+    const vh = g.vehicles ? g.vehicles.raycastMoving(o, d, range, selfV) : null;
     const wh = g.colliders.raycast(o.x, o.y, o.z, d.x, d.y, d.z, range, skip && skip.size ? (it) => !skip.has(it) : null);
     let gt = Infinity, ceiling = false;
     // the ground (or the car-park floor, if the shot starts down there)
@@ -1294,12 +1303,13 @@ export class Weapons {
     // flat roofs are floors too
     const rt = this.roofHit(o, d, range);
     if (rt < gt) gt = rt;
-    const wt = wh ? wh.t : Infinity;
-    if (zh && zh.t < wt && zh.t < gt) return { zombie: zh.z, t: zh.t, point: zh.point, head: zh.head };
+    const wt = wh ? wh.t : Infinity, vt = vh ? vh.t : Infinity;
+    if (zh && zh.t < wt && zh.t < gt && zh.t < vt) return { zombie: zh.z, t: zh.t, point: zh.point, head: zh.head };
+    if (vt < wt && vt < gt) return { point: vh.point, normal: vh.normal, t: vt, vehicle: vh.v, surface: 'metal' };
     if (wt < gt && wt < Infinity) {
       const pt = new THREE.Vector3(o.x + d.x * wt, o.y + d.y * wt, o.z + d.z * wt);
       const kind = wh.item.kind;
-      return { point: pt, normal: new THREE.Vector3(wh.nx, 0, wh.nz), t: wt, item: wh.item, surface: kind === 'car' || kind === 'post' ? 'metal' : 'concrete' };
+      return { point: pt, normal: new THREE.Vector3(wh.nx, 0, wh.nz), t: wt, item: wh.item, vehicle: wh.item.vehicle || wh.item.lotCar || null, surface: kind === 'car' || kind === 'post' ? 'metal' : 'concrete' };
     }
     if (gt < Infinity) return { point: new THREE.Vector3(o.x + d.x * gt, o.y + d.y * gt, o.z + d.z * gt), normal: new THREE.Vector3(0, ceiling ? -1 : 1, 0), t: gt, surface: ceiling ? 'concrete' : 'ground' };
     return { t: range };

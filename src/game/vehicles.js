@@ -169,6 +169,7 @@ export class Vehicles {
     this.models = models;
     // parked car records come from the car lot (props.js)
     this.lot = g.props.cars;
+    for (const c of this.lot.cars) if (c.col) c.col.lotCar = c;
     // bikes and drones on free spots near a few landmarks
     const anchors = {
       bike: [[60, -84], [128, 30], [-40, 60], [-120, 20]],
@@ -386,6 +387,7 @@ export class Vehicles {
     const g = this.g, s = v.spec;
     if (v.col) { v.col.walk = false; v.col.shoot = false; }
     v.col = g.colliders.addBox(v.pos.x, v.pos.z, s.hw, s.hd, -v.heading, { height: v.pos.y + (v.type === 'bike' ? 1.1 : 1.45), minY: v.pos.y - 0.5, kind: v.type === 'drone' ? 'box' : 'car' });
+    v.col.vehicle = v;   // (so a bullet that hits it knows what it hit)
     g.nav.refreshArea(g.colliders, v.pos.x - 3, v.pos.z - 3, v.pos.x + 3, v.pos.z + 3); g.unav?.refreshArea(g.colliders, v.pos.x - 3, v.pos.z - 3, v.pos.x + 3, v.pos.z + 3);
     this.place(v);
   }
@@ -444,7 +446,8 @@ export class Vehicles {
     this.g.scene.add(mesh);
     const v = this.makeRecord('car', mesh, c.x, c.z, c.h, { fwdSign, y: c.ground, vid: 1000 + lot.cars.indexOf(c), paint: c.color, lotCar: c });
     this.list.push(v);
-    this.g.nav.refreshArea(this.g.colliders, c.x - 3, c.z - 3, c.x + 3, c.z + 3); this.g.unav?.refreshArea(this.g.colliders, c.x - 3, c.z - 3, c.x + 3, c.z + 3);
+    // parked where it stood, with a collider of its own (bullets and zombies still meet it)
+    this.park(v);
     return v;
   }
 
@@ -461,7 +464,7 @@ export class Vehicles {
   // Someone takes the wheel: the local player, or (on a co-op host) a client's player.
   occupy(target, p, slot) {
     const v = target.type ? target : this.claimCar(target);
-    if (target.type) this.unpark(v);
+    this.unpark(v);
     v.driver = slot; v.who = p; v.moved = true;
     p.vehicle = v;
     // a fallen bike is picked up again
@@ -613,6 +616,9 @@ export class Vehicles {
     this.flashBeacons(this.g.time || 0);
     this.crash.update(dt);
     this.smoke(dt);
+    // bullets that hit vehicles this last moment, applied (where the world is simulated for real)
+    const now = g.time || performance.now() / 1000;
+    for (const v of this.list) if (v.shots && v.shots.n && now - v.shots.t > 0.15) this.flushShots(v);
     // (the fallen bike sliding on: moved where the world is simulated for real)
     if (g.mode !== 'client') for (const v of this.list) if (v.coasting) this.coastTick(v, dt);
     this.kickVel.addScaledVector(this.kick, -90 * dt).multiplyScalar(Math.exp(-9 * dt));
@@ -831,15 +837,20 @@ export class Vehicles {
 
   // What one hit does (worked out where the car is simulated for real: alone, or the host).
   // Point and direction in the car's own frame, so every screen puts the dent in the same place.
-  damageFrom(v, ct, j) {
+  // (bullets and blasts: opts.y the height hit, opts.dmg the damage to add, opts.wear what the
+  // bumper or wheel nearby loses, opts.dent how deep)
+  damageFrom(v, ct, j, opts = {}) {
     const s = v.spec, c = Math.cos(v.heading), sn = Math.sin(v.heading);
     // world -> car frame (model x forward-ish, z to the right)
     const lx = ct.ox * c - ct.oz * sn, lz = ct.ox * sn + ct.oz * c;
-    const ly = v.type === 'bike' ? 0.6 : 0.6;
+    const ly = opts.y ?? 0.6;
     const dnx = -(ct.nx * c - ct.nz * sn), dnz = -(ct.nx * sn + ct.nz * c);   // into the car
-    const e = { p: [+lx.toFixed(3), ly, +lz.toFixed(3)], d: [+dnx.toFixed(3), +dnz.toFixed(3)], j: +j.toFixed(2), parts: [], dmg: 0 };
-    e.dmg = Math.min(100, v.dmg + Math.max(0, j - 3) * 3.2);
+    const e = { p: [+lx.toFixed(3), +ly.toFixed(3), +lz.toFixed(3)], d: [+dnx.toFixed(3), +dnz.toFixed(3)], j: +j.toFixed(2), parts: [], dmg: 0 };
+    if (opts.kind) e.k = opts.kind;
+    if (opts.dent != null) e.dd = +opts.dent.toFixed(3);
+    e.dmg = Math.min(100, v.dmg + (opts.dmg ?? Math.max(0, j - 3) * 3.2));
     if (v.type !== 'car') return e;
+    if (opts.wear != null) j = opts.wear;
     // bumpers and wheels have so much strength; each hit near one takes some away
     const hp = v.hp, front = lx * v.fwdSign > s.hw - 0.9, rear = lx * v.fwdSign < -(s.hw - 0.9);
     const hitPart = (name, amount, max) => {
@@ -847,13 +858,14 @@ export class Vehicles {
       hp[name] = (hp[name] ?? max) - amount;
       if (hp[name] <= 0) e.parts.push(name);
     };
-    if (front && j > 4) hitPart('bumperF', j, 11);
-    if (rear && j > 4) hitPart('bumperR', j, 11);
+    const min = opts.wear != null ? 0 : 4;
+    if (front && j > min) hitPart('bumperF', j, 11);
+    if (rear && j > min) hitPart('bumperR', j, 11);
     // wheels: a hit at a corner
     const wx = s.wheelbase / 2;
     for (const [name, sx, sz] of [['wheelFL', 1, -1], ['wheelFR', 1, 1], ['wheelRL', -1, -1], ['wheelRR', -1, 1]]) {
       const ax = sx * wx * v.fwdSign, az = sz * s.hd * v.fwdSign;
-      if (Math.hypot(lx - ax, lz - az) < 1.05 && j > 6) hitPart(name, j * 0.8, 15);
+      if (Math.hypot(lx - ax, lz - az) < 1.05 && j > (opts.wear != null ? 0 : 6)) hitPart(name, j * 0.8, 15);
     }
     return e;
   }
@@ -866,13 +878,16 @@ export class Vehicles {
       const c = Math.cos(v.heading), sn = Math.sin(v.heading);
       const wx = e.p[0] * c + e.p[2] * sn, wz = -e.p[0] * sn + e.p[2] * c;
       const n = new THREE.Vector3(-(e.d[0] * c + e.d[1] * sn), 0, -(-e.d[0] * sn + e.d[1] * c));
-      this.crash.impactFx(v, new THREE.Vector3(v.pos.x + wx, v.pos.y + e.p[1], v.pos.z + wz), n, e.j, { local: v === this.active });
+      const at = new THREE.Vector3(v.pos.x + wx, v.pos.y + e.p[1], v.pos.z + wz);
+      if (e.k === 'shot') this.crash.bulletFx(v, at, n, e.j, e.glass);
+      else this.crash.impactFx(v, at, n, e.j, { local: v === this.active, glass: e.glass });
     }
     v.dmg = Math.max(v.dmg, e.dmg || 0);
-    if (v.type === 'car' && e.j > 3.5) {
-      this.crash.dent(v, new THREE.Vector3(e.p[0], e.p[1], e.p[2]), new THREE.Vector3(e.d[0], 0, e.d[1]).normalize(), Math.min(0.3, 0.035 * (e.j - 2)));
-      (v.dents || (v.dents = [])).push([e.p[0], e.p[1], e.p[2], e.d[0], e.d[1], e.j]);
-      if (v.dents.length > 16) v.dents.shift();
+    const depth = e.dd ?? (e.j > 3.5 ? Math.min(0.3, 0.035 * (e.j - 2)) : 0);
+    if (v.type === 'car' && depth > 0.005) {
+      this.crash.dent(v, new THREE.Vector3(e.p[0], e.p[1], e.p[2]), new THREE.Vector3(e.d[0], 0, e.d[1]).normalize(), depth, e.k === 'shot' ? 0.35 : null);
+      (v.dents || (v.dents = [])).push([e.p[0], e.p[1], e.p[2], e.d[0], e.d[1], e.j, depth]);
+      if (v.dents.length > 24) v.dents.shift();
     }
     for (const name of e.parts || []) this.losePart(v, name, e);
     if (e.dmg >= 100 && !v.deadNoted) { v.deadNoted = true; if (v === this.active) g.hud.notice('The engine\'s gone. Get out and find another ride.'); }
@@ -954,12 +969,108 @@ export class Vehicles {
     }
   }
 
+  // --- guns and blasts ---
+
+  // A bullet hits a vehicle (where the world is simulated for real: alone, or the host). It does
+  // what a crash does, a little at a time: the hits of a burst are added up and applied together
+  // (one dent where they landed, strength off the bumper or wheel there, glass, the engine's total).
+  bulletHit(target, point, dir, dmg) {
+    const v = target.type ? target : this.claimCar(target);
+    if (!v || v.type === 'drone') return;
+    const b = v.shots || (v.shots = { dmg: 0, n: 0, t: 0, p: new THREE.Vector3(), d: new THREE.Vector3() });
+    if (!b.n) b.t = this.g.time || performance.now() / 1000;
+    b.dmg += dmg; b.n++;
+    b.p.copy(point); b.d.copy(dir);
+  }
+
+  flushShots(v) {
+    const b = v.shots;
+    b.n = 0;
+    const ox = b.p.x - v.pos.x, oz = b.p.z - v.pos.z, hl = Math.hypot(b.d.x, b.d.z) || 1;
+    const y = b.p.y - v.pos.y;
+    // glass: the windows are the top part of a car, above the waist
+    const glass = v.type === 'car' && y > 0.95 && y < 1.4;
+    const e = this.damageFrom(v, { ox, oz, nx: -b.d.x / hl, nz: -b.d.z / hl }, 2 + b.dmg * 0.02, {
+      kind: 'shot', y, dmg: b.dmg * 0.06, wear: b.dmg * 0.02, dent: glass ? 0 : Math.min(0.1, 0.012 + b.dmg * 0.0004),
+    });
+    if (glass) {
+      e.glass = 1;
+      // (our own screen: the bullet's sparks are there already, the glass isn't)
+      this.crash.chips.emit(b.p, 10, new THREE.Vector3(-b.d.x * 1.5, 0.6, -b.d.z * 1.5), 0xcfeaf5, { size: 0.08, speed: 1.8, glass: true });
+      this.g.audio.play('glass', { pos: b.p, vol: 0.5 });
+    }
+    b.dmg = 0;
+    this.applyDamage(v, e, false);
+    this.g.net?.vehicleCrash?.(v, e);
+  }
+
+  // Where a shot meets a vehicle on the move (driven, or rolling on its own): those have no
+  // collider, so they're tested here, each as a box. -> {v, t, point, normal} or null
+  raycastMoving(o, d, range, skip = null) {
+    let best = null;
+    for (const v of this.list) {
+      if (v === skip || v.type === 'drone' || (v.driver == null && !v.coasting)) continue;
+      const s = v.spec, c = Math.cos(v.heading), sn = Math.sin(v.heading);
+      // the ray in the vehicle's frame (x along the model, z across, y up from its feet)
+      const rx = o.x - v.pos.x, rz = o.z - v.pos.z;
+      const lo = [rx * c - rz * sn, o.y - v.pos.y, rx * sn + rz * c], ld = [d.x * c - d.z * sn, d.y, d.x * sn + d.z * c];
+      const lo3 = [-s.hw, 0.1, -s.hd], hi3 = [s.hw, v.type === 'bike' ? 1.2 : 1.45, s.hd];
+      // (slabs: where the ray is inside all three pairs of faces at once)
+      let t0 = 0, t1 = range, axis = -1;
+      for (let k = 0; k < 3; k++) {
+        if (Math.abs(ld[k]) < 1e-9) { if (lo[k] < lo3[k] || lo[k] > hi3[k]) { t0 = Infinity; break; } continue; }
+        const a = (lo3[k] - lo[k]) / ld[k], b2 = (hi3[k] - lo[k]) / ld[k];
+        const near = Math.min(a, b2), far = Math.max(a, b2);
+        if (near > t0) { t0 = near; axis = k; }
+        t1 = Math.min(t1, far);
+        if (t0 > t1) { t0 = Infinity; break; }
+      }
+      if (!(t0 < Infinity) || axis < 0 || (best && t0 >= best.t)) continue;
+      // the face's normal back in the world
+      const n = [0, 0, 0]; n[axis] = -Math.sign(ld[axis]);
+      const normal = new THREE.Vector3(n[0] * c + n[2] * sn, n[1], -n[0] * sn + n[2] * c);
+      best = { v, t: t0, point: new THREE.Vector3(o.x + d.x * t0, o.y + d.y * t0, o.z + d.z * t0), normal };
+    }
+    return best;
+  }
+
+  // A blast (a grenade, a bloater bursting): every car and bike near it is damaged as if hit hard
+  // from that side, and shoved (a parked one rolls a little way; a bike goes down).
+  blast(x, y, z, radius, power) {
+    const g = this.g, reach = radius + 2.5;
+    if (g.mode === 'client') return;
+    for (const c of this.lot.cars) if (!c.taken && Math.abs(c.x - x) < reach && Math.abs(c.z - z) < reach && Math.hypot(c.x - x, c.z - z) < reach && Math.abs(c.ground - y) < 3) this.claimCar(c);
+    for (const v of this.list) {
+      if (v.type === 'drone') continue;
+      const dx = v.pos.x - x, dz = v.pos.z - z, d = Math.hypot(dx, dz) || 0.01;
+      if (d > reach || Math.abs(v.pos.y + 0.6 - y) > 3) continue;
+      const k = 1 - d / reach, ux = dx / d, uz = dz / d, s = v.spec;
+      // the side facing the blast takes it
+      const r = Math.min(d, Math.max(s.hd, s.hw * Math.abs(ux * Math.cos(v.heading) - uz * Math.sin(v.heading))));
+      const e = this.damageFrom(v, { ox: -ux * r, oz: -uz * r, nx: ux, nz: uz }, 4 + 20 * k, { kind: 'blast', y: 0.7, dmg: power * 0.09 * k, dent: Math.min(0.28, 0.08 + 0.2 * k) });
+      if (k > 0.45 && v.type === 'car') e.glass = 1;
+      this.applyDamage(v, e, false);
+      g.net?.vehicleCrash?.(v, e);
+      this.crash.impactFx(v, new THREE.Vector3(v.pos.x - ux * r, v.pos.y + 0.7, v.pos.z - uz * r), new THREE.Vector3(ux, 0, uz), 4 + 20 * k, { local: v === this.active, glass: !!e.glass });
+      // the shove: along the blast, with a twist
+      const push = (v.type === 'bike' ? 9 : 5) * k, fx = Math.cos(v.heading) * v.fwdSign, fz = -Math.sin(v.heading) * v.fwdSign;
+      v.speed += (ux * fx + uz * fz) * push;
+      v.slip += (ux * -fz + uz * fx) * push;
+      v.spin += (Math.random() - 0.5) * 3 * k;
+      if (v.type === 'bike' && k > 0.35 && !v.fallen) {
+        v.fallen = true; v.fallSide = Math.random() < 0.5 ? -1 : 1;
+        if (v.who) this.throwRider(v, 8, push);
+      }
+      if (v.driver == null && !v.coasting && push > 0.6) { this.unpark(v); v.coasting = true; }
+    }
+  }
+
   // A late joiner catches up: the damage a vehicle already has (no flying debris, it's history).
   restoreDamage(v, d) {
     if (d.dmg) v.dmg = d.dmg;
     if (v.type !== 'car') return;
     for (const e of d.dents || []) {
-      this.crash.dent(v, new THREE.Vector3(e[0], e[1], e[2]), new THREE.Vector3(e[3], 0, e[4]).normalize(), Math.min(0.3, 0.035 * (e[5] - 2)));
+      this.crash.dent(v, new THREE.Vector3(e[0], e[1], e[2]), new THREE.Vector3(e[3], 0, e[4]).normalize(), e[6] ?? Math.min(0.3, 0.035 * (e[5] - 2)));
       (v.dents || (v.dents = [])).push(e);
     }
     for (const name of d.lost || []) {

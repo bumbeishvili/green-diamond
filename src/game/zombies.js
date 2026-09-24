@@ -461,6 +461,7 @@ export class Zombies {
       } else if (pd < radius * 4) pl.shake = Math.min(1, pl.shake + 0.5 * (1 - pd / (radius * 4)));
     }
     if (this.onExplode) this.onExplode(x, y, z, radius, source);
+    if (this.onBlastVehicles) this.onBlastVehicles(x, y, z, radius, dmgZombie);
     return kills;
   }
 

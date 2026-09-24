@@ -322,9 +322,9 @@ export class Crashes {
   }
 
   // Push the body in around p (car frame), towards the inside along dir (car frame, unit).
-  dent(v, p, dir, depth) {
+  dent(v, p, dir, depth, radius = null) {
     if (!v.dentable) this.prepare(v);
-    const R = 0.55 + depth * 1.4, lp = new THREE.Vector3(), ld = new THREE.Vector3(), vtx = new THREE.Vector3();
+    const R = radius ?? 0.55 + depth * 1.4, lp = new THREE.Vector3(), ld = new THREE.Vector3(), vtx = new THREE.Vector3();
     v.mesh.updateMatrixWorld(true);
     const inv = new THREE.Matrix4().copy(v.mesh.matrixWorld).invert();
     for (const o of v.dentable) {
@@ -443,6 +443,15 @@ export class Crashes {
       pl.shake = Math.min(1, pl.shake + 0.2 + k * 0.8);
       g.vehicles.kickCamera(new THREE.Vector3(-n.x, 0, -n.z).multiplyScalar(0.25 + k * 1.2));
     }
+  }
+
+  // bullets into a car (on the screens that didn't fire them): sparks, flakes of paint, glass
+  bulletFx(v, p, n, j, glass) {
+    const g = this.g;
+    this.sparks.emit(p, 6, new THREE.Vector3(n.x, 0.4, n.z), 4);
+    this.chips.emit(p, 2, new THREE.Vector3(n.x, 0.5, n.z), v.paint ?? 0x888888, { size: 0.07, speed: 1.2 });
+    if (glass) { this.chips.emit(p, 8, new THREE.Vector3(n.x * 1.5, 0.6, n.z * 1.5), 0xcfeaf5, { size: 0.08, speed: 1.8, glass: true }); g.audio.play('glass', { pos: p, vol: 0.5 }); }
+    else g.audio.play('metal', { pos: p, vol: Math.min(0.8, 0.3 + j * 0.05) });
   }
 
   // grinding along a wall, or on the rims: a few sparks every tick
