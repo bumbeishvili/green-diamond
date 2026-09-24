@@ -280,7 +280,7 @@ export class HUD {
 
   // ---- co-op ----
   coop(on) {
-    for (const id of ['mclock', 'team']) document.getElementById(id)?.classList.toggle('hidden', !on);
+    for (const id of ['mclock', 'team', 'key-talk']) document.getElementById(id)?.classList.toggle('hidden', !on);
     if (!on) this.down(0);
   }
 
