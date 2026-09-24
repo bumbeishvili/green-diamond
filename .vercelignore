@@ -1,0 +1,9 @@
+# Only the game's static files and api/ are deployed (CLI uploads are capped at 100 MB on Hobby).
+node_modules
+reference
+tools
+assets/previews
+assets/hdri
+start.command
+.env*
+.vercel

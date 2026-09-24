@@ -44,6 +44,7 @@
 </div>
 
 <div id="fade"></div>
+<div id="net" class="hidden"></div>
 
 <div id="loading" class="screen">
   <div class="brand">
@@ -64,6 +65,15 @@
   <p class="lede">Something got into the complex after dark. The gates on Bob Walsh Street won't hold.
     Survive as many waves as you can.</p>
   <button id="play" class="btn">Play</button>
+  <div id="mp">
+    <div class="mp-title">Play with friends <span>up to 4 · same password, same match</span></div>
+    <form id="mp-form" autocomplete="off">
+      <input id="mp-pass" type="password" placeholder="Match password" maxlength="128" spellcheck="false">
+      <button id="mp-join" class="btn ghost" type="submit">Join</button>
+      <button id="mp-leave" class="btn ghost hidden" type="button">Leave</button>
+    </form>
+    <div id="mp-status"></div>
+  </div>
   <div class="settings">
     <label>Mouse sensitivity <input id="sens" type="range" min="0.2" max="3" step="0.05" value="1"></label>
     <label>Volume <input id="vol" type="range" min="0" max="1" step="0.05" value="0.8"></label>
@@ -79,7 +89,7 @@
     <span><b>WASD</b> move</span><span><b>Shift</b> sprint</span><span><b>Space</b> jump</span><span><b>C</b> crouch</span>
     <span><b>Click</b> shoot (hold to draw the bow)</span><span><b>E</b> aim (or hold right-click)</span><span><b>R</b> reload</span>
     <span><b>Q</b> or <b>1–7</b> switch weapon (again: next in the group)</span><span><b>Shift</b> (scoped) hold breath</span><span><b>G</b> throw a grenade</span><span><b>V</b> knife</span>
-    <span><b>F</b> buy · take the stairs · get in a car, bike or drone</span><span><b>C</b> (driving) camera</span><span><b>L</b> flashlight</span><span><b>M</b> map</span><span><b>Esc</b> pause</span>
+    <span><b>F</b> buy · take the stairs · get in a car, bike or drone</span><span><b>L</b> flashlight</span><span><b>M</b> map</span><span><b>Esc</b> pause</span>
   </div>
   <div class="credits" id="credits"></div>
 </div>

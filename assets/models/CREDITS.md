@@ -148,3 +148,23 @@ Attribution lines (ready to paste):
 | `vehicles/drone.glb` | Personal one-seat multicopter (placeholder) | Original, procedurally modelled in Blender 4.1 for this project | (authored for this project) |
 
 Crediting Quaternius, Teh_Bucket, Lucian Pavel, AdamKokrito, SirDraco65, Pichuliru and LonesomeDucky is appreciated but not required. The authored placeholders (compound bow, arrow, multicopter) were built from primitives with a Blender script and contain no third-party content.
+
+## Motorbike rider (added 2026-09-24)
+
+| File | Name | Author | Source |
+|---|---|---|---|
+| `vehicles/rider.glb` | Motorbike rider, posed on `vehicles/bike.glb` (static): 'SWAT' torso, arms, gloves and boots + 'Casual Character' jeans from the Ultimate Modular Men Pack; full-face helmet and neck modelled for this project | Quaternius (helmet and neck: original, CC0) | https://poly.pizza/m/Btfn3G5Xv4, https://poly.pizza/m/kZ3DmIoGip (pack: https://quaternius.com/packs/ultimatemodularcharacters.html) |
+
+CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/): no attribution required. Suggested credit: "Rider built from the Ultimate Modular Men Pack by Quaternius (CC0)". Changes: parts of two characters combined on their shared rig, recoloured (charcoal jacket, black vest, gloves and boots, blue jeans), arms lengthened, posed on bike.glb and baked to static meshes, head replaced by the authored helmet (details in manifest_extra.json). The bike itself (bike.glb) is CC-BY 3.0 by jeremy and keeps its attribution above.
+
+## Toyota Prius hero car (added 2026-09-24)
+
+CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/), attribution required. Attribution line (ready to paste):
+
+- "Toyota Prius" by Isidor Goo (AirplaneChef) (https://sketchfab.com/3d-models/toyota-prius-aa599d492d3d4618a1bf5f3786e1bbd9), licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Used as `assets/models/vehicles/prius.glb` (modified: re-oriented and scaled to metres, wheels split into pivoted nodes, materials re-authored as PBR and repainted blue, lamp covers made clear / red, cabin decimated, ambient occlusion baked, the plate letters replaced by number plates; see manifest_extra.json). Downloaded without a login from the Objaverse mirror on Hugging Face (https://huggingface.co/datasets/allenai/objaverse).
+
+| File | Name | Author | Source |
+|---|---|---|---|
+| `vehicles/prius.glb` | Toyota Prius (XW30, 2010 look), Blue Ribbon Metallic | Isidor Goo (AirplaneChef) | https://sketchfab.com/3d-models/toyota-prius-aa599d492d3d4618a1bf5f3786e1bbd9 |
+
+The fallback number-plate texture (Georgian format, made-up number "PR-010-US"; the game draws its own plates at runtime) was made for this project (CC0). Licence note: CC BY 4.0 is the licence the uploader declared on Sketchfab; the original authorship of the mesh could not be verified independently.

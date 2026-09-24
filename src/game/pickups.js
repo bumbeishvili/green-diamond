@@ -144,6 +144,10 @@ export class Pickups {
         return { x, z, y: s.top };
       }
     }
+    if (Math.random() < 0.12 && g.underground) {
+      const spot = g.underground.randomSpot(this.list);
+      if (spot && Math.hypot(spot.x - p.x, spot.z - p.z) >= minFromPlayer) return spot;
+    }
     for (let k = 0; k < 300; k++) {
       const mx = x0 + Math.random() * (x1 - x0), my = y0 + Math.random() * (y1 - y0);
       if (!pointInPoly(mx, my, g.level.play.outer)) continue;
@@ -154,7 +158,7 @@ export class Pickups {
       if (this.list.some((it) => Math.hypot(it.x - x, it.z - z) < 14)) continue;
       if (g.director && g.director.stations.some((st) => Math.hypot(st.x - x, st.z - z) < 5)) continue;
       const y = g.hm.atWorld(x, z);
-      if (y < -0.5) continue; // garage ramps, pools
+      if (y < -0.5) continue; // ramps, pools
       return { x, z, y };
     }
     return null;

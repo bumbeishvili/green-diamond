@@ -1,18 +1,51 @@
 import * as THREE from 'three';
-import { pointInPoly } from '../world/geom.js';
+import { pointInPoly, polyCentroid } from '../world/geom.js';
 
 // Enterable vehicles: every parked car, a few motorbikes and personal drones.
 //  F        get in / out (stand next to it)
-//  WASD     drive / fly;  Space: handbrake (car, bike) or climb (drone);  C: descend (drone) / chase camera (car, bike)
-//  mouse    look around and shoot out through the windows
-// Cars and bikes run zombies over; zombies can still reach you through the door.
+//  WASD     drive / fly;  Space: handbrake (car, bike) or climb (drone);  C: descend (drone)
+// Cars and bikes are driven from one high chase camera looking down on them, with your guns put
+// away: you run the dead down instead. Inside a car nothing can touch you; on a bike only once you
+// slow to a crawl. The drone is flown first-person and you can shoot from it.
 
+// accel/brake in m/s², speeds in m/s; steer = most the front wheel turns (rad), steerRate = how fast
+// it gets there (rad/s); grip = most sideways acceleration the tyres hold (m/s²): at speed that,
+// not the wheel, limits how tight you can turn
 const SPEC = {
-  car: { accel: 7.5, brake: 16, reverse: 5, vmax: 19, wheelbase: 2.7, steer: 0.55, circles: [-1.45, 0, 1.45], radius: 0.95,
-    hw: 2.2, hd: 0.92, seat: [0.05, 1.12, -0.38], step: 0.45, exitSide: 1.6, mass: 1 },
-  bike: { accel: 9.5, brake: 18, reverse: 2.5, vmax: 23, wheelbase: 1.45, steer: 0.62, circles: [-0.6, 0.6], radius: 0.42,
-    hw: 1.0, hd: 0.35, seat: [-0.15, 1.28, 0], step: 0.55, exitSide: 1.0, mass: 0.35 },
+  car: { accel: 4.2, brake: 10, reverse: 3, vmax: 20, vrev: 5.5, roll: 0.35, drag: 0.012, wheelbase: 2.7, steer: 0.5, steerRate: 1.2, grip: 7,
+    circles: [-1.45, 0, 1.45], radius: 0.95, hw: 2.2, hd: 0.92, seat: [0.05, 1.12, -0.38], step: 0.45, exitSide: 1.6, mass: 1 },
+  bike: { accel: 5.5, brake: 12, reverse: 1.5, vmax: 24, vrev: 2.5, roll: 0.3, drag: 0.01, wheelbase: 1.45, steer: 0.38, steerRate: 1.7, grip: 8.5,
+    circles: [-0.6, 0.6], radius: 0.42, hw: 1.0, hd: 0.35, seat: [-0.15, 1.28, 0], step: 0.55, exitSide: 1.0, mass: 0.35 },
   drone: { accel: 10, vmax: 14, vUp: 6.5, radius: 1.35, hw: 1.3, hd: 1.3, seat: [0, 1.2, 0], ceiling: 90, exitSide: 1.8 },
+};
+
+// Which way a model's plate UVs run, read from the front plate's face: seen from in front of the
+// car the text must run left to right (towards -Z, the car's left is +Z) and stand upright (with
+// glTF UVs, v = 0 is the top of the image). Models differ, so the number is flipped to suit.
+function plateFlip(car) {
+  const p = new THREE.Vector3(), n = new THREE.Vector3(), pts = [];
+  car.updateMatrixWorld(true);
+  car.traverse((o) => {
+    if (!o.isMesh || ![].concat(o.material).some((m) => /^plate$/i.test(m.name))) return;
+    const g = o.geometry, P = g.attributes.position, N = g.attributes.normal, U = g.attributes.uv;
+    if (!P || !N || !U) return;
+    for (let i = 0; i < P.count; i++) {
+      p.fromBufferAttribute(P, i).applyMatrix4(o.matrixWorld);
+      n.fromBufferAttribute(N, i).transformDirection(o.matrixWorld);
+      if (p.x > 0 && n.x > 0.7) pts.push([p.z, p.y, U.getX(i), U.getY(i)]);
+    }
+  });
+  if (pts.length < 3) return { u: false, v: false };
+  const mean = (k) => pts.reduce((a, q) => a + q[k], 0) / pts.length;
+  const cov = (a, b) => { const ma = mean(a), mb = mean(b); return pts.reduce((s, q) => s + (q[a] - ma) * (q[b] - mb), 0); };
+  return { u: cov(2, 0) > 0, v: cov(3, 1) > 0 };
+}
+
+// the detailed cars: what the notice calls them, their plates and how they sound
+const HEROES = {
+  prius: { name: 'Toyota Prius, 2010', plate: 'QQ-939-QC', sound: 'hybrid' },
+  corolla: { name: 'Toyota Corolla, 2023', plate: 'VV-186-RV', sound: 'car' },
+  leaf: { name: 'Nissan Leaf security car', plate: 'GD-001-SC', sound: 'ev' },
 };
 
 function proceduralBike(color = 0xb3261e) {
@@ -76,12 +109,43 @@ function proceduralDrone() {
   return g;
 }
 
+// A rider in a jacket, jeans and a full-face helmet, sitting on the bike (bike frame: +X forward,
+// +Y up, metres, origin on the ground between the axles).
+function proceduralRider() {
+  const g = new THREE.Group();
+  const M = (color, rough = 0.8, metal = 0) => new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal });
+  const jacket = M(0x1d2733, 0.75), jeans = M(0x2f3e57, 0.9), boots = M(0x1b1510, 0.8), gloves = M(0x121212, 0.8);
+  const helmet = M(0x1b1c1f, 0.28, 0.15), visor = M(0x0b0f14, 0.08, 0.9);
+  const up = new THREE.Vector3(0, 1, 0);
+  const limb = (a, b, r, mat) => {
+    const A = new THREE.Vector3(...a), B = new THREE.Vector3(...b), d = B.clone().sub(A), len = d.length();
+    const m = new THREE.Mesh(new THREE.CapsuleGeometry(r, Math.max(0.01, len - r * 2), 4, 10), mat);
+    m.position.copy(A).addScaledVector(d, 0.5);
+    m.quaternion.setFromUnitVectors(up, d.normalize());
+    g.add(m);
+    return m;
+  };
+  const torso = limb([-0.3, 0.98, 0], [0.0, 1.43, 0], 0.17, jacket);
+  torso.scale.set(1, 1, 1.15);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.145, 18, 14), helmet); head.position.set(0.06, 1.63, 0); g.add(head);
+  const vis = new THREE.Mesh(new THREE.SphereGeometry(0.148, 18, 10, -0.9, 1.8, 1.05, 0.7), visor); vis.position.copy(head.position); vis.rotation.y = Math.PI / 2; g.add(vis);
+  for (const sd of [-1, 1]) {
+    const sh = [-0.03, 1.4, 0.19 * sd], el = [0.2, 1.2, 0.3 * sd], ha = [0.44, 1.09, 0.34 * sd];
+    limb(sh, el, 0.056, jacket); limb(el, ha, 0.048, jacket);
+    const gl = new THREE.Mesh(new THREE.SphereGeometry(0.052, 10, 8), gloves); gl.position.set(...ha); g.add(gl);
+    const hp = [-0.27, 0.93, 0.13 * sd], kn = [0.1, 0.9, 0.2 * sd], ft = [-0.03, 0.42, 0.21 * sd];
+    limb(hp, kn, 0.085, jeans); limb(kn, ft, 0.064, jeans);
+    const bt = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.1, 0.1), boots); bt.position.set(ft[0] + 0.07, ft[1] - 0.03, ft[2]); g.add(bt);
+  }
+  g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  return g;
+}
+
 export class Vehicles {
   constructor(game) {
     this.g = game;
     this.list = [];      // bikes, drones and any car that has been driven
     this.active = null;
-    this.thirdPerson = false;
     this.tmp = new THREE.Vector3();
     this.hud = document.getElementById('vhud');
     this.roofs = game.player.roofs;
@@ -102,6 +166,123 @@ export class Vehicles {
         if (spot) this.spawnVehicle(type, spot.x, spot.z, this.openHeading(spot.x, spot.z), models);
       }
     }
+    this.spawnHeroes(models);
+  }
+
+  // The detailed cars, each only if its model is there: the blue 2010 Prius in the first bay inside
+  // Gate 1, the grey 2023 Corolla in the bay next to it, and the estate's light-blue Leaf security
+  // car by the Gate 1 booth. Clear-coated paint, their own plates, wheels that spin and steer,
+  // brake lights and headlights (and the security car's roof beacon).
+  spawnHeroes(models) {
+    const V = models.vehicles || {}, L = this.g.level;
+    this.heroes = {};
+    const gate = L.gates.find((q) => q.name === 'Gate 1') || L.gates[0];
+    const bays = (x, y) => [...L.stalls].sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y));
+    const first = bays(gate.x, gate.y)[0];
+    if (!first) return;
+    if (V.prius) this.spawnHero('prius', V.prius, first.x, -first.y, first.h + Math.PI);
+    const next = bays(first.x, first.y).find((b) => b !== first && Math.abs(Math.sin(b.h - first.h)) < 0.2);
+    if (V.corolla && next) this.spawnHero('corolla', V.corolla, next.x, -next.y, next.h + Math.PI);
+    if (V.leaf) {
+      // the security car noses out of the bay nearest the Gate 1 booth
+      const booth = L.buildings.find((b) => b.group === 'guard' && polyCentroid(b.poly.outer)[1] < 0);
+      const [bx, by] = booth ? polyCentroid(booth.poly.outer) : [gate.x, gate.y];
+      const bay = bays(bx, by).find((b) => b !== first && b !== next);
+      if (bay) this.spawnHero('leaf', V.leaf, bay.x, -bay.y, bay.h + Math.PI);
+    }
+  }
+
+  spawnHero(kind, src, x, z, heading) {
+    const g = this.g, spec = HEROES[kind];
+    // whoever was parked there has gone
+    for (const c of this.lot.cars) {
+      if (!c.taken && Math.hypot(c.x - x, c.z - z) < 1.5) { c.taken = true; if (c.col) { c.col.walk = false; c.col.shoot = false; } }
+    }
+    const mesh = new THREE.Group();
+    const car = src.clone(true);
+    mesh.add(car);
+    const lights = { head: [], tail: [], beacon: [] };
+    const upgraded = new Map();
+    car.traverse((o) => {
+      if (!o.isMesh) return;
+      o.castShadow = true; o.receiveShadow = true;
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      const out = mats.map((m) => {
+        if (upgraded.has(m)) return upgraded.get(m);
+        let n = m;
+        if (/paint/i.test(m.name)) {
+          // metallic paint under a clear coat, like the real thing
+          n = m.isMeshPhysicalMaterial ? m.clone() : new THREE.MeshPhysicalMaterial({
+            name: m.name, color: m.color, map: m.map, normalMap: m.normalMap, metalness: 0.55, roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.05,
+          });
+          n.envMapIntensity = 1.25;
+        } else if (/glass/i.test(m.name)) {
+          n = m.clone(); n.transparent = true; n.opacity = Math.min(m.opacity ?? 1, 0.5); n.roughness = 0.04; n.metalness = 0.1; n.envMapIntensity = 1.6; n.depthWrite = false;
+        } else if (/headlight/i.test(m.name)) {
+          n = m.clone(); n.emissive = new THREE.Color(0xfff4e0); n.emissiveIntensity = 0; lights.head.push(n);
+        } else if (/taillight|brake/i.test(m.name)) {
+          n = m.clone(); n.emissive = new THREE.Color(0xff1a0a); n.emissiveIntensity = 0.15; lights.tail.push(n);
+        } else if (/beacon/i.test(m.name)) {
+          n = m.clone(); n.emissive = new THREE.Color(0xffa010); n.emissiveIntensity = 0.1; lights.beacon.push(n);
+        } else if (/^plate$/i.test(m.name) && spec.plate) {
+          n = m.clone(); n.map = this.plateTexture(spec.plate, plateFlip(car));
+        } else if (/livery/i.test(m.name)) {
+          // lettering on the body: cut out, not blended, and pulled forward so it never flickers
+          n = m.clone(); n.transparent = false; n.alphaTest = 0.5; n.alphaToCoverage = true;
+          n.polygonOffset = true; n.polygonOffsetFactor = -2; n.polygonOffsetUnits = -2;
+        }
+        upgraded.set(m, n);
+        return n;
+      });
+      o.material = Array.isArray(o.material) ? out : out[0];
+      if (o.material.transparent) o.renderOrder = 1;
+    });
+    const wheels = ['Wheel_FL', 'Wheel_FR', 'Wheel_RL', 'Wheel_RR'].map((n) => car.getObjectByName(n)).filter(Boolean);
+    for (const w of wheels) w.rotation.order = 'YXZ';
+    let wheelR = 0.31;
+    if (wheels[0]) { const b = new THREE.Box3().setFromObject(wheels[0]); wheelR = Math.max(0.2, (b.max.y - b.min.y) / 2); }
+    g.scene.add(mesh);
+    const v = this.makeRecord('car', mesh, x, z, heading, {
+      hero: kind, wheels, front: wheels.filter((w) => /F[LR]$/.test(w.name)), wheelR, lights,
+    });
+    this.park(v);
+    this.list.push(v);
+    this.heroes[kind] = v;
+    if (kind === 'prius') this.prius = v;
+    return v;
+  }
+
+  plateTexture(number, flip = { u: false, v: false }) {
+    const t = new THREE.TextureLoader().load(`assets/textures/plates/${number}.png`);
+    t.flipY = false;                        // glTF UVs
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = 8;
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(flip.u ? -1 : 1, flip.v ? -1 : 1);
+    t.offset.set(flip.u ? 1 : 0, flip.v ? 1 : 0);
+    return t;
+  }
+
+  // spinning/steering wheels, brake lights and headlights of a detailed car
+  animateHero(v, dt, input) {
+    if (!v.hero) return;
+    v.spin = (v.spin || 0) - (v.speed / v.wheelR) * dt;
+    for (const w of v.wheels) w.rotation.z = v.spin;
+    for (const w of v.front) w.rotation.y = v.steer;
+    const braking = input && ((input.down('KeyS') && v.speed > 0.3) || (input.down('KeyW') && v.speed < -0.3) || input.down('Space'));
+    const night = this.g.atmo.lampLevel > 0.4;
+    for (const m of v.lights.tail) m.emissiveIntensity = braking ? 4 : this.active === v && night ? 1.2 : 0.15;
+    for (const m of v.lights.head) m.emissiveIntensity = this.active === v && night ? 3 : 0;
+  }
+
+  // the security car's amber beacon turns while it's driven, and all night long
+  flashBeacons(time) {
+    const v = this.heroes && this.heroes.leaf;
+    if (!v || !v.lights.beacon.length) return;
+    const on = this.active === v || this.g.atmo.lampLevel > 0.4;
+    const phase = (time * 1.6) % 1;
+    const k = on ? (phase < 0.12 || (phase > 0.24 && phase < 0.36) ? 7 : 0.35) : 0.1;
+    for (const m of v.lights.beacon) m.emissiveIntensity = k;
   }
 
   // park facing the longest clear run, so you can ride straight off
@@ -150,15 +331,24 @@ export class Vehicles {
       wheelR = u.wheelR || wheelR;
     } else mesh = type === 'bike' ? proceduralBike([0xb3261e, 0x1f4fa8, 0x222222, 0xe0a100][this.list.length % 4]) : proceduralDrone();
     g.scene.add(mesh);
-    const v = this.makeRecord(type, mesh, x, z, heading, { seat, wheelR });
+    let rider = null;
+    if (type === 'bike') {
+      const frame = extra.bike ? mesh.children[0] : mesh; // the model's own frame (before our centring)
+      rider = extra.rider ? extra.rider.clone(true) : proceduralRider();
+      rider.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+      rider.visible = false;
+      frame.add(rider);
+    }
+    const v = this.makeRecord(type, mesh, x, z, heading, { seat, wheelR, rider });
     this.park(v);
     this.list.push(v);
     return v;
   }
 
   makeRecord(type, mesh, x, z, heading, extra = {}) {
+    const y = extra.y ?? this.g.hm.atWorld(x, z);
     return Object.assign({
-      type, spec: SPEC[type], mesh, pos: new THREE.Vector3(x, this.g.hm.atWorld(x, z), z), heading, speed: 0, steer: 0,
+      type, spec: SPEC[type], mesh, pos: new THREE.Vector3(x, y, z), heading, speed: 0, steer: 0,
       vel: new THREE.Vector3(), fwdSign: 1, col: null, tilt: new THREE.Vector2(), lean: 0,
     }, extra);
   }
@@ -168,13 +358,13 @@ export class Vehicles {
     const g = this.g, s = v.spec;
     if (v.col) { v.col.walk = false; v.col.shoot = false; }
     v.col = g.colliders.addBox(v.pos.x, v.pos.z, s.hw, s.hd, -v.heading, { height: v.pos.y + (v.type === 'bike' ? 1.1 : 1.45), minY: v.pos.y - 0.5, kind: v.type === 'drone' ? 'box' : 'car' });
-    g.nav.refreshArea(g.colliders, v.pos.x - 3, v.pos.z - 3, v.pos.x + 3, v.pos.z + 3);
+    g.nav.refreshArea(g.colliders, v.pos.x - 3, v.pos.z - 3, v.pos.x + 3, v.pos.z + 3); g.unav?.refreshArea(g.colliders, v.pos.x - 3, v.pos.z - 3, v.pos.x + 3, v.pos.z + 3);
     this.place(v);
   }
 
   unpark(v) {
     if (v.col) { v.col.walk = false; v.col.shoot = false; }
-    this.g.nav.refreshArea(this.g.colliders, v.pos.x - 3, v.pos.z - 3, v.pos.x + 3, v.pos.z + 3);
+    this.g.nav.refreshArea(this.g.colliders, v.pos.x - 3, v.pos.z - 3, v.pos.x + 3, v.pos.z + 3); this.g.unav?.refreshArea(this.g.colliders, v.pos.x - 3, v.pos.z - 3, v.pos.x + 3, v.pos.z + 3);
   }
 
   place(v) {
@@ -221,9 +411,9 @@ export class Vehicles {
       fwdSign = 1;
     }
     this.g.scene.add(mesh);
-    const v = this.makeRecord('car', mesh, c.x, c.z, c.h, { fwdSign });
+    const v = this.makeRecord('car', mesh, c.x, c.z, c.h, { fwdSign, y: c.ground });
     this.list.push(v);
-    this.g.nav.refreshArea(this.g.colliders, c.x - 3, c.z - 3, c.x + 3, c.z + 3);
+    this.g.nav.refreshArea(this.g.colliders, c.x - 3, c.z - 3, c.x + 3, c.z + 3); this.g.unav?.refreshArea(this.g.colliders, c.x - 3, c.z - 3, c.x + 3, c.z + 3);
     return v;
   }
 
@@ -233,16 +423,39 @@ export class Vehicles {
     if (target.type) this.unpark(v);
     this.active = v;
     p.vehicle = v;
-    // cars and bikes: look relative to the vehicle; drone: absolute, starting along its nose
+    // drone: you look where you fly, starting along its nose; cars and bikes: the chase camera
     p.yaw = v.type === 'drone' ? v.heading - Math.PI / 2 : 0;
     p.pitch = -0.05;
     p.vel.set(0, 0, 0);
     v.speed = 0; v.vel.set(0, 0, 0);
-    this.thirdPerson = false;
     g.weapons.adsToggle = false;
-    this.startEngine(v.type);
-    g.hud.notice(v.type === 'drone' ? 'Drone: WASD move, Space up, C down, F to get out' : `${v.type === 'bike' ? 'Motorbike' : 'Car'}: WASD drive, Space handbrake, C camera, F to get out`);
+    this.camYaw = null; this.camPos = null; this.lookAt = null;
+    if (v.rider) v.rider.visible = true;
+    if (v.type !== 'drone') this.headlights(v, true);
+    this.startEngine(v.hero ? HEROES[v.hero].sound : v.type);
+    const name = v.hero ? HEROES[v.hero].name : v.type === 'bike' ? 'Motorbike' : 'Car';
+    g.hud.notice(v.type === 'drone' ? 'Drone: WASD move, Space up, C down, F to get out' : `${name}: WASD drive, Space handbrake, F to get out`);
   }
+
+  // the flashlight becomes the headlights while you drive (same light, so nothing recompiles)
+  headlights(v, on) {
+    const g = this.g, L = g.flashlight;
+    if (!L) return;
+    if (on) {
+      const front = v.type === 'bike' ? 0.95 : 2.25 * (v.fwdSign < 0 ? -1 : 1);
+      v.mesh.add(L, L.target);
+      L.position.set(front, 0.8, 0);
+      L.target.position.set(front + 14 * Math.sign(front), 0, 0);
+      L.angle = 0.55; L.distance = 45;
+    } else {
+      g.camera.add(L, L.target);
+      L.position.set(0.25, -0.2, 0);
+      L.target.position.set(0, -0.6, -8);
+      L.angle = 0.42; L.distance = 38;
+    }
+  }
+
+  get hidesWeapons() { return !!this.active && this.active.type !== 'drone'; }
 
   exit() {
     const g = this.g, p = g.player, v = this.active;
@@ -256,7 +469,7 @@ export class Vehicles {
     for (const [side, back] of tries) {
       const x = v.pos.x + right.x * side + fwd.x * back, z = v.pos.z + right.z * side + fwd.z * back;
       const probe = { x, z };
-      const y = Math.max(g.hm.atWorld(x, z), p.roofAt(x, z) <= v.pos.y + 0.6 ? p.roofAt(x, z) : -Infinity);
+      const y = Math.max(g.groundAt(x, z, v.pos.y + 0.6), p.roofAt(x, z) <= v.pos.y + 0.6 ? p.roofAt(x, z) : -Infinity);
       if (!g.colliders.resolve(probe, 0.35, y + 0.3, y + 1.7, 1) && Math.abs(y - v.pos.y) < 1.2 || v.type === 'drone') { out = { x, z, y }; break; }
     }
     if (!out) { g.hud.notice('No room to get out here'); return; }
@@ -270,6 +483,9 @@ export class Vehicles {
     p.onGround = false;
     v.speed = 0; v.vel.set(0, 0, 0);
     if (v.type === 'drone') this.settleDrone(v);
+    if (v.rider) v.rider.visible = false;
+    if (v.type !== 'drone') this.headlights(v, false);
+    if (v.hero) { v.speed = 0; this.animateHero(v, 0, null); }
     this.park(v);
     this.stopEngine();
     g.weapons.ignoreItems = null;
@@ -277,7 +493,7 @@ export class Vehicles {
 
   settleDrone(v) {
     const g = this.g;
-    const floor = Math.max(g.hm.atWorld(v.pos.x, v.pos.z), this.roofBelow(v.pos.x, v.pos.z, v.pos.y));
+    const floor = Math.max(g.groundAt(v.pos.x, v.pos.z, v.pos.y + 0.3), this.roofBelow(v.pos.x, v.pos.z, v.pos.y));
     v.pos.y = floor; v.tilt.set(0, 0);
   }
 
@@ -295,6 +511,7 @@ export class Vehicles {
         v.mesh.userData.rotors.forEach((r, i) => { r.rotation.y += v.rotorSpin * dt * (/bottom/i.test(r.name) || i % 2 ? -1 : 1); });
       }
     }
+    this.flashBeacons(this.g.time || 0);
     if (!playing) return;
     if (!this.active) {
       const near = !p.dead && this.nearest();
@@ -308,8 +525,8 @@ export class Vehicles {
     }
     const v = this.active;
     if (input.hit('KeyF')) { input.pressed.delete('KeyF'); this.exit(); return; }
-    if (v.type !== 'drone' && input.hit('KeyC')) this.thirdPerson = !this.thirdPerson;
     if (v.type === 'drone') this.flyDrone(v, dt, input); else this.drive(v, dt, input);
+    this.animateHero(v, dt, input);
     this.place(v);
     this.runOver(v);
     this.seatPlayer(v, dt);
@@ -319,29 +536,46 @@ export class Vehicles {
     const alt = v.type === 'drone' ? ` · ${Math.max(0, v.pos.y - g.hm.atWorld(v.pos.x, v.pos.z)).toFixed(0)} m up` : '';
     this.hud.textContent = `${kmh} km/h${alt}`;
     this.hud.classList.add('on');
-    g.hud.prompt(v.type === 'drone' ? 'Space up · C down · <b>F</b> get out' : `Space handbrake · C camera · <b>F</b> get out`);
+    g.hud.prompt(v.type === 'drone' ? 'Space up · C down · <b>F</b> get out' : 'Space handbrake · <b>F</b> get out');
   }
 
-  // Bicycle-model driving with three collision circles along the body.
+  // Bicycle-model driving with collision circles along the body. The wheel turns in at a limited
+  // rate, and at speed the tyres' grip (not the wheel) sets how tight you can go; hitting something
+  // at an angle slides you along it, head-on stops you.
   drive(v, dt, input) {
     const g = this.g, s = v.spec;
     const throttle = (input.down('KeyW') ? 1 : 0) - (input.down('KeyS') ? 1 : 0);
-    if (throttle > 0) v.speed += (v.speed < 0 ? s.brake : s.accel) * dt;
-    else if (throttle < 0) v.speed -= (v.speed > 0.3 ? s.brake : s.reverse) * dt;
-    else v.speed *= Math.exp(-0.45 * dt);
-    if (input.down('Space')) v.speed *= Math.exp(-3.2 * dt);
-    v.speed = THREE.MathUtils.clamp(v.speed, -s.vmax * 0.35, s.vmax);
+    const handbrake = input.down('Space');
+    const v0 = v.speed;
+    if (throttle > 0) {
+      if (v.speed < -0.3) v.speed = Math.min(0, v.speed + s.brake * dt);
+      else v.speed += s.accel * Math.pow(Math.max(0, 1 - v.speed / s.vmax), 0.6) * dt;
+    } else if (throttle < 0) {
+      if (v.speed > 0.3) v.speed = Math.max(0, v.speed - s.brake * dt);
+      else v.speed = Math.max(-s.vrev, v.speed - s.reverse * dt);
+    }
+    // rolling resistance and air
+    const coast = (s.roll + s.drag * v.speed * v.speed) * dt * (throttle ? 0.3 : 1);
+    v.speed = Math.abs(v.speed) <= coast ? 0 : v.speed - Math.sign(v.speed) * coast;
+    if (handbrake) v.speed *= Math.exp(-2.4 * dt);
+    // steering: turn in at a limited rate, back to centre a bit quicker
+    const spd = Math.abs(v.speed);
     const steerIn = (input.down('KeyA') ? 1 : 0) - (input.down('KeyD') ? 1 : 0);
-    const steerMax = s.steer * (1 - 0.55 * Math.min(1, Math.abs(v.speed) / s.vmax));
-    v.steer = THREE.MathUtils.damp(v.steer, steerIn * steerMax, 6, dt);
-    v.heading += (v.speed / s.wheelbase) * Math.tan(v.steer) * dt * (input.down('Space') && Math.abs(v.speed) > 5 ? 1.5 : 1);
+    const gripLimit = Math.atan((s.grip * s.wheelbase) / Math.max(1, spd * spd));
+    const target = steerIn * Math.min(s.steer, gripLimit);
+    const rate = (steerIn === 0 || Math.sign(target) !== Math.sign(v.steer) ? 2.2 : 1) * s.steerRate * dt;
+    v.steer += THREE.MathUtils.clamp(target - v.steer, -rate, rate);
+    const yawRate = (v.speed / s.wheelbase) * Math.tan(v.steer) * (handbrake && spd > 5 ? 1.25 : 1);
+    v.heading += yawRate * dt;
+    v.yawRate = yawRate;
     const cos = Math.cos(v.heading), sin = Math.sin(v.heading);
     const fx = cos * v.fwdSign, fz = -sin * v.fwdSign;
     const nx = v.pos.x + fx * v.speed * dt, nz = v.pos.z + fz * v.speed * dt;
+    const G = (x, z) => g.groundAt(x, z, v.pos.y + 0.6);
     // curbs and steps: too high blocks like a wall
-    const frontY = g.hm.atWorld(nx + fx * s.hw * Math.sign(v.speed || 1), nz + fz * s.hw * Math.sign(v.speed || 1));
-    let blocked = frontY - v.pos.y > s.step;
-    // collide the body circles with the world
+    const dirS = Math.sign(v.speed || 1);
+    const frontY = G(nx + fx * s.hw * dirS, nz + fz * s.hw * dirS);
+    const blocked = frontY - v.pos.y > s.step;
     let pushX = 0, pushZ = 0, hits = 0;
     if (!blocked) {
       for (const off of s.circles) {
@@ -350,24 +584,41 @@ export class Vehicles {
         if (g.colliders.resolve(c, s.radius, v.pos.y + 0.12, v.pos.y + 1.4, 2)) { hits++; pushX += c.x - ox; pushZ += c.z - oz; }
       }
     }
-    const impact = Math.abs(v.speed);
-    if (blocked || hits) {
-      if (impact > 4) { g.audio.play('metal', { pos: v.pos, vol: Math.min(1, impact / 12) }); g.player.shake = Math.min(1, g.player.shake + impact / 14); }
-      v.speed *= blocked ? -0.2 : -0.3;
-      if (!blocked) { v.pos.x = nx + pushX / hits; v.pos.z = nz + pushZ / hits; }
+    if (blocked) {
+      if (spd > 4) this.bump(v, spd);
+      v.speed = spd > 6 ? -v.speed * 0.1 : 0;
+    } else if (hits) {
+      // slide along what we hit: lose the part of the speed going into it
+      const px = pushX / hits, pz = pushZ / hits, pl = Math.hypot(px, pz) || 1;
+      const into = Math.abs((fx * px + fz * pz) / pl);   // 1 = head-on, 0 = scraping along
+      if (spd * into > 3) this.bump(v, spd * into);
+      v.speed *= Math.max(0, 1 - into * 1.1);
+      if (into > 0.85 && spd > 6) v.speed = -Math.sign(v0) * spd * 0.12;
+      v.pos.x = nx + px; v.pos.z = nz + pz;
     } else { v.pos.x = nx; v.pos.z = nz; }
-    // ride the ground: pitch and roll from the terrain under the wheels
-    const hF = g.hm.atWorld(v.pos.x + fx * s.hw * 0.8, v.pos.z + fz * s.hw * 0.8), hB = g.hm.atWorld(v.pos.x - fx * s.hw * 0.8, v.pos.z - fz * s.hw * 0.8);
+    // ride the ground: pitch and roll from the terrain under the wheels, plus a little body
+    // movement from braking/accelerating and cornering
+    const hF = G(v.pos.x + fx * s.hw * 0.8, v.pos.z + fz * s.hw * 0.8), hB = G(v.pos.x - fx * s.hw * 0.8, v.pos.z - fz * s.hw * 0.8);
     const rx = -fz, rz = fx;
-    const hL = g.hm.atWorld(v.pos.x - rx * s.hd, v.pos.z - rz * s.hd), hR = g.hm.atWorld(v.pos.x + rx * s.hd, v.pos.z + rz * s.hd);
+    const hL = G(v.pos.x - rx * s.hd, v.pos.z - rz * s.hd), hR = G(v.pos.x + rx * s.hd, v.pos.z + rz * s.hd);
     v.pos.y = THREE.MathUtils.damp(v.pos.y, Math.max(hF, hB, (hF + hB) / 2), 14, dt);
-    v.tilt.x = THREE.MathUtils.damp(v.tilt.x, Math.atan2(hF - hB, s.hw * 1.6) * v.fwdSign, 10, dt);
-    v.tilt.y = THREE.MathUtils.damp(v.tilt.y, Math.atan2(hR - hL, s.hd * 2), 10, dt);
+    const accel = (v.speed - v0) / Math.max(dt, 1e-3), lateral = v.speed * yawRate;
+    const bodyPitch = v.type === 'car' ? THREE.MathUtils.clamp(-accel * 0.006, -0.035, 0.035) : 0;
+    const bodyRoll = v.type === 'car' ? THREE.MathUtils.clamp(-lateral * 0.008, -0.05, 0.05) : 0;
+    v.tilt.x = THREE.MathUtils.damp(v.tilt.x, Math.atan2(hF - hB, s.hw * 1.6) * v.fwdSign + bodyPitch * v.fwdSign, 8, dt);
+    v.tilt.y = THREE.MathUtils.damp(v.tilt.y, Math.atan2(hR - hL, s.hd * 2) + bodyRoll, 6, dt);
     if (v.type === 'bike') {
-      v.lean = THREE.MathUtils.damp(v.lean, -v.steer * Math.min(1, Math.abs(v.speed) / 8) * 0.9, 6, dt);
+      // lean into the turn as a real bike must: tan(lean) = v * yaw rate / g
+      v.lean = THREE.MathUtils.damp(v.lean, -THREE.MathUtils.clamp(Math.atan(lateral / 9.81), -0.7, 0.7), 7, dt);
       if (v.mesh.userData.wheels) for (const w of v.mesh.userData.wheels) w.rotation.z -= (v.speed / (v.wheelR || 0.39)) * dt;
     }
     v.vel.set(fx * v.speed, 0, fz * v.speed);
+  }
+
+  bump(v, speed) {
+    const g = this.g;
+    g.audio.play('metal', { pos: v.pos, vol: Math.min(1, speed / 12) });
+    g.player.shake = Math.min(1, g.player.shake + speed / 16);
   }
 
   // Personal drone: moves relative to where you look.
@@ -389,10 +640,12 @@ export class Vehicles {
     let ny = v.pos.y + v.vel.y * dt;
     // walls stop you below roof height; above the roofs you're free
     if (g.colliders.resolve(next, s.radius, ny + 0.1, ny + 1.9, 2)) { v.vel.x *= 0.3; v.vel.z *= 0.3; }
-    const ground = g.hm.atWorld(next.x, next.z);
+    const ground = g.groundAt(next.x, next.z, v.pos.y + 0.3);
     const floor = Math.max(ground, this.roofBelow(next.x, next.z, v.pos.y));
     if (ny < floor) { ny = floor; v.vel.y = Math.max(0, v.vel.y); }
     ny = Math.min(ny, ground + s.ceiling);
+    const gar = g.underground.at(next.x, next.z, v.pos.y + 0.3);
+    if (gar) { ny = Math.min(ny, gar.ceiling - 1.15); if (v.vel.y > 0 && ny >= gar.ceiling - 1.15) v.vel.y = 0; }
     v.pos.set(next.x, ny, next.z);
     let dh = ((yaw + Math.PI / 2 - v.heading + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
     v.heading += dh * (1 - Math.exp(-5 * dt));
@@ -423,7 +676,7 @@ export class Vehicles {
         g.audio.play('flesh', { pos: zb.pos, vol: 1 });
         v.speed *= v.type === 'bike' ? 0.75 : 0.9;
         if (!killed) { zb.pos.x += v.vel.x * 0.12; zb.pos.z += v.vel.z * 0.12; zb.hitT = 0.8; }
-        if (v.type === 'bike' && spd > 12) g.player.damage(8, zb.pos.x, zb.pos.z);
+        if (v.type === 'bike' && spd > 12) g.player.damage(5, zb.pos.x, zb.pos.z);
       } else {
         // push out of the body along the shallow axis
         const px = ex - Math.abs(lx), pz = ez - Math.abs(lz);
@@ -445,60 +698,51 @@ export class Vehicles {
     seat.applyMatrix4(v.mesh.matrixWorld);
     p.pos.set(seat.x, seat.y - 1.1, seat.z);
     p.viewY = p.pos.y;
-    const baseYaw = v.type === 'drone' ? 0 : v.heading - Math.PI / 2 + (v.fwdSign < 0 ? Math.PI : 0);
+    v.mesh.visible = true;
+    if (v.type !== 'drone') {
+      p.yaw = 0; p.pitch = 0;   // (you get out facing the way the vehicle points)
+      this.topView(v, dt);
+      return;
+    }
     cam.rotation.order = 'YXZ';
     const sh = p.shake * p.shake, t = performance.now() / 1000;
-    if (this.thirdPerson && v.type !== 'drone') {
-      const yaw = baseYaw + p.yaw;
-      const back = v.type === 'bike' ? 4.5 : 6.5, up = v.type === 'bike' ? 2 : 2.6;
-      const tx = v.pos.x + Math.sin(yaw) * back, tz = v.pos.z + Math.cos(yaw) * back;
-      const ty = Math.max(g.hm.atWorld(tx, tz) + 0.5, v.pos.y + up - p.pitch * 3);
-      cam.position.set(tx, ty, tz);
-      cam.rotation.set(p.pitch - 0.18, yaw, 0);
-      v.mesh.visible = true;
-    } else {
-      cam.position.copy(seat);
-      cam.rotation.set(p.pitch + p.punch.x + (Math.sin(t * 40) * 0.004 * sh), baseYaw + p.yaw + p.punch.y, v.type === 'bike' ? -v.lean * 0.5 : 0);
-      // inside a car we draw a cabin frame instead of the body (the body would block the view)
-      v.mesh.visible = v.type !== 'car';
-      this.cabin(v);
-    }
-    if (Math.abs(cam.fov - p.fovBase * (1 - p.ads * (p.adsZoom ?? 0.22))) > 0.01) {
-      cam.fov = THREE.MathUtils.lerp(cam.fov, p.fovBase * (1 - p.ads * (p.adsZoom ?? 0.22)), 0.25);
-      cam.updateProjectionMatrix();
-    }
-    if (this.cabinMesh) this.cabinMesh.visible = v.type === 'car' && !this.thirdPerson;
+    cam.position.copy(seat);
+    cam.rotation.set(p.pitch + p.punch.x + (Math.sin(t * 40) * 0.004 * sh), p.yaw + p.punch.y, 0);
+    const fov = p.fovBase * (1 - p.ads * (p.adsZoom ?? 0.22));
+    if (Math.abs(cam.fov - fov) > 0.01) { cam.fov = THREE.MathUtils.lerp(cam.fov, fov, 0.25); cam.updateProjectionMatrix(); }
   }
 
-  // Dashboard, steering wheel, pillars, roof edge and bonnet in the car's own frame (x forward,
-  // y up, z right, driver on the left), shown in place of the body when driving in first person.
-  cabin(v) {
-    if (v.type !== 'car') return;
-    if (!this.cabinMesh) {
-      const g = new THREE.Group();
-      const dash = new THREE.MeshStandardMaterial({ color: 0x1d1e20, roughness: 0.8 });
-      const trim = new THREE.MeshStandardMaterial({ color: 0x2c2d30, roughness: 0.6 });
-      const bonnet = new THREE.MeshStandardMaterial({ color: 0x9aa0a6, roughness: 0.35, metalness: 0.5 });
-      const add = (geo, m, x, y, z, rx = 0, ry = 0, rz = 0) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.rotation.set(rx, ry, rz); g.add(o); return o; };
-      add(new THREE.BoxGeometry(0.4, 0.2, 1.62), dash, 0.72, 0.93, 0);                         // dashboard
-      add(new THREE.TorusGeometry(0.19, 0.022, 8, 28), trim, 0.47, 1.0, -0.38, 0, Math.PI / 2, -0.45); // wheel
-      add(new THREE.BoxGeometry(0.07, 0.9, 0.07), trim, 0.62, 1.22, -0.8, 0, 0, 0.75);          // A-pillars
-      add(new THREE.BoxGeometry(0.07, 0.9, 0.07), trim, 0.62, 1.22, 0.8, 0, 0, 0.75);
-      add(new THREE.BoxGeometry(0.1, 0.07, 1.62), trim, 0.3, 1.5, 0);                          // roof header
-      add(new THREE.BoxGeometry(0.07, 0.6, 0.07), trim, -0.45, 1.2, -0.84);                     // B-pillars
-      add(new THREE.BoxGeometry(0.07, 0.6, 0.07), trim, -0.45, 1.2, 0.84);
-      add(new THREE.BoxGeometry(1.4, 0.2, 0.08), dash, 0.1, 0.8, -0.86);                        // door cards
-      add(new THREE.BoxGeometry(1.4, 0.2, 0.08), dash, 0.1, 0.8, 0.86);
-      add(new THREE.BoxGeometry(1.3, 0.06, 1.62), bonnet, 1.55, 0.88, 0, 0, 0, -0.08);           // bonnet
-      g.traverse((o) => { if (o.isMesh) o.castShadow = false; });
-      g.matrixAutoUpdate = false;
-      this.cabinMesh = g;
-      this.g.scene.add(g);
-    }
-    // same transform as the car body (mirrored for models whose nose points -x)
-    this.cabinMesh.matrix.copy(v.mesh.matrixWorld);
-    if (v.fwdSign < 0) this.cabinMesh.matrix.multiply(new THREE.Matrix4().makeRotationY(Math.PI));
-    this.cabinMesh.matrixWorldNeedsUpdate = true;
+  // Cars and bikes: one camera, high behind the vehicle and looking down on it, swinging round
+  // with the direction of travel and pulled in by walls (and kept under the car-park ceiling).
+  topView(v, dt) {
+    const g = this.g, cam = g.camera, bike = v.type === 'bike';
+    const heading = v.heading + (v.fwdSign < 0 ? Math.PI : 0);
+    if (this.camYaw == null) this.camYaw = heading;
+    const d = ((heading - this.camYaw + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
+    this.camYaw += d * (1 - Math.exp(-1.7 * dt));
+    const spd = Math.abs(v.speed);
+    let back = (bike ? 5 : 7) + spd * 0.12, up = (bike ? 8 : 10.5) + spd * 0.22;
+    const fx = Math.cos(this.camYaw), fz = -Math.sin(this.camYaw);
+    const ahead = 2 + spd * 0.2;
+    const gar = g.underground.at(v.pos.x, v.pos.z, v.pos.y + 0.3);
+    if (gar) { up = Math.min(up, gar.ceiling - v.pos.y - 0.45); back = Math.min(back, 5.5); }
+    const ox = v.pos.x, oy = v.pos.y + 1.4, oz = v.pos.z;
+    let cx = ox - fx * back, cy = v.pos.y + up, cz = oz - fz * back;
+    // keep a clear line from the vehicle up to the camera
+    const dx = cx - ox, dy = cy - oy, dz = cz - oz, len = Math.hypot(dx, dy, dz) || 1;
+    const hit = g.colliders.raycast(ox, oy, oz, dx / len, dy / len, dz / len, len, (it) => it.kind === 'building' || it.kind === 'wall');
+    if (hit) { const k = Math.max(0.12, (hit.t - 0.4) / len); cx = ox + dx * k; cy = oy + dy * k; cz = oz + dz * k; }
+    this.camTarget = (this.camTarget || new THREE.Vector3()).set(cx, cy, cz);
+    if (!this.camPos) this.camPos = this.camTarget.clone();
+    else this.camPos.lerp(this.camTarget, 1 - Math.exp(-(hit ? 20 : 6) * dt));
+    cam.position.copy(this.camPos);
+    const sh = g.player.shake;
+    if (sh > 0.01) { const t = performance.now() / 1000; cam.position.x += Math.sin(t * 47) * 0.06 * sh; cam.position.y += Math.cos(t * 53) * 0.06 * sh; }
+    const look = (this.lookTarget || (this.lookTarget = new THREE.Vector3())).set(ox + fx * ahead, v.pos.y + 0.6, oz + fz * ahead);
+    if (!this.lookAt) this.lookAt = look.clone(); else this.lookAt.lerp(look, 1 - Math.exp(-8 * dt));
+    cam.up.set(0, 1, 0);
+    cam.lookAt(this.lookAt);
+    if (Math.abs(cam.fov - 60) > 0.01) { cam.fov = THREE.MathUtils.lerp(cam.fov, 60, 0.2); cam.updateProjectionMatrix(); }
   }
 
   // --- engine sound (synthesised) ---
@@ -506,6 +750,20 @@ export class Vehicles {
     const a = this.g.audio;
     if (!a.ctx) return;
     const c = a.ctx;
+    if (type === 'hybrid' || type === 'ev') {
+      const gain = c.createGain(); gain.gain.value = 0;
+      const whine = c.createOscillator(); whine.type = 'sine'; whine.frequency.value = 180;
+      const wg = c.createGain(); wg.gain.value = 0.25;
+      const ice = c.createOscillator(); ice.type = 'sawtooth'; ice.frequency.value = 40;
+      const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 500;
+      const ig = c.createGain(); ig.gain.value = 0;
+      whine.connect(wg).connect(gain); ice.connect(lp).connect(ig).connect(gain);
+      gain.connect(a.master);
+      whine.start(); ice.start();
+      gain.gain.setTargetAtTime(type === 'ev' ? 0.06 : 0.08, c.currentTime, 0.3);
+      this.engine = { gain, oscs: [{ o: whine, m: 1 }, { o: ice, m: 1 }], type, whine, ice, ig };
+      return;
+    }
     const gain = c.createGain(); gain.gain.value = 0;
     const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = type === 'drone' ? 1800 : 700;
     const oscs = (type === 'drone' ? [1, 1.013, 0.987, 1.5] : [1, 0.5, 1.01]).map((m) => {
@@ -520,6 +778,14 @@ export class Vehicles {
     const e = this.engine;
     if (!e) return;
     const c = this.g.audio.ctx;
+    if (e.type === 'hybrid' || e.type === 'ev') {
+      // electric whine; the Prius's petrol engine joins in above 40 km/h
+      const spd = Math.abs(v.speed);
+      e.whine.frequency.setTargetAtTime(160 + spd * 38, c.currentTime, 0.1);
+      e.ice.frequency.setTargetAtTime(38 + spd * 3.5, c.currentTime, 0.2);
+      e.ig.gain.setTargetAtTime(e.type === 'hybrid' && spd > 11 ? 0.9 : 0, c.currentTime, 0.4);
+      return;
+    }
     const load = v.type === 'drone' ? 0.6 + Math.hypot(v.vel.x, v.vel.z, v.vel.y) / 12 : Math.abs(v.speed) / v.spec.vmax;
     const base = v.type === 'drone' ? 120 + load * 60 : v.type === 'bike' ? 55 + load * 160 : 38 + load * 90;
     for (const { o, m } of e.oscs) o.frequency.setTargetAtTime(base * m, c.currentTime, 0.08);

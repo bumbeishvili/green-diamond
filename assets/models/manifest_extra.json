@@ -2038,5 +2038,324 @@
   },
   "preview": "assets/previews/models/extra_drone.jpg",
   "preview_kind": "Blender 4.1 EEVEE render of the delivered GLB; Preview shows the glTF axes at the origin: +X red, +Y green, +Z blue."
+ },
+ {
+  "file": "assets/models/vehicles/rider.glb",
+  "category": "vehicle",
+  "name": "Motorbike rider (static, posed on bike.glb)",
+  "source_url": "https://poly.pizza/m/Btfn3G5Xv4",
+  "extra_sources": [
+   "https://poly.pizza/m/kZ3DmIoGip"
+  ],
+  "source_pack": "Quaternius, Ultimate Modular Men Pack (https://quaternius.com/packs/ultimatemodularcharacters.html, https://poly.pizza/bundle/Ultimate-Modular-Men-Pack-ZiH8muWqwQ)",
+  "author": "Quaternius ('SWAT' torso, arms, gloves and boots; 'Casual Character' jeans); helmet and neck modelled for this project",
+  "license": "CC0 1.0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "size_bytes": 297092,
+  "sha1": "efad9a8125dfd8a0ffe4eca53bcb0d539d6a57ad",
+  "triangles": 6474,
+  "bbox": {
+   "min": [
+    -0.3755,
+    0.3723,
+    -0.3531
+   ],
+   "max": [
+    0.5437,
+    1.7794,
+    0.3531
+   ],
+   "size": [
+    0.9192,
+    1.4071,
+    0.7063
+   ],
+   "space": "model units (metres), after all node transforms (static meshes); bike.glb's frame"
+  },
+  "forward_axis": "+X (same frame as bike.glb: rider faces the front wheel)",
+  "up_axis": "+Y",
+  "scale_to_m": 1.0,
+  "size_m": [
+   0.919,
+   1.407,
+   0.706
+  ],
+  "origin": "same as bike.glb: on the ground, midway between the axles. Add the rider as a child of the bike's glTF scene with an identity transform.",
+  "skinned": false,
+  "joints": 0,
+  "meshes": 2,
+  "primitives": 7,
+  "materials": 6,
+  "textures": [],
+  "extensions_used": [],
+  "animations": [],
+  "nodes": {
+   "Rider": "root, identity transform",
+   "Rider_Body": "jacket, black vest/gloves/boots/neck gaiter, jeans (materials Rider_Jacket, Rider_Black, Rider_Jeans)",
+   "Rider_Helmet": "full-face helmet (Helmet_Shell red, Helmet_Stripe white, Helmet_Visor, Rider_Black trim): hide it for a first-person view"
+  },
+  "rider_points": {
+   "frame": "bike.glb / rider.glb native coordinates (x forward, y up, z = rider's right), metres",
+   "grip_right": [
+    0.479,
+    1.073,
+    0.289
+   ],
+   "grip_left": [
+    0.479,
+    1.073,
+    -0.289
+   ],
+   "wrists": [
+    0.376,
+    1.166,
+    0.254
+   ],
+   "elbows": [
+    0.114,
+    1.229,
+    0.268
+   ],
+   "shoulders": [
+    -0.076,
+    1.367,
+    0.153
+   ],
+   "hip_joint_centre": [
+    -0.285,
+    0.957,
+    0.0
+   ],
+   "seat_contact": "buttocks on the seat top (y ~0.86) between x -0.36 and -0.24",
+   "knees": [
+    0.105,
+    0.855,
+    0.279
+   ],
+   "ankles": [
+    -0.178,
+    0.51,
+    0.232
+   ],
+   "boot_balls_on_pegs": [
+    -0.12,
+    0.4,
+    0.245
+   ],
+   "helmet_centre": [
+    -0.01,
+    1.64,
+    0.0
+   ],
+   "helmet_top": [
+    0.0,
+    1.779,
+    0.0
+   ],
+   "eye_point": [
+    0.056,
+    1.63,
+    0.0
+   ],
+   "note": "values with a non-zero z are mirrored for the other side (-z = left)"
+  },
+  "notes": "Static rider built for vehicles/bike.glb in the bike's own frame: parented to the bike's glTF scene with an identity transform, it sits on the seat with both hands round the grips and the balls of the boots on the grey footpeg plates. Built from two CC0 characters of the Quaternius Ultimate Modular Men Pack that share one 62-joint rig: the 'SWAT' torso, arms, gloved hands and boots (recoloured as a charcoal riding jacket with a black armour vest and full black gloves) and the 'Casual Character' jeans. The head was replaced by a full-face helmet modelled for this project (red shell, white centre stripe, dark smoked visor with side pivots, chin vent, black rim, closed underneath) over a black neck gaiter. Posed in Blender 4.1 with a scripted IK/FK solver and baked into static meshes (armature applied, skeleton and clips removed): pelvis on the seat, about 32 deg forward lean with a straight back, head up (5 deg nose-down), elbows bent about 36 deg and slightly out, fingers solved to wrap the 2.8 cm grips, knees against the tank, heels up. The pack's stylised arms were about 20 % too short to reach the bars, so the arms were lengthened in the rest pose (upper arm x1.55, forearm x1.15) before posing. Checked against bike.glb from the side, front, top and chase views: nothing shows through the bike. The only overlaps are hidden: the grips pass through the closed fists, the inner thighs press up to 3 cm into the tank's rear corners and the jeans sink up to 2 cm into the front of the seat; the knees touch the tank (under 3 mm). Materials are metallic 0 except Helmet_Visor (0.6, roughness 0.08), single-sided, flat colours (no textures or UVs). 6.5k tris, 7 draw calls. Game code: src/assets.js wraps bike.glb's scene ('inner') in a group and scales it by 1.95/2.1155 = 0.922 and re-centres it, so add a clone of the rider to that inner scene (vehicleRoot.children[0]), not to the wrapper, and set castShadow on its meshes. Show it only while the player rides. The first-person seat camera ([-0.25, 1.5, 0] in wrapper units) sits just behind the helmet, so hide the rider (or at least Rider_Helmet) in first person, or move that camera to the eye point (0.056, 1.63, 0), which is (0.05, 1.50, 0) in wrapper units. Node names contain no wheel/tyre/rotor/blade/SeatPoint, so the loader's part lookups are unaffected.",
+  "validation": {
+   "glb_magic": true,
+   "json_chunk_parsed": true,
+   "glb_chunks": [
+    [
+     "JSON",
+     5716
+    ],
+    [
+     "BIN",
+     291348
+    ]
+   ],
+   "khronos_validator": {
+    "errors": 0,
+    "warnings": 0,
+    "codes": []
+   },
+   "threejs_r186_load": "ok (GLTFLoader in headless Chromium, added under bike.glb's scene exactly as src/assets.js wraps the bike, 6474 tris, MeshStandardMaterial x6, no console errors)"
+  },
+  "preview": "assets/previews/models/extra_rider.jpg",
+  "preview_kind": "Blender 4.1 EEVEE render of the delivered GLB on bike.glb (side, front, high three-quarter chase view); Preview shows the glTF axes at the origin: +X red, +Y green, +Z blue."
+ },
+ {
+  "file": "assets/models/vehicles/prius.glb",
+  "category": "vehicle",
+  "name": "Toyota Prius, 3rd generation (XW30), 2010 look, Blue Ribbon Metallic (hero car)",
+  "source_url": "https://sketchfab.com/3d-models/toyota-prius-aa599d492d3d4618a1bf5f3786e1bbd9",
+  "download_url": "https://huggingface.co/datasets/allenai/objaverse/resolve/main/glbs/000-142/aa599d492d3d4618a1bf5f3786e1bbd9.glb",
+  "download_note": "Fetched with no login and no captcha from the Objaverse mirror on Hugging Face (allenai/objaverse, not gated; every object keeps the licence its author gave it on Sketchfab). The Sketchfab page itself needs a login to download.",
+  "author": "Isidor Goo (Sketchfab user AirplaneChef, https://sketchfab.com/AirplaneChef); number-plate texture made for this project",
+  "license": "CC-BY 4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "size_bytes": 2843748,
+  "sha1": "45ea9ea4f2e8fcae6ecab3f051a92af768928aa4",
+  "triangles": 42528,
+  "bbox": {
+   "min": [
+    -2.2031,
+    0,
+    -0.8787
+   ],
+   "max": [
+    2.2598,
+    1.6643,
+    0.8808
+   ],
+   "size": [
+    4.4629,
+    1.6643,
+    1.7595
+   ],
+   "space": "model units (metres), after all node transforms; max y is the antenna tip (roof 1.499)"
+  },
+  "forward_axis": "+X (nose)",
+  "up_axis": "+Y",
+  "right_axis": "+Z (driver's side, left, is -Z; left-hand drive)",
+  "scale_to_m": 1.0,
+  "size_m": [
+   4.463,
+   1.664,
+   1.76
+  ],
+  "dimensions_m": {
+   "length_bumpers": 4.46,
+   "length_with_plates": 4.463,
+   "width_body": 1.76,
+   "roof_height": 1.499,
+   "height_with_antenna": 1.664,
+   "wheelbase": 2.732,
+   "track_front": 1.498,
+   "track_rear": 1.468,
+   "ground_clearance": 0.163,
+   "front_overhang": 0.891,
+   "rear_overhang": 0.837,
+   "real_2010_prius": "4.460 x 1.745 x 1.490 m, wheelbase 2.700 m"
+  },
+  "origin": "on the ground (tyre contact plane, y = 0), midway between the front and rear wheel centres (x = 0), on the centreline (z = 0)",
+  "skinned": false,
+  "joints": 0,
+  "meshes": 9,
+  "primitives": 28,
+  "materials": 19,
+  "material_names": {
+   "Paint": "body paint, sRGB #23528f (linear 0.0168, 0.0844, 0.2747), metallic 0.65, roughness 0.3, KHR_materials_clearcoat 1.0 / 0.04; base colour x AO map",
+   "Glass": "dark tinted windows, alpha BLEND 0.42, roughness 0.05",
+   "HeadLight": "chrome headlight reflectors behind the clear lenses; emissive off (black) by default",
+   "TailLight": "red tail-light lenses (also the high stop lamp); emissive off (black) by default",
+   "LampLens": "clear headlight and fog-lamp covers, alpha BLEND 0.14",
+   "Indicator": "amber indicators",
+   "Trim_Black": "matte black plastic (seals, grille, lower trim, underbody, antenna)",
+   "Trim_GlossBlack": "piano black (spoiler band, glass frit borders)",
+   "Trim_Grey": "dark grey plastic (fog-lamp bezels, lamp housings)",
+   "Chrome": "badges ('PRIUS'), trim strips, lamp reflectors",
+   "Emblem": "blue-tinted chrome Toyota emblem discs (no logo artwork)",
+   "Rim": "silver alloy 5-spoke wheels, metallic 1.0, roughness 0.28",
+   "Tyre": "rubber, roughness 0.9",
+   "Disc": "brake discs (inside the wheel nodes)",
+   "Caliper": "brake calipers (in Body, so they do not spin)",
+   "Exhaust": "tail pipe",
+   "Plate": "number plates 520 x 110 mm, textured (see plates.uv_convention)",
+   "Interior": "cabin, dark charcoal",
+   "Interior_Light": "seats / headliner, dark grey"
+  },
+  "textures": [
+   "prius_ao (image/jpeg, 2048x2048 greyscale ambient-occlusion atlas; baseColorTexture of the Body and wheel materials, multiplied by their baseColorFactor)",
+   "plate_ge (image/png, 1024x256, fallback Georgian-format plate 'PR-010-US', number made up; stored vertically flipped because the plate UVs follow the runtime-canvas convention below)"
+  ],
+  "plates": {
+   "material": "Plate",
+   "node": "Plates (front and rear plate, one mesh)",
+   "size_mm": [
+    520,
+    110
+   ],
+   "aspect": 4.727,
+   "uv_convention": "TEXCOORD_0 (= three.js geometry uv) covers each plate's outer face as the full 0..1 range: u 0 -> 1 left to right as the plate is read, v 0 at the bottom edge -> 1 at the top edge, on both plates; so a THREE.CanvasTexture with its default flipY = true draws upright (checked in three.js r186 with 'QQ-939-QC'). Plate edges and backs sample one background texel (u 0.2, v 0.95).",
+   "fallback_texture_note": "The embedded PNG is stored upside down so that standard glTF viewers (flipY = false) also show it upright."
+  },
+  "extensions_used": [
+   "KHR_materials_clearcoat"
+  ],
+  "animations": [],
+  "nodes": {
+   "Prius": "root, identity transform",
+   "Body": "paint shell, trim, chrome, emblems, calipers, exhaust",
+   "Glass": "all windows",
+   "Lights": "HeadLight reflectors, TailLight lenses, LampLens covers, Indicators",
+   "Plates": "front and rear number plates",
+   "Interior": "seats, dashboard, steering wheel, door cards (decimated to 7k tris)",
+   "Wheel_FL": "front left wheel (tyre, rim, brake disc); pivot at the wheel centre (1.3659, 0.3237, -0.7489)",
+   "Wheel_FR": "front right wheel; pivot at (1.3659, 0.3237, 0.7489)",
+   "Wheel_RL": "rear left wheel; pivot at (-1.3659, 0.3237, -0.7341)",
+   "Wheel_RR": "rear right wheel; pivot at (-1.3659, 0.3237, 0.7341)"
+  },
+  "wheels": {
+   "names": [
+    "Wheel_FL",
+    "Wheel_FR",
+    "Wheel_RL",
+    "Wheel_RR"
+   ],
+   "radius_m": 0.3237,
+   "tyre_width_m": 0.225,
+   "segments_around": 60,
+   "centres": {
+    "Wheel_FL": [
+     1.3659,
+     0.3237,
+     -0.7489
+    ],
+    "Wheel_FR": [
+     1.3659,
+     0.3237,
+     0.7489
+    ],
+    "Wheel_RL": [
+     -1.3659,
+     0.3237,
+     -0.7341
+    ],
+    "Wheel_RR": [
+     -1.3659,
+     0.3237,
+     0.7341
+    ]
+   },
+   "spin": "about local +Z; rolling forward (+X) is negative rotation.z (rotation.z -= speed * dt / 0.3237)",
+   "steer": "about local +Y (use rotation.order 'YXZ' so steering is applied after the spin)",
+   "note": "identity rotation, unit scale; tyre + rim + disc only (calipers stay in Body), so Box3 height / 2 = radius"
+  },
+  "notes": "Hero car for the Gate 1 bay (src/game/vehicles.js spawnPrius). Source choice: the Open Robotics car_demo Prius (github.com/osrf/car_demo, prius_description/meshes; package.xml says Apache 2.0, the repo has no LICENSE file; the same model is CC0 on Gazebo Fuel as OpenRobotics/Prius Hybrid) was rejected: it is the 4th-generation XW50 (2016) body, 2.2k triangles with 76-triangle wheels. The Webots Prius is licensed for use only with Webots, and poly.pizza / OpenGameArt have no Prius. The only clean, permissively licensed XW30 found without a login is this CC-BY model (pre-facelift 2010-2011 front), so it was used. Provenance caveat: the licence is the one the uploader declared on Sketchfab; the part names (boot_ok, bonnet_ok, chassis_hi, ...) suggest it was converted from a game-mod rig, and the original authorship could not be verified independently. Changes: baked the Sketchfab node transforms (131 mirrored nodes; the winding follows the mirror and the author's normals were kept), turned the nose to +X, scaled x0.5552 to 4.46 m long, put the origin on the ground between the axles, split the four wheels (tyre + rim + disc) into pivoted nodes, re-authored every material as PBR (19 materials, 28 primitives = draw calls), recoloured the white paint to Blue Ribbon Metallic, turned the black lamp covers into a clear lens over chrome reflectors (headlights) and red lenses (tail lights), removed the floating Berlin plate letters 'B MM 7125' and added 520 x 110 mm number plates with runtime-canvas UVs and a made-up fallback texture ('PR-010-US'), decimated the cabin from 25.9k to 7k triangles (steering wheel 8.9k to 0.9k), and baked ambient occlusion in Cycles (2048 px, 256 samples, 0.5 m reach; body occluded by the ground, wheels and cabin; wheels self-occlusion only because they spin). The AO rides in the base-colour texture because spawnPrius rebuilds Paint as a MeshPhysicalMaterial that keeps color and map but drops aoMap. Lamps: HeadLight and TailLight have black emissive in the file; the game sets the colour and intensity (0xfff4e0 x3, 0xff1a0a x0.15 / x4 braking). Avoid 'brake' in any other material name: spawnPrius treats /taillight|brake/i as a tail light. All materials are double-sided, as in the source. Checked from all sides and from below: no flipped faces (winding agrees with the normals on 100 % of faces), no visible gaps; the only coincident faces are a few cm2 inside the door cavities. Limits: slightly wavy reflections on the bonnet nose (source mesh), emblem discs have no logo, doors and bonnet are not separate.",
+  "validation": {
+   "glb_magic": true,
+   "json_chunk_parsed": true,
+   "glb_chunks": [
+    [
+     "JSON",
+     25984
+    ],
+    [
+     "BIN",
+     2817736
+    ]
+   ],
+   "khronos_validator": {
+    "version": "2.0.0-dev.3.10",
+    "errors": 0,
+    "warnings": 0,
+    "infos": 0,
+    "hints": 0,
+    "codes": []
+   },
+   "threejs_r186_load": "ok (GLTFLoader in headless Chromium from http://127.0.0.1:8765/assets/models/vehicles/prius.glb, spawnPrius material upgrade applied, Wheel_FL/FR/RL/RR found, wheelR 0.3237, wheel pivots hold under spin + steer, no console errors)"
+  },
+  "preview": "assets/previews/models/extra_prius.jpg",
+  "preview_kind": "Blender 4.1 EEVEE render of the delivered GLB (front 3/4, rear 3/4, side, high chase view); Preview shows the glTF axes at the origin: +X red, +Y green, +Z blue."
  }
 ]

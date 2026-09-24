@@ -19,7 +19,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw
 from shapely import affinity
-from shapely.geometry import (LineString, MultiLineString, MultiPolygon, Point,
+from shapely.geometry import (LineString, MultiLineString, MultiPoint, MultiPolygon, Point,
                               Polygon, box)
 from shapely.ops import polygonize, substring, unary_union
 
@@ -691,6 +691,140 @@ enc = np.clip(np.round((hm + 4.0) * 40.0), 0, 255).astype(np.uint8)
 Image.fromarray(enc, 'L').save(ROOT / 'data' / 'heightmap.png', optimize=True)
 
 # ----------------------------------------------------------------------------------------
+# Underground car parks. The ramps the zombies come up lead down into one continuous parking
+# level under each courtyard (the middle one and the northern one), just as in the complex:
+# aisles 6.5 m wide with 2.5 x 5 m stalls on both sides, back-to-back stall rows with a column
+# every three stalls, cross aisles, a lane in from every ramp, strip lights over the aisles.
+# 2.95 m clear under the courtyard deck. (Own RNG so the rest of the level stays the same.)
+# ----------------------------------------------------------------------------------------
+U_AISLE, U_STALL_W, U_STALL_D, U_CEIL = 6.5, 2.5, 5.0, 2.95
+U_MODULE = U_AISLE + 2 * U_STALL_D     # 16.5 m: aisle with a stall row either side
+urng = random.Random(4242)
+pool_block = pool_union.buffer(2.5)
+ramp_polys = [Polygon(r['poly']['outer']) for r in ramp_out]
+ramp_block = unary_union([rp.buffer(0.15, join_style=2) for rp in ramp_polys])
+
+
+def ramp_frame(r):
+    tx, ty = r['top']
+    bx, by = r['bottom']
+    L = math.hypot(bx - tx, by - ty)
+    return bx, by, (bx - tx) / L, (by - ty) / L
+
+
+groups = {'middle': [], 'north': []}
+for r in ramp_out:
+    bx, by, ax, ay = ramp_frame(r)
+    groups['middle' if Point(bx, by).distance(mid_court) < 30 else 'north'].append(r)
+
+underground = []
+for name, rs in groups.items():
+    if not rs:
+        continue
+    # the space under the courtyard: everything between the ramp doors (and under the whole
+    # middle courtyard), clipped to the site, around the pools and the ramps themselves
+    pts = []
+    for r in rs:
+        bx, by, ax, ay = ramp_frame(r)
+        pts += [(bx, by), (bx + ax * 10, by + ay * 10)]
+    region = MultiPoint(pts).convex_hull.buffer(7, join_style=2)
+    if name == 'middle':
+        region = region.union(mid_court.buffer(2))
+    region = region.intersection(play.buffer(-1.5)).difference(pool_block).difference(ramp_block)
+    parts = [q for q in getattr(region, 'geoms', [region]) if q.geom_type == 'Polygon']
+    doors_pts = [Point(ramp_frame(r)[0], ramp_frame(r)[1]) for r in rs]
+    parts = [q for q in parts if any(q.distance(d) < 0.6 for d in doors_pts)]
+    if not parts:
+        continue
+    area = unary_union(parts).simplify(0.05)
+    area = max(getattr(area, 'geoms', [area]), key=lambda q: q.area) if area.geom_type != 'Polygon' else area
+    # grid axis: the long side of the area's minimum rectangle
+    mrr = list(area.minimum_rotated_rectangle.exterior.coords)
+    e1 = (mrr[1][0] - mrr[0][0], mrr[1][1] - mrr[0][1]); e2 = (mrr[2][0] - mrr[1][0], mrr[2][1] - mrr[1][1])
+    e = e1 if math.hypot(*e1) >= math.hypot(*e2) else e2
+    el = math.hypot(*e)
+    ux, uy = e[0] / el, e[1] / el
+    vx, vy = -uy, ux
+    ox, oy = area.centroid.x, area.centroid.y
+    local = lambda x, y: ((x - ox) * ux + (y - oy) * uy, (x - ox) * vx + (y - oy) * vy)
+    world = lambda u, v: (ox + ux * u + vx * v, oy + uy * u + vy * v)
+    cs = [local(x, y) for x, y in area.exterior.coords]
+    umin, umax = min(c[0] for c in cs), max(c[0] for c in cs)
+    vmin, vmax = min(c[1] for c in cs), max(c[1] for c in cs)
+    # keep-clear zones: a lane in from every ramp door, and a cross aisle every ~40 m
+    lanes = []
+    pdoors = []
+    for r in rs:
+        bx, by, ax, ay = ramp_frame(r)
+        nx, ny = -ay, ax
+        hw = r['width'] / 2
+        lane = Polygon([(bx + nx * 3.6, by + ny * 3.6), (bx - nx * 3.6, by - ny * 3.6),
+                        (bx - nx * 3.6 + ax * 14, by - ny * 3.6 + ay * 14), (bx + nx * 3.6 + ax * 14, by + ny * 3.6 + ay * 14)])
+        lanes.append(lane)
+        da, db = (bx + nx * hw, by + ny * hw), (bx - nx * hw, by - ny * hw)
+        pdoors.append({'a': [rnd(da[0]), rnd(da[1])], 'b': [rnd(db[0]), rnd(db[1])], 'axis': [rnd(ax, 4), rnd(ay, 4)],
+                      'in': [rnd(bx + ax * 2.5), rnd(by + ay * 2.5)], 'out': [rnd(bx - ax * 3.0), rnd(by - ay * 3.0)]})
+    n_cross = max(1, int((umax - umin) // 40))
+    for k in range(1, n_cross + 1):
+        uc = umin + (umax - umin) * k / (n_cross + 1)
+        lanes.append(Polygon([world(uc - 3.25, vmin - 1), world(uc + 3.25, vmin - 1), world(uc + 3.25, vmax + 1), world(uc - 3.25, vmax + 1)]))
+    keep_clear = unary_union(lanes).buffer(0.2)
+    inner = area.buffer(-0.3)
+    stalls_u, columns, lights, aisles = [], [], [], []
+    v = vmin + U_STALL_D + U_AISLE / 2
+    while v < vmax - U_AISLE / 2:
+        aisles.append(v)
+        v += U_MODULE
+    for va in aisles:
+        # strip lights down the aisle
+        u = umin + 3.75
+        while u < umax:
+            c = Point(*world(u, va))
+            if area.buffer(-1).contains(c):
+                lights.append([rnd(c.x), rnd(c.y)])
+            u += 7.5
+        for sd in (-1, 1):
+            vc = va + sd * (U_AISLE / 2 + U_STALL_D / 2)
+            k = 0
+            u = umin + U_STALL_W / 2
+            while u < umax:
+                st = Polygon([world(u - U_STALL_W / 2 + 0.05, vc - U_STALL_D / 2), world(u + U_STALL_W / 2 - 0.05, vc - U_STALL_D / 2),
+                              world(u + U_STALL_W / 2 - 0.05, vc + U_STALL_D / 2), world(u - U_STALL_W / 2 + 0.05, vc + U_STALL_D / 2)])
+                if inner.contains(st) and not st.intersects(keep_clear):
+                    c = Point(*world(u, vc))
+                    # nose towards the back of the stall (away from the aisle)
+                    hx, hy = vx * sd, vy * sd
+                    stalls_u.append({'x': rnd(c.x), 'y': rnd(c.y), 'h': rnd(math.atan2(hy, hx), 3)})
+                u += U_STALL_W
+            # columns on the line where this row backs onto the next module's row
+            vb = va + sd * (U_AISLE / 2 + U_STALL_D + 0.05)
+            u = umin
+            while u < umax:
+                c = Point(*world(u, vb))
+                if area.buffer(-0.6).contains(c) and not c.buffer(0.5).intersects(keep_clear):
+                    if all(math.hypot(c.x - q[0], c.y - q[1]) > 1.0 for q in columns):
+                        columns.append([rnd(c.x), rnd(c.y)])
+                u += 3 * U_STALL_W
+    floor = -ramp_out[0]['depth']
+    for st in stalls_u:
+        if urng.random() < 0.55:
+            h = st['h'] + (0 if urng.random() < 0.7 else math.pi)
+            cars.append({'x': st['x'], 'y': st['y'], 'h': rnd(h, 3), 'v': urng.randrange(1000), 'f': floor})
+    # a few places deep inside where they come from
+    far = []
+    for va in aisles:
+        for f in (0.2, 0.5, 0.8):
+            c = Point(*world(umin + (umax - umin) * f, va))
+            if area.buffer(-1.5).contains(c) and min(c.distance(d) for d in doors_pts) > 18:
+                far.append(c)
+    for c in far[:4]:
+        spawns.append({'kind': 'parking', 'x': rnd(c.x), 'y': rnd(c.y), 'f': floor})
+    underground.append({'name': name, 'poly': poly_out(area), 'floor': floor, 'ceiling': rnd(floor + U_CEIL),
+                        'axis': [rnd(ux, 4), rnd(uy, 4)], 'doors': pdoors, 'columns': columns, 'stalls': stalls_u,
+                        'lights': lights})
+print('underground parking', [(u['name'], round(Polygon(u['poly']['outer']).area), len(u['stalls']), len(u['columns']), len(u['doors'])) for u in underground])
+
+# ----------------------------------------------------------------------------------------
 # Output
 # ----------------------------------------------------------------------------------------
 level = {
@@ -716,6 +850,7 @@ level = {
                'floor': -1.3} for p in pools],
     'pool_steps': pool_steps,
     'ramps': ramp_out,
+    'underground': underground,
     'fences': fences,
     'gaps': gaps,
     'walls': walls,

@@ -9,7 +9,7 @@ export class Input {
     this.onLockChange = null;
 
     addEventListener('keydown', (e) => {
-      if (e.repeat) return;
+      if (e.repeat || e.target instanceof HTMLInputElement) return;   // typing in the menu's fields
       this.keys.add(e.code);
       this.pressed.add(e.code);
       if (['Space', 'Tab'].includes(e.code)) e.preventDefault();

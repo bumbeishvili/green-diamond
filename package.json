@@ -1,0 +1,15 @@
+{
+  "name": "green-diamond",
+  "private": true,
+  "type": "module",
+  "description": "Green Diamond: Dighomi Outbreak. Static three.js game; api/ holds the Vercel Functions for multiplayer signalling.",
+  "scripts": {
+    "dev": "node tools/dev.mjs"
+  },
+  "dependencies": {
+    "@vercel/blob": "^2.3.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

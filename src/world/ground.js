@@ -5,7 +5,7 @@ import { pbr } from './textures.js';
 import { addMacroVariation, pbrMaterial } from './materials.js';
 
 // Ground surfaces of the complex: roads, parking, pavers, lawns, pool decks, curbs,
-// pools, garage ramps, retaining walls, plus the land around the complex.
+// pools, the ramps down to the underground car parks, retaining walls, plus the land around the complex.
 export async function buildGround(level, scene, colliders) {
   const group = new THREE.Group();
   group.name = 'ground';
@@ -88,7 +88,7 @@ export async function buildGround(level, scene, colliders) {
     group.add(w);
     pools.push(w);
     // the pool edge keeps zombies out (they path around); the player can hop in and out
-    colliders.addRing(pool.poly.outer.map(([x, y]) => [x, -y]), { height: pool.rim + 0.2, kind: 'pool' });
+    colliders.addRing(pool.poly.outer.map(([x, y]) => [x, -y]), { height: pool.rim + 0.2, minY: -2.5, kind: 'pool' });
   }
   // steps down into each pool
   const stepGeoms = [];
@@ -127,7 +127,7 @@ export async function buildGround(level, scene, colliders) {
   }
   if (rails.length) group.add(new THREE.Mesh(mergeGeometries(rails), chrome));
 
-  // Ramps down to the underground garages.
+  // Ramps down to the underground car parks.
   const rampGeoms = [], rampWalls = [], doors = [];
   for (const r of level.ramps) {
     const [tx, ty] = r.top, [bx, by] = r.bottom;
@@ -141,12 +141,19 @@ export async function buildGround(level, scene, colliders) {
     for (const s of [1, -1]) {
       const ex = tx + nx * s * 1.04, ey = ty + ny * s * 1.04, fx = bx + nx * s * 1.04, fy = by + ny * s * 1.04;
       rampWalls.push(wallStrip([ex, ey], [fx, fy], [0, -r.depth], 0.95, 0.25));
-      colliders.addSegment(ex, -ey, fx, -fy, { height: 0.95, kind: 'wall' });
+      colliders.addSegment(ex, -ey, fx, -fy, { height: 0.95, minY: -r.depth - 1, kind: 'wall' });
     }
-    // back wall with the garage door
+    // at the bottom: the open way into the underground car park under a lintel (or a shut
+    // roll-up door if the ramp has no car park behind it)
+    const park = (level.underground || []).find((u) => u.doors.some((d) => Math.hypot((d.a[0] + d.b[0]) / 2 - bx, (d.a[1] + d.b[1]) / 2 - by) < 1.5));
+    if (park) {
+      rampWalls.push(wallStrip([bx + nx * 1.1, by + ny * 1.1], [bx - nx * 1.1, by - ny * 1.1], [park.ceiling, park.ceiling], 0.95, 0.4));
+      colliders.addSegment(bx + nx, -(by + ny), bx - nx, -(by - ny), { height: 0.95, minY: park.ceiling, kind: 'wall' });
+      continue;
+    }
     const back = wallStrip([bx + nx * 1.1, by + ny * 1.1], [bx - nx * 1.1, by - ny * 1.1], [-r.depth, -r.depth], 0.95, 0.4);
     rampWalls.push(back);
-    colliders.addSegment(bx + nx, -(by + ny), bx - nx, -(by - ny), { height: 3, kind: 'wall' });
+    colliders.addSegment(bx + nx, -(by + ny), bx - nx, -(by - ny), { height: 3, minY: -r.depth - 1, kind: 'wall' });
     doors.push({ x: bx - ax * 0.05, y: by - ay * 0.05, fx: -ax, fy: -ay, w: r.width - 0.8, bottom: -r.depth });
   }
   const rampMesh = new THREE.Mesh(mergeGeometries(rampGeoms), mats.asphalt);
@@ -177,7 +184,13 @@ export async function buildGround(level, scene, colliders) {
 
   // Land around the complex: big base plane + streets + construction dirt.
   // near field: a grass disc; the real terrain (surroundings.js) takes over beyond ~500 m
-  const base = new THREE.Mesh(new THREE.CircleGeometry(560, 96), mats.wild);
+  // (with holes where the ramps and pools go down, or you'd see grass over them from above)
+  const disc = new THREE.Shape();
+  disc.absarc(0, 0, 560, 0, Math.PI * 2, false);
+  for (const hole of [...level.ramps.map((r) => r.poly), ...level.pools.map((p) => p.poly)]) {
+    disc.holes.push(new THREE.Path(hole.outer.map(([x, y]) => new THREE.Vector2(x, y))));
+  }
+  const base = new THREE.Mesh(new THREE.ShapeGeometry(disc, 48), mats.wild);
   base.rotation.x = -Math.PI / 2;
   base.position.y = -0.03;
   const bp = base.geometry.attributes.position, bu = base.geometry.attributes.uv;

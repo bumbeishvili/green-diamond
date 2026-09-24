@@ -17,9 +17,10 @@ export const TYPES = {
   brute: { hp: 3.5, speed: [1.35, 1.6], dmg: 1.7, scale: [1.3, 1.4], models: ['city', 'thin'], tint: [0.62, 0.55, 0.5], shove: 7 },
   screamer: { hp: 0.8, speed: [1.7, 2.1], dmg: 0.8, scale: [0.95, 1.0], models: ['office', 'city'], tint: [1.12, 1.18, 1.08], emissive: 0x161c16, scream: true },
   bloater: { hp: 1.5, speed: [0.95, 1.2], dmg: 1, scale: [1.06, 1.12], models: ['hazmat'], emissive: 0x3cff22, emissiveI: 0.3, wide: 1.2, explode: true, walkClip: /waddle/i },
-  dog: { species: 'dog', hp: 0.45, speed: [5.3, 6.3], dmg: 0.5, scale: [0.95, 1.1], tint: [0.66, 0.56, 0.52], emissive: 0x2a0000, emissiveI: 0.5 },
-  wolf: { species: 'dog', model: 'wolf', hp: 1.1, speed: [5.0, 5.8], dmg: 0.8, scale: [0.95, 1.05], tint: [0.6, 0.55, 0.52], emissive: 0x2a0000, emissiveI: 0.5 },
-  crow: { species: 'crow', hp: 0.2, speed: [10, 12.5], dmg: 0.3, scale: [0.9, 1.1] },
+  // animals nip rather than maul: a dog bite is under a fifth of a zombie's, a crow's a tenth
+  dog: { species: 'dog', hp: 0.45, speed: [5.3, 6.3], dmg: 0.18, scale: [0.95, 1.1], tint: [0.66, 0.56, 0.52], emissive: 0x2a0000, emissiveI: 0.5 },
+  wolf: { species: 'dog', model: 'wolf', hp: 1.1, speed: [5.0, 5.8], dmg: 0.3, scale: [0.95, 1.05], tint: [0.6, 0.55, 0.52], emissive: 0x2a0000, emissiveI: 0.5 },
+  crow: { species: 'crow', hp: 0.2, speed: [10, 12.5], dmg: 0.11, scale: [0.9, 1.1] },
 };
 const MODEL_KEYS = { city: /city/i, thin: /thin/i, office: /office/i, hazmat: /hazmat/i };
 
@@ -209,6 +210,10 @@ export class Zombies {
     this.frozen = false;
     this.stairs = [];          // stairwells [{top, levels, roof:{x,z}, doors:[{x,z}]}] (three.js coords)
     this.targetStair = null;   // the stairwell up to the roof the player is standing on
+    this.underground = null;   // the car parks under the courtyards (world/underground.js)
+    this.playerLevel = null;   // the car park the player is down in
+    this.unav = null;          // flow field on the car-park level (around parked cars and columns)
+    this.groundFn = null;      // (x, z, y) -> floor height, car-park aware
     this.tmpA = new THREE.Vector3(); this.tmpB = new THREE.Vector3(); this.tmpC = new THREE.Vector3();
     this.dir = { x: 0, z: 0 };
   }
@@ -246,7 +251,7 @@ export class Zombies {
       groanT: 2 + Math.random() * 6, lean: 0.1 + Math.random() * 0.2, tilt: (Math.random() - 0.5) * 0.5, armAsym: (Math.random() - 0.5) * 0.5,
       pos: new THREE.Vector3(x, y ?? ground, z), vel: new THREE.Vector3(), heading: Math.random() * Math.PI * 2,
       dealt: false, small: def.species === 'dog' || def.species === 'crow' || !!def.crawl, fallDir: 1, fallV: 0,
-      orbit: Math.random() * Math.PI * 2, diveT: 2.5 + Math.random() * 3, crowState: 'circle', climbUp: 0,
+      orbit: Math.random() * Math.PI * 2, diveT: 3.5 + Math.random() * 4, crowState: 'circle', climbUp: 0,
     });
     zb.root.rotation.set(0, zb.heading, 0);
     zb.root.position.copy(zb.pos);
@@ -390,14 +395,18 @@ export class Zombies {
     this.pools.get(zb.type).push(zb);
   }
 
-  groundOf(zb) { return zb.roof != null ? zb.roof : this.hm.atWorld(zb.pos.x, zb.pos.z); }
+  groundOf(zb) { return zb.roof != null ? zb.roof : this.floorAt(zb.pos.x, zb.pos.z, zb.pos.y); }
+  floorAt(x, z, y) { return this.groundFn ? this.groundFn(x, z, y + 0.3) : this.hm.atWorld(x, z); }
+  levelOf(x, z, y) { return this.underground ? this.underground.at(x, z, y + 0.3) : null; }
 
   // Blast damage (grenades, bloaters): zombies and the player in range, not through walls.
   explode(x, y, z, radius, dmgZombie, dmgPlayer, source = 'explosion') {
     const pl = this.player;
     let kills = 0;
+    const level = this.levelOf(x, z, y - 0.6);
     for (const zb of this.list) {
       if (zb.state === 'dead' || zb.state === 'climb') continue;
+      if (this.levelOf(zb.pos.x, zb.pos.z, zb.pos.y) !== level) continue;
       const cy = zb.species === 'crow' ? zb.pos.y : zb.pos.y + 0.8;
       const d = Math.hypot(zb.pos.x - x, cy - y, zb.pos.z - z);
       if (d > radius || !this.col.clear(x, y + 0.3, z, zb.pos.x, cy + 0.2, zb.pos.z)) continue;
@@ -407,7 +416,8 @@ export class Zombies {
       if (killed) { kills++; zb.blast = dir; }
       if (this.onBlastHit) this.onBlastHit(zb, killed);
     }
-    if (dmgPlayer > 0 && !pl.dead) {
+    // (a car keeps the blast off you)
+    if (dmgPlayer > 0 && !pl.dead && !(pl.vehicle && pl.vehicle.type === 'car') && this.levelOf(pl.pos.x, pl.pos.z, pl.pos.y) === level) {
       const pd = Math.hypot(pl.pos.x - x, pl.pos.y + 1 - y, pl.pos.z - z);
       if (pd < radius && this.col.clear(x, y + 0.3, z, pl.pos.x, pl.pos.y + 1.2, pl.pos.z)) {
         pl.damage(dmgPlayer * Math.pow(1 - pd / radius, 0.8), x, z);
@@ -473,7 +483,7 @@ export class Zombies {
       const dy = Math.abs(ppos.y - zb.pos.y);
 
       // bloater: arms its fuse when it reaches you
-      if (zb.def.explode && dist < 1.9 && dy < 1.6 && !pl.dead && !wrongRoof) {
+      if (zb.def.explode && dist < 1.9 && dy < 1.6 && !pl.dead && !wrongRoof && !(pl.vehicle && pl.vehicle.type === 'car')) {
         this.audio.play('hiss', { pos: zb.pos, vol: 1 });
         this.kill(zb, null, false, 'fuse');
         continue;
@@ -494,9 +504,9 @@ export class Zombies {
 
       // --- attack ---
       const v = pl.vehicle;
-      const inCar = v && v.type === 'car';
+      const shielded = !!v && (v.type === 'car' || (v.type === 'bike' && Math.abs(v.speed) > 2.5));
       const dog = zb.species === 'dog';
-      const reach = (dog ? 1.5 : zb.def.crawl ? 1.2 : 1.3) + (inCar ? 1.0 : v && v.type === 'bike' ? 0.3 : 0) + (zb.def.shove ? 0.2 : 0);
+      const reach = (dog ? 1.5 : zb.def.crawl ? 1.2 : 1.3) + (v && v.type === 'bike' ? 0.3 : 0) + (zb.def.shove ? 0.2 : 0);
       const windup = dog ? 0.22 : 0.45, total = dog ? 0.65 : 1.0;
       zb.attackCd -= dt;
       if (zb.state === 'attack') {
@@ -510,8 +520,8 @@ export class Zombies {
         }
         if (!zb.dealt && zb.attackT > windup) {
           zb.dealt = true;
-          if (dist < reach + 0.45 && dy < 1.5 && !pl.dead && !(v && v.type === 'drone')) {
-            pl.damage(zb.damage * (inCar ? 0.6 : 1), zb.pos.x, zb.pos.z);
+          if (dist < reach + 0.45 && dy < 1.5 && !pl.dead && !shielded && !(v && v.type === 'drone')) {
+            pl.damage(zb.damage, zb.pos.x, zb.pos.z);
             if (zb.def.shove && !v) { pl.vel.x += (dx / (dist || 1)) * zb.def.shove; pl.vel.z += (dz / (dist || 1)) * zb.def.shove; pl.shake = Math.min(1, pl.shake + 0.4); }
             this.audio.play('bite', { vol: 0.9, rate: dog ? 1.3 : 1 });
             if (this.onPlayerHit) this.onPlayerHit(zb);
@@ -520,14 +530,14 @@ export class Zombies {
         if (zb.attackT > total) {
           zb.state = 'chase';
           zb.leap = 0;
-          zb.attackCd = dog ? 0.25 : 0.35;
+          zb.attackCd = dog ? 1.0 + Math.random() * 0.6 : 0.35;
           this.play(zb, this.moveClip(zb));
         }
         this.animate(zb, dt, 0);
         this.place(zb);
         continue;
       }
-      if (!wrongRoof && dist < reach && dy < 1.5 && zb.attackCd <= 0 && !pl.dead && !(v && v.type === 'drone' && dy > 0.6)) {
+      if (!wrongRoof && !shielded && dist < reach && dy < 1.5 && zb.attackCd <= 0 && !pl.dead && !(v && v.type === 'drone' && dy > 0.6)) {
         zb.state = 'attack'; zb.attackT = 0; zb.dealt = false;
         this.audio.play(dog ? 'growl' : 'attack', { pos: zb.pos, vol: 0.9, rate: zb.def.shove ? 0.7 : 1 });
         this.play(zb, 'attack', 0.1);
@@ -537,10 +547,12 @@ export class Zombies {
       // --- steering ---
       let wx, wz;
       const onRoof = zb.roof != null;
+      const zU = onRoof ? null : this.levelOf(zb.pos.x, zb.pos.z, zb.pos.y), pU = this.playerLevel;
+      const offNav = onRoof || !!zU;   // the ground-level flow field doesn't cover roofs or the car parks
       zb.losT -= dt;
       if (zb.losT <= 0) {
         zb.losT = 0.2 + Math.random() * 0.1;
-        zb.direct = !wrongRoof && dist < 24 && Math.abs(ppos.y - zb.pos.y) < 2.5 && (onRoof || nav.lineWalkable(zb.pos.x, zb.pos.z, ppos.x, ppos.z))
+        zb.direct = !wrongRoof && zU === pU && dist < 24 && Math.abs(ppos.y - zb.pos.y) < 2.5 && (offNav || nav.lineWalkable(zb.pos.x, zb.pos.z, ppos.x, ppos.z))
           && this.col.clear(zb.pos.x, zb.pos.y + 1.2, zb.pos.z, ppos.x, ppos.y + 1.4, ppos.z);
       }
       const seePlayer = zb.direct && zb.forceField <= 0;
@@ -555,10 +567,19 @@ export class Zombies {
         if (this.onScream) this.onScream(zb);
         continue;
       }
-      if (wrongRoof) {
-        const tx = zb.stair.roof.x - zb.pos.x, tz = zb.stair.roof.z - zb.pos.z, tl = Math.hypot(tx, tz) || 1;
-        wx = tx / tl; wz = tz / tl;
-      } else if (seePlayer || dist < 1.8 || onRoof) { wx = dx / (dist || 1); wz = dz / (dist || 1); }
+      let door = null;
+      const toward = (t) => { const tx = t.x - zb.pos.x, tz = t.z - zb.pos.z, tl = Math.hypot(tx, tz) || 1; wx = tx / tl; wz = tz / tl; };
+      if (wrongRoof) toward(zb.stair.roof);
+      else if (zU && zU !== pU) {
+        // leave the car park: along its flow field to a ramp door, then up the ramp
+        const d = this.underground.nearestDoor(zU, zb.pos.x, zb.pos.z);
+        // at the doorway (anywhere between just inside and the ramp): carry on up the ramp
+        if (Math.hypot(d.in.x - zb.pos.x, d.in.z - zb.pos.z) < 3 || Math.hypot(d.out.x - zb.pos.x, d.out.z - zb.pos.z) < 5.6) toward(d.out);
+        else if (this.unav && !pU && this.unav.direction(zb.pos.x, zb.pos.z, this.dir)) { wx = this.dir.x; wz = this.dir.z; }
+        else toward(d.in);
+      } else if (!zU && pU && zb.pos.y < pU.floor + 1.6 && (door = pU.doors.find((q) => Math.hypot(q.out.x - zb.pos.x, q.out.z - zb.pos.z) < 4))) toward(door.in); // at the bottom of the ramp: in
+      else if (zU && !seePlayer && dist >= 1.8 && this.unav && this.unav.direction(zb.pos.x, zb.pos.z, this.dir)) { wx = this.dir.x; wz = this.dir.z; }
+      else if (seePlayer || dist < 1.8 || onRoof || zU) { wx = dx / (dist || 1); wz = dz / (dist || 1); }
       else if (nav.direction(zb.pos.x, zb.pos.z, this.dir)) { wx = this.dir.x; wz = this.dir.z; }
       else { wx = dx / (dist || 1); wz = dz / (dist || 1); }
       // separation
@@ -578,7 +599,7 @@ export class Zombies {
       const wl = Math.hypot(wx, wz) || 1;
       let speed = zb.speed * (zb.buffT > 0 ? 1.35 : 1);
       // far away and out of sight: hurry up (so waves never stall), or get moved closer
-      if (!onRoof) {
+      if (!offNav) {
         const pathD = nav.distanceAt(zb.pos.x, zb.pos.z);
         zb.progT += dt;
         if (zb.progT > 3) {
@@ -603,7 +624,7 @@ export class Zombies {
         p.x += ex * push * 0.8; p.z += ez * push * 0.8;
         pl.pos.x -= ex * push * 0.2; pl.pos.z -= ez * push * 0.2;
       }
-      const gy = onRoof ? zb.roof : this.hm.atWorld(p.x, p.z);
+      const gy = onRoof ? zb.roof : this.floorAt(p.x, p.z, zb.pos.y);
       if (gy - zb.pos.y < 0.75) {
         this.col.resolve(p, dog ? 0.28 : 0.3, zb.pos.y + 0.3, zb.pos.y + (zb.small ? 0.9 : 1.7), 2, SKIP);
         const moved = Math.hypot(p.x - zb.pos.x, p.z - zb.pos.z);
@@ -680,7 +701,7 @@ export class Zombies {
       zb.vel.y = THREE.MathUtils.damp(zb.vel.y, (ty / tl) * sp, 3, dt);
       zb.vel.z = THREE.MathUtils.damp(zb.vel.z, (tz / tl) * sp, 3, dt);
       zb.diveT -= dt;
-      if (zb.diveT <= 0 && !pl.dead && tl < 14) { zb.crowState = 'dive'; this.audio.play('caw', { pos: zb.pos, vol: 0.7 }); if (zb.actions && zb.actions.attack) this.play(zb, 'attack', 0.15); }
+      if (zb.diveT <= 0 && !pl.dead && tl < 14 && !this.playerLevel && !(pl.vehicle && pl.vehicle.type === 'car')) { zb.crowState = 'dive'; this.audio.play('caw', { pos: zb.pos, vol: 0.7 }); if (zb.actions && zb.actions.attack) this.play(zb, 'attack', 0.15); }
     } else if (zb.crowState === 'dive') {
       const tx = hx - zb.pos.x, ty = hy - zb.pos.y, tz = hz - zb.pos.z, tl = Math.hypot(tx, ty, tz) || 1;
       const sp = zb.speed * 1.3;
@@ -688,10 +709,12 @@ export class Zombies {
       zb.vel.y = THREE.MathUtils.damp(zb.vel.y, (ty / tl) * sp, 6, dt);
       zb.vel.z = THREE.MathUtils.damp(zb.vel.z, (tz / tl) * sp, 6, dt);
       if (tl < 0.9) {
-        const inCar = pl.vehicle && pl.vehicle.type === 'car';
-        pl.damage(zb.damage * (inCar ? 0.4 : 1), zb.pos.x, zb.pos.z);
-        this.audio.play('bite', { vol: 0.6, rate: 1.8 });
-        if (this.onPlayerHit) this.onPlayerHit(zb);
+        const safe = pl.vehicle && (pl.vehicle.type === 'car' || (pl.vehicle.type === 'bike' && Math.abs(pl.vehicle.speed) > 2.5));
+        if (!safe) {
+          pl.damage(zb.damage, zb.pos.x, zb.pos.z);
+          this.audio.play('bite', { vol: 0.6, rate: 1.8 });
+          if (this.onPlayerHit) this.onPlayerHit(zb);
+        }
         zb.crowState = 'away';
         zb.climbT = 1.3;
         this.play(zb, 'fly', 0.2);
@@ -700,7 +723,7 @@ export class Zombies {
     } else {
       zb.vel.y = THREE.MathUtils.damp(zb.vel.y, 7, 4, dt);
       zb.climbT -= dt;
-      if (zb.climbT <= 0) { zb.crowState = 'circle'; zb.diveT = 2.5 + Math.random() * 4; zb.t = 0; }
+      if (zb.climbT <= 0) { zb.crowState = 'circle'; zb.diveT = 4.5 + Math.random() * 5; zb.t = 0; }
     }
     zb.pos.addScaledVector(zb.vel, dt);
     const floor = Math.max(this.hm.atWorld(zb.pos.x, zb.pos.z), pl.roofAt ? pl.roofAt(zb.pos.x, zb.pos.z) : -Infinity) + 0.4;

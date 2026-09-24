@@ -50,7 +50,8 @@ export function buildBuildings(level, scene, colliders, atmo) {
     heights.push({ id: b.id, top: top + parapet, roof: top + 0.15, style, pts });
 
     // collision: the footprint, full height
-    colliders.addRing(pts.map(([x, y]) => [x, -y]), { height: top + parapet, kind: 'building' });
+    // (the walls stop at street level: the underground car parks run beneath some blocks)
+    colliders.addRing(pts.map(([x, y]) => [x, -y]), { height: top + parapet, minY: -0.3, kind: 'building' });
 
     for (let i = 0; i < pts.length; i++) {
       const [ax, ay] = pts[i], [bx, by] = pts[(i + 1) % pts.length];

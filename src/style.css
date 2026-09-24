@@ -70,6 +70,10 @@ canvas#game { position: fixed; inset: 0; width: 100vw; height: 100vh; display: b
 #crosshair .t, #crosshair .b { width: 2px; height: 9px; left: -1px; }
 #crosshair .l, #crosshair .r { width: 9px; height: 2px; top: -1px; }
 #crosshair.ads { opacity: 0; }
+#hud.driving #crosshair, #hud.driving #scope, #hud.driving #hitmarker, #hud.driving #slots, #hud.driving #ammo, #hud.driving #nades { display: none; }
+/* the chase camera puts the vehicle mid-screen: keep text off it */
+#hud.driving #prompt { top: auto; bottom: 128px; }
+#hud.driving #notice { top: 16%; }
 #hitmarker {
   position: absolute; left: 50%; top: 50%; width: 26px; height: 26px; margin: -13px 0 0 -13px; opacity: 0;
   background:
@@ -154,3 +158,36 @@ canvas#game { position: fixed; inset: 0; width: 100vw; height: 100vh; display: b
   #ammo-mag { font-size: 44px; }
   #minimap { width: 120px; height: 120px; left: 16px; top: 16px; }
 }
+
+/* ---------- multiplayer ---------- */
+#mp { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+#mp .mp-title { font-family: var(--head); font-size: 18px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink); }
+#mp .mp-title span { font-family: var(--body); font-size: 12px; letter-spacing: 0; text-transform: none; color: var(--muted); margin-left: 6px; }
+#mp form { display: flex; gap: 8px; }
+#mp input { width: 220px; background: #16181b; color: var(--ink); border: 1px solid #3a3d42; padding: 8px 10px; font-size: 15px; }
+#mp input:focus { outline: none; border-color: var(--green); }
+#mp input:disabled { opacity: .5; }
+#mp .btn.ghost { padding: 6px 22px; font-size: 16px; }
+#mp-status { min-height: 18px; max-width: 520px; font-size: 13px; color: var(--muted); line-height: 1.4; }
+#mp-status.ok { color: var(--green); }
+#mp-status.err { color: #ff8a80; }
+
+#net {
+  position: fixed; top: 12px; right: 12px; z-index: 25; min-width: 250px; padding: 8px 10px;
+  background: rgba(8, 9, 11, .78); border: 1px solid rgba(255,255,255,.08); color: var(--ink);
+  font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; pointer-events: auto;
+}
+#net .net-head { display: flex; gap: 10px; align-items: baseline; white-space: nowrap; }
+#net .net-head b { color: var(--green); letter-spacing: .08em; }
+#net table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+#net th { font-weight: 400; color: var(--muted); font-size: 11px; text-align: left; }
+#net td { padding: 1px 6px 1px 0; }
+#net .n { text-align: right; }
+#net tr.me td { color: #fff; font-weight: 600; }
+#net tr.empty td { color: #6d6a64; }
+#net details { margin-top: 6px; color: var(--muted); }
+#net summary { cursor: pointer; }
+#net summary i { color: #ffb74d; font-style: normal; }
+#net label { display: grid; grid-template-columns: 44px 1fr 60px; align-items: center; gap: 6px; }
+#net input[type=range] { width: 100%; }
+#net .net-foot { margin-top: 4px; color: #6d6a64; font-size: 10px; }

@@ -2,6 +2,7 @@
 // Items are vertical extrusions: wall segments, cylinders and oriented boxes, each with a
 // vertical span [minY, maxY]. Used for player/zombie movement and bullet ray tests.
 
+const STREET = -0.3;   // default bottom of a collider (the car parks' ceilings are at -0.45)
 const SEG = 0, CIR = 1, BOX = 2;
 
 export class Colliders {
@@ -37,7 +38,9 @@ export class Colliders {
     return item;
   }
 
-  addSegment(x1, z1, x2, z2, { height = 200, minY = -20, kind = 'wall', walk = true, shoot = true } = {}) {
+  // Everything reaches down to just below street level unless told otherwise (minY), so the
+  // underground car parks under the courtyards aren't full of the trees and fences up top.
+  addSegment(x1, z1, x2, z2, { height = 200, minY = STREET, kind = 'wall', walk = true, shoot = true } = {}) {
     const dx = x2 - x1, dz = z2 - z1, len = Math.hypot(dx, dz);
     if (len < 1e-3) return null;
     return this._insert({ t: SEG, x1, z1, x2, z2, dx: dx / len, dz: dz / len, len, minY, maxY: height, kind, walk, shoot },
@@ -47,12 +50,12 @@ export class Colliders {
   addPolyline(pts, opts) { for (let i = 0; i < pts.length - 1; i++) this.addSegment(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], opts); }
   addRing(pts, opts) { this.addPolyline([...pts, pts[0]], opts); }
 
-  addCircle(x, z, r, { height = 3, minY = -20, kind = 'post', walk = true, shoot = true } = {}) {
+  addCircle(x, z, r, { height = 3, minY = STREET, kind = 'post', walk = true, shoot = true } = {}) {
     return this._insert({ t: CIR, x, z, r, minY, maxY: height, kind, walk, shoot }, x - r, z - r, x + r, z + r);
   }
 
   // Oriented box: centre, half extents along its local x (hw) and z (hd), rotation about y.
-  addBox(x, z, hw, hd, angle, { height = 1.5, minY = -20, kind = 'box', walk = true, shoot = true } = {}) {
+  addBox(x, z, hw, hd, angle, { height = 1.5, minY = STREET, kind = 'box', walk = true, shoot = true } = {}) {
     const c = Math.cos(angle), s = Math.sin(angle);
     const ex = Math.abs(c) * hw + Math.abs(s) * hd, ez = Math.abs(s) * hw + Math.abs(c) * hd;
     return this._insert({ t: BOX, x, z, hw, hd, c, s, minY, maxY: height, kind, walk, shoot }, x - ex, z - ez, x + ex, z + ez);

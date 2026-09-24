@@ -21,6 +21,8 @@ import { Director } from './game/director.js';
 import { Vehicles } from './game/vehicles.js';
 import { Stairs } from './game/stairs.js';
 import { Pickups } from './game/pickups.js';
+import { Underground } from './world/underground.js';
+import { NetUI } from './net/ui.js';
 
 const $ = (id) => document.getElementById(id);
 const START_HOUR = 17.25;       // wave 1 starts at 17:15; each wave pushes the clock ~12 minutes
@@ -92,6 +94,9 @@ class Game {
     this.progress(0.5, 'Parking the cars, planting the trees…');
     this.props = buildProps(this.level, this.scene, this.colliders, this.hm, this.atmo, this.quality, this.models);
     this.systems.push(this.props);
+    this.progress(0.55, 'Opening the underground car parks…');
+    this.underground = new Underground(this.level);
+    await this.underground.build(this.scene, this.colliders);
 
     // invisible walls across the gates and fence breaches: zombies pass, the player stays in
     for (const [x1, y1, x2, y2] of this.level.gaps) this.colliders.addSegment(x1, -y1, x2, -y2, { height: 50, kind: 'playerOnly', shoot: false });
@@ -99,10 +104,21 @@ class Game {
 
     this.progress(0.6, 'Mapping every way in…');
     this.nav = new NavGrid(this.colliders);
+    // the car-park level gets its own flow field: only its own walls, columns and parked cars
+    if (this.underground.list.length) {
+      const [x0, y0, x1, y1] = this.underground.bounds(), floor = this.underground.list[0].floor;
+      this.unav = new NavGrid(this.colliders, {
+        minX: x0 - 2, minZ: -y1 - 2, size: Math.max(x1 - x0, y1 - y0) + 4, cell: 1,
+        filter: (o) => o.walk && o.minY < 0 && o.maxY < 0 && o.maxY > floor + 0.3,
+        inside: (x, z) => !!this.underground.at(x, z, floor + 0.2),
+        pad: 0.35,
+      });
+    }
 
     this.effects = new Effects(this.scene);
     this.effects.setViewport(innerHeight);
     this.player = new Player(this.camera, this.hm, this.colliders);
+    this.player.underground = this.underground;
     this.player.pools = this.level.pools.map((pl) => ({ pts: pl.poly.outer, water: pl.rim - 0.13 }));
     this.player.onStep = () => this.audio.play('step', { vol: 0.25, jitter: 0.2 });
     this.player.onFall = () => { this.hud.damage(); this.audio.play('hurt', { vol: 0.9 }); };
@@ -112,6 +128,9 @@ class Game {
     this.hud = new HUD(this.level);
     this.zombies = new Zombies(this.scene, { colliders: this.colliders, hm: this.hm, nav: this.nav, effects: this.effects, audio: this.audio, player: this.player, models: this.models });
     this.zombies.stairs = this.stairs.list;
+    this.zombies.underground = this.underground;
+    this.zombies.unav = this.unav || null;
+    this.zombies.groundFn = (x, z, y) => this.groundAt(x, z, y);
     this.weapons = new Weapons(this);
     this.weapons.setup(this.models);
     this.director = new Director(this);
@@ -140,6 +159,12 @@ class Game {
     this.credits();
     this.progress(1, 'Ready');
     this.ready = true;
+  }
+
+  // The floor under a point at height y: the car-park floor if it's down there, else the terrain.
+  groundAt(x, z, y = 1e9) {
+    const u = this.underground.at(x, z, y);
+    return u ? u.floor : this.hm.atWorld(x, z);
   }
 
   spawnPlayer() {
@@ -257,17 +282,36 @@ class Game {
     if (playing) {
       // flow field towards the player; if they're up on a roof, towards that building's lobby doors
       const st = this.player.roof && this.player.roof.stair;
+      const pU = this.underground.at(this.player.pos.x, this.player.pos.z, this.player.pos.y + 0.1);
       this.zombies.targetStair = st || null;
+      this.zombies.playerLevel = pU;
       this.navT = (this.navT || 0) - dt;
       if (this.navT <= 0 && !this.nav.busy) {
         if (st) this.nav.request(st.doors[0].x, st.doors[0].z, st.doors.slice(1));
+        else if (pU) this.nav.request(pU.doors[0].out.x, pU.doors[0].out.z, pU.doors.slice(1).map((d) => d.out));
         else this.nav.request(this.player.pos.x, this.player.pos.z);
         this.navT = 0.3;
       }
       this.nav.step(this.quality === QUALITY.low ? 9000 : 16000);
+      // car-park flow field: to the player if they're down there, else to the ramp doors (only
+      // worth running while someone is actually down there)
+      if (this.unav) {
+        const anyone = pU || this.zombies.list.some((z) => z.state !== 'dead' && z.pos.y < -1.5);
+        const goal = pU ? `p${this.unav.idx(this.player.pos.x, this.player.pos.z)}` : 'doors';
+        this.unavT = (this.unavT || 0) - dt;
+        if (anyone && this.unavT <= 0 && !this.unav.busy && (goal !== this.unavGoal || pU)) {
+          if (pU) this.unav.request(this.player.pos.x, this.player.pos.z);
+          else { const ins = this.underground.doorIns; this.unav.request(ins[0].x, ins[0].z, ins.slice(1)); }
+          this.unavGoal = goal;
+          this.unavT = 0.35;
+        }
+        if (anyone) this.unav.step(5000);
+      }
       this.zombies.frozen = this.frozen;
       this.zombies.update(dt, this.time);
-      this.weapons.update(dt, this.input, !debugCam);
+      const armed = !this.vehicles.hidesWeapons;   // guns away while you drive a car or ride a bike
+      this.hud.driving(!armed);
+      this.weapons.update(dt, this.input, !debugCam && armed);
       if (this.forceAds) this.player.ads = 1;
       this.director.update(dt);
       this.pickups.update(dt);
@@ -276,7 +320,8 @@ class Game {
       if (this.input.hit('KeyL')) this.flashOn = !this.flashOn;
     }
     // flashlight: on by itself once it's dark, L toggles
-    const wantLight = this.flashOn !== (this.atmo.lampLevel > 0.6);
+    const underground = !!this.underground.at(this.player.pos.x, this.player.pos.z, this.player.pos.y + 0.1);
+    const wantLight = this.flashOn !== (this.atmo.lampLevel > 0.6 || underground);
     this.flashlight.intensity = THREE.MathUtils.damp(this.flashlight.intensity, wantLight ? 60 : 0, 12, dt);
 
     for (const s of this.systems) s.update?.(dt, this.time, this.camera);
@@ -288,7 +333,7 @@ class Game {
     if (this.audio.ctx) this.audio.setListener(this.camera.position, this.player.forward(new THREE.Vector3()));
 
     this.renderer.render(this.scene, this.camera);
-    if (!debugCam) this.weapons.render(this.renderer, this.atmo);
+    if (!debugCam && !this.vehicles.hidesWeapons) this.weapons.render(this.renderer, this.atmo);
     this.input.endFrame();
 
     const st = this.stats;
@@ -311,6 +356,9 @@ class Game {
 
 const game = new Game();
 window.__game = game;
+// multiplayer: the lobby in the menu and the network overlay (milestone 1: connecting and measuring)
+game.net = new NetUI();
+window.__net = game.net.session;
 game.load().then(() => game.start()).catch((e) => {
   console.error(e);
   $('load-text').textContent = 'Failed to load: ' + e.message;

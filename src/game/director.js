@@ -35,7 +35,7 @@ export class Director {
     // zombies that wander far out of sight get moved to a closer spawn
     game.zombies.relocate = (zb) => {
       const sp = this.pickSpawn();
-      if (sp) { zb.roof = null; zb.pos.set(sp[1], game.hm.atWorld(sp[1], sp[2]), sp[2]); zb.vel.set(0, 0, 0); }
+      if (sp) { zb.roof = null; zb.pos.set(sp[1], sp[4] ?? game.hm.atWorld(sp[1], sp[2]), sp[2]); zb.vel.set(0, 0, 0); }
     };
     game.zombies.onScream = (zb) => this.onScream(zb);
   }
@@ -210,12 +210,18 @@ export class Director {
       const x = s.x, z = -s.y;
       const d = Math.hypot(x - p.x, z - p.z);
       if (d < 12 || d > 130) continue;
-      const path = g.nav.distanceAt(x, z);
+      let path = g.nav.distanceAt(x, z);
+      if (s.f != null) {
+        // down in a car park: the walk out to its nearest ramp plus the flow field from there
+        const u = g.underground.at(x, z, s.f + 0.3), d = u && g.underground.nearestDoor(u, x, z);
+        path = d ? g.nav.distanceAt(d.out.x, d.out.z) + Math.hypot(d.in.x - x, d.in.z - z) : Infinity;
+      }
       if (!isFinite(path) || path > 160) continue;
-      const seen = d < 60 && g.colliders.clear(p.x, p.y + 1.6, p.z, x, g.hm.atWorld(x, z) + 1.4, z);
+      const sy = s.f ?? g.hm.atWorld(x, z);
+      const seen = d < 60 && g.colliders.clear(p.x, p.y + 1.6, p.z, x, sy + 1.4, z);
       // prefer spawns about 30 m away on foot, out of sight
       const w = (seen ? 0.08 : 1) * (Math.exp(-(((path - 30) / 20) ** 2)) + 0.03);
-      cands.push([w, x, z, s.kind]);
+      cands.push([w, x, z, s.kind, s.f]);
     }
     if (!cands.length) return null;
     const tot = cands.reduce((a, c) => a + c[0], 0);
@@ -255,7 +261,7 @@ export class Director {
     const s = this.pickSpawn();
     if (!s) return false;
     const jitter = () => (Math.random() - 0.5) * 1.5;
-    g.zombies.spawn(s[1] + jitter(), s[2] + jitter(), opts);
+    g.zombies.spawn(s[1] + jitter(), s[2] + jitter(), { ...opts, y: s[4] ?? null });
     return true;
   }
 
@@ -267,7 +273,7 @@ export class Director {
       for (let i = 0; i < pack.n; i++) {
         const a = (i / pack.n) * Math.PI * 2;
         const type = i === 0 && w >= 6 ? 'wolf' : 'dog'; // from wave 6 a wolf leads the pack
-        g.zombies.spawn(s[1] + Math.cos(a) * 1.2, s[2] + Math.sin(a) * 1.2, { type, hp: this.health(w), speedMul: this.speedMul('dog', w), damage: this.damage(w) });
+        g.zombies.spawn(s[1] + Math.cos(a) * 1.2, s[2] + Math.sin(a) * 1.2, { type, hp: this.health(w), speedMul: this.speedMul('dog', w), damage: Math.min(40, this.damage(w)), y: s[4] ?? null });
       }
       g.audio.play('growl', { vol: 0.9, pos: { x: s[1], y: g.hm.atWorld(s[1], s[2]) + 0.6, z: s[2] }, ref: 12 });
       g.hud.notice('Stray dogs: they are fast, keep moving');
@@ -279,7 +285,7 @@ export class Director {
     const a0 = Math.random() * Math.PI * 2;
     for (let i = 0; i < n; i++) {
       const a = a0 + (Math.random() - 0.5) * 0.8, d = 45 + Math.random() * 15;
-      g.zombies.spawn(p.x + Math.cos(a) * d, p.z + Math.sin(a) * d, { type: 'crow', hp: this.health(w), damage: this.damage(w), y: p.y + 22 + Math.random() * 10 });
+      g.zombies.spawn(p.x + Math.cos(a) * d, p.z + Math.sin(a) * d, { type: 'crow', hp: this.health(w), damage: Math.min(40, this.damage(w)), y: p.y + 22 + Math.random() * 10 });
     }
     g.audio.play('caw', { vol: 0.8 });
   }

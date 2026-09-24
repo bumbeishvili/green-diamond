@@ -503,9 +503,9 @@ function carMaterial() {
 function buildCars(level, group, colliders, H, models) {
   const cars = [];
   for (const c of level.cars) {
-    const y = H(c.x, c.y);
+    const y = c.f ?? H(c.x, c.y); // cars in the underground car parks stand on its floor
     const rec = { x: c.x, z: -c.y, h: c.h, ground: y, v: c.v, color: CAR_COLORS[(c.v * 7) % CAR_COLORS.length], taken: false };
-    rec.col = colliders.addBox(c.x, -c.y, 2.2, 0.92, -c.h, { height: y + 1.45, kind: 'car' });
+    rec.col = colliders.addBox(c.x, -c.y, 2.2, 0.92, -c.h, { height: y + 1.45, minY: y - 0.4, kind: 'car' });
     cars.push(rec);
   }
   const fleet = (models.cars || []).filter((m) => m.geometry);
@@ -542,19 +542,22 @@ function buildCars(level, group, colliders, H, models) {
       if ((tick++ % 3) !== 0) return;
       pm.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
       frustum.setFromProjectionMatrix(pm);
-      const cx = camera.position.x, cz = camera.position.z;
+      const cx = camera.position.x, cz = camera.position.z, camUnder = camera.position.y < -0.6, camLow = camera.position.y < 4;
       const counts = meshes.map(() => 0);
       let pc = 0;
       for (const c of cars) {
         if (c.taken) continue;
         const dx = c.x - cx, dz = c.z - cz, d = Math.hypot(dx, dz);
+        // cars down in the car parks only show from down there (or from the ramps); from down
+        // there, only the nearest cars up top can be seen (through the ramp doors)
+        if (c.ground < -1 ? !(camUnder || (camLow && d < 30)) : camUnder && d > 45) continue;
         sphere.center.set(c.x, c.ground + 1, c.z);
         const inView = frustum.intersectsSphere(sphere);
         if (!inView && d > 22) continue;
         _e.set(0, c.h, 0); _q.setFromEuler(_e);
         _m.compose(_p.set(c.x, c.ground, c.z), _q, _s.set(1, 1, 1));
         col.setHex(c.color).convertSRGBToLinear();
-        if (meshes.length && d < DETAIL) {
+        if (meshes.length && d < (camUnder ? 32 : DETAIL)) {
           const k = c.v % meshes.length, i = counts[k]++;
           meshes[k].setMatrixAt(i, _m); meshes[k].setColorAt(i, col);
         } else {

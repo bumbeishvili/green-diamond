@@ -113,6 +113,12 @@ export class HUD {
 
   damage() { this.dmgT = 0.6; }
 
+  driving(on) {
+    if (on === this.isDriving) return;
+    this.isDriving = on;
+    this.el.hud.classList.toggle('driving', on);
+  }
+
   scope(on) {
     if (on === this.scoped) return;
     this.scoped = on;
@@ -179,6 +185,20 @@ export class HUD {
       if (c.kind === 'court_round') { ctx.strokeStyle = '#2f5a3a'; ctx.lineWidth = 2; ctx.stroke(); }
     }
     for (const b of level.buildings) poly(b.poly, b.group === 'podium' ? '#9a9486' : '#d9d6cf');
+    // the car parks underneath, as dashed outlines
+    ctx.save();
+    ctx.setLineDash([6, 5]); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(40,44,52,0.75)';
+    for (const u of level.underground || []) {
+      ctx.beginPath();
+      u.poly.outer.forEach(([x, y], i) => { const [a, b] = P(x, y); i ? ctx.lineTo(a, b) : ctx.moveTo(a, b); });
+      ctx.closePath(); ctx.stroke();
+      for (const d of u.doors) {
+        const [a, b] = P((d.a[0] + d.b[0]) / 2, (d.a[1] + d.b[1]) / 2);
+        ctx.fillStyle = '#2f6db3'; ctx.fillRect(a - 9, b - 9, 18, 18);
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 15px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('P', a, b + 1);
+      }
+    }
+    ctx.restore();
     for (const b of level.surroundings.buildings) poly(b.poly, '#6d6d6b');
     this.mapCanvas = c;
     this.mapCtx = this.el.map.getContext('2d');

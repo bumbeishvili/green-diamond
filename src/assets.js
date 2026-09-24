@@ -243,6 +243,19 @@ async function loadExtras(out) {
     out.vehicles[key] = root;
   }));
 
+  // the detailed cars (the Prius and Corolla by Gate 1, the security Leaf): already in metres,
+  // nose +X, origin on the ground between the axles
+  await Promise.all(['prius', 'corolla', 'leaf'].map(async (key) => {
+    const g = await load(`assets/models/vehicles/${key}.glb`);
+    if (g) out.vehicles[key] = g.scene;
+  }));
+
+  const rider = await load('assets/models/vehicles/rider.glb');
+  if (rider) {
+    rider.scene.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    out.vehicles.rider = rider.scene;
+  }
+
   await Promise.all(EXTRA_WEAPONS.map(async (name) => {
     const g = await load(`assets/models/weapons/${name}.glb`);
     if (g) out.weapons[name] = g;

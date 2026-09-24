@@ -6,11 +6,16 @@ const SQ2 = 14, ONE = 10;
 const DIRS = [[1, 0, ONE], [-1, 0, ONE], [0, 1, ONE], [0, -1, ONE], [1, 1, SQ2], [1, -1, SQ2], [-1, 1, SQ2], [-1, -1, SQ2]];
 
 export class NavGrid {
-  constructor(colliders, { minX = -178, minZ = -178, size = 356, cell = 1 } = {}) {
+  // filter(item): which colliders block (default: the ground level); inside(x, z): cells where it
+  // returns false are blocked (used for the car-park level, which only exists inside its outline)
+  // pad: extra clearance round boxes (parked cars, columns) so routes keep to proper aisles
+  constructor(colliders, { minX = -178, minZ = -178, size = 356, cell = 1, filter = null, inside = null, pad = 0 } = {}) {
     this.minX = minX; this.minZ = minZ; this.cell = cell;
     this.n = Math.ceil(size / cell);
+    this.filter = filter; this.inside = inside; this.pad = pad;
     const N = this.n * this.n;
     this.blocked = new Uint8Array(N);
+    if (inside) for (let i = 0; i < N; i++) { const c = this.center(i, {}); if (!inside(c.x, c.z)) this.blocked[i] = 1; }
     this.dist = new Uint32Array(N).fill(0xffffffff);
     this.work = new Uint32Array(N);
     this.heap = new Int32Array(N * 4);
@@ -37,7 +42,10 @@ export class NavGrid {
     const n = this.n, c = this.cell;
     const ix0 = Math.max(0, Math.floor((x0 - this.minX) / c)), ix1 = Math.min(n - 1, Math.floor((x1 - this.minX) / c));
     const iz0 = Math.max(0, Math.floor((z0 - this.minZ) / c)), iz1 = Math.min(n - 1, Math.floor((z1 - this.minZ) / c));
-    for (let iz = iz0; iz <= iz1; iz++) for (let ix = ix0; ix <= ix1; ix++) this.blocked[iz * n + ix] = 0;
+    for (let iz = iz0; iz <= iz1; iz++) for (let ix = ix0; ix <= ix1; ix++) {
+      const i = iz * n + ix;
+      this.blocked[i] = this.inside && !this.inside(this.minX + (ix + 0.5) * c, this.minZ + (iz + 0.5) * c) ? 1 : 0;
+    }
     const items = [];
     col.forEachNear(x0 - 2, z0 - 2, x1 + 2, z1 + 2, (o) => { items.push(o); });
     this.rasterize({ items }, [ix0, iz0, ix1, iz1]);
@@ -57,8 +65,11 @@ export class NavGrid {
       }
     };
     for (const o of col.items) {
-      if (!o.walk || o.kind === 'playerOnly' || o.kind === 'barrier') continue;
-      if (o.maxY < 0.35 && o.kind !== 'pool') continue; // low curbs etc.
+      if (this.filter) { if (!this.filter(o)) continue; }
+      else {
+        if (!o.walk || o.kind === 'playerOnly' || o.kind === 'barrier') continue;
+        if (o.maxY < 0.35 && o.kind !== 'pool') continue; // low curbs, and anything underground
+      }
       if (o.t === 0) {
         for (let s = 0; s <= o.len; s += 0.3) mark(o.x1 + o.dx * s, o.z1 + o.dz * s, 0.55);
       } else if (o.t === 1) {
@@ -66,7 +77,7 @@ export class NavGrid {
       } else {
         const step = 0.4;
         for (let u = -o.hw; u <= o.hw + 1e-6; u += step) for (let v = -o.hd; v <= o.hd + 1e-6; v += step) {
-          mark(o.x + u * o.c - v * o.s, o.z + u * o.s + v * o.c, 0.5);
+          mark(o.x + u * o.c - v * o.s, o.z + u * o.s + v * o.c, 0.5 + this.pad);
         }
       }
     }

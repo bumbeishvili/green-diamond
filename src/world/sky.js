@@ -79,6 +79,11 @@ export class Atmosphere {
     this.envSky.material.uniforms.showSunDisc.value = 0;
     this.envSky.material.uniforms.cloudCoverage.value = 0.0;
     this.envScene.add(this.envSky);
+    // and ground under the horizon: reflections of the world below the skyline are ground, not sky
+    // (without it every car flank and window at a glancing angle mirrors bright haze)
+    this.envGround = new THREE.Mesh(new THREE.CircleGeometry(900, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0, fog: false }));
+    this.envGround.position.y = -6;
+    this.envScene.add(this.envGround);
     this.envRT = null;
 
     this.sunDir = new THREE.Vector3();
@@ -134,6 +139,8 @@ export class Atmosphere {
     const u = this.envSky.material.uniforms, src = this.sky.material.uniforms;
     for (const k of ['turbidity', 'rayleigh', 'mieCoefficient', 'mieDirectionalG']) u[k].value = src[k].value;
     u.sunPosition.value.copy(this.sunDir);
+    const lit = 1 - this.night;
+    this.envGround.material.color.setRGB(0.3, 0.31, 0.3).multiplyScalar(0.08 + 0.92 * lit * lerp(1, 0.7, this.golden));
     if (this.envRT) this.envRT.dispose();
     this.envRT = this.pmrem.fromScene(this.envScene, 0, 0.1, 2000);
     this.scene.environment = this.envRT.texture;

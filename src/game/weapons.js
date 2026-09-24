@@ -932,7 +932,7 @@ export class Weapons {
   }
 
   floorAt(x, z, y) {
-    const pl = this.g.player, gy = this.g.hm.atWorld(x, z);
+    const pl = this.g.player, gy = this.g.groundAt(x, z, y);
     const r = pl.roofAt(x, z);
     return y >= r - 0.4 ? Math.max(gy, r) : gy;
   }
@@ -965,6 +965,8 @@ export class Weapons {
           }
         }
         n.pos.set(q.x, ny, q.z);
+        const gar = g.underground.at(n.pos.x, n.pos.z, n.pos.y - 0.3);
+        if (gar && n.pos.y > gar.ceiling - 0.06) { n.pos.y = gar.ceiling - 0.06; if (n.vel.y > 0) n.vel.y = -n.vel.y * 0.3; }
         const floor = this.floorAt(n.pos.x, n.pos.z, n.pos.y) + 0.035;
         if (n.pos.y < floor) {
           n.pos.y = floor;
@@ -1084,19 +1086,26 @@ export class Weapons {
     const g = this.g;
     const zh = g.zombies.raycast(o, d, range, exclude);
     const wh = g.colliders.raycast(o.x, o.y, o.z, d.x, d.y, d.z, range, skip && skip.size ? (it) => !skip.has(it) : null);
-    let gt = Infinity;
+    let gt = Infinity, ceiling = false;
+    // the ground (or the car-park floor, if the shot starts down there)
+    const inGar = g.underground.at(o.x, o.z, o.y - 1.5);
+    const floor = (x, z, y) => (inGar ? inGar.floor : g.groundAt(x, z, y));
     if (d.y < -0.001) {
       let prev = 0;
       const stepT = Math.min(0.5, range);
       for (let t = stepT; t <= range + 1e-6; t += stepT) {
-        const y = o.y + d.y * t, gy = g.hm.atWorld(o.x + d.x * t, o.z + d.z * t);
+        const y = o.y + d.y * t, gy = floor(o.x + d.x * t, o.z + d.z * t, y);
         if (y <= gy) {
           let lo = prev, hi = t;
-          for (let i = 0; i < 6; i++) { const m = (lo + hi) / 2; if (o.y + d.y * m <= g.hm.atWorld(o.x + d.x * m, o.z + d.z * m)) hi = m; else lo = m; }
+          for (let i = 0; i < 6; i++) { const m = (lo + hi) / 2; if (o.y + d.y * m <= floor(o.x + d.x * m, o.z + d.z * m, o.y + d.y * m)) hi = m; else lo = m; }
           gt = hi; break;
         }
         prev = t;
       }
+    } else if (inGar && d.y > 0.001) {
+      // the car-park ceiling
+      const t = (inGar.ceiling - o.y) / d.y;
+      if (t > 0 && t < range) { gt = t; ceiling = true; }
     }
     // flat roofs are floors too
     const rt = this.roofHit(o, d, range);
@@ -1108,7 +1117,7 @@ export class Weapons {
       const kind = wh.item.kind;
       return { point: pt, normal: new THREE.Vector3(wh.nx, 0, wh.nz), t: wt, item: wh.item, surface: kind === 'car' || kind === 'post' ? 'metal' : 'concrete' };
     }
-    if (gt < Infinity) return { point: new THREE.Vector3(o.x + d.x * gt, o.y + d.y * gt, o.z + d.z * gt), normal: new THREE.Vector3(0, 1, 0), t: gt, surface: 'ground' };
+    if (gt < Infinity) return { point: new THREE.Vector3(o.x + d.x * gt, o.y + d.y * gt, o.z + d.z * gt), normal: new THREE.Vector3(0, ceiling ? -1 : 1, 0), t: gt, surface: ceiling ? 'concrete' : 'ground' };
     return { t: range };
   }
 

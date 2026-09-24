@@ -39,6 +39,8 @@ export class Player {
     this.roofs = [];           // [{pts, top}] flat roofs you can stand on (reachable by drone)
     this.vehicle = null;       // set while driving/flying; the vehicle then places the camera
     this.roof = null;          // the roof you're standing on (with its stairwell, if any)
+    this.underground = null;   // the car parks under the courtyards (set by the game)
+    this.parking = null;       // the one you're down in
     this.onFall = null;        // callback(damage) for a hard landing
     this.speedWeapon = 1;      // heavy guns slow you down, the knife speeds you up
   }
@@ -53,11 +55,19 @@ export class Player {
     return r ? r.top : -Infinity;
   }
 
-  // ground under the feet: terrain, or a roof if we're up on one
+  // ground under the feet: terrain, the car-park floor if we're down there, or a roof if we're up on one
   groundAt(x, z, y) {
-    const g = this.hm.maxAround(x, -z, 0.18);
+    const u = this.underground && this.underground.at(x, z, y + 0.05);
+    if (u) return u.floor;
+    let g = this.sample(x, z, y);
+    for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2; g = Math.max(g, this.sample(x + Math.cos(a) * 0.18, z + Math.sin(a) * 0.18, y)); }
     const r = this.roofAt(x, z);
     return y >= r - 0.6 ? Math.max(g, r) : g;
+  }
+
+  sample(x, z, y) {
+    const u = this.underground && this.underground.at(x, z, y + 0.05);
+    return u ? u.floor : this.hm.atWorld(x, z);
   }
 
   // mouse look only (used while in a vehicle)
@@ -167,6 +177,12 @@ export class Player {
     }
     const r = this.roofObj(this.pos.x, this.pos.z);
     this.roof = r && this.pos.y > r.top - 0.4 ? r : null;
+    // the car-park ceiling stops a jump
+    this.parking = this.underground ? this.underground.at(this.pos.x, this.pos.z, this.pos.y + 0.05) : null;
+    if (this.parking && this.pos.y + this.eyeHeight + 0.15 > this.parking.ceiling) {
+      this.pos.y = this.parking.ceiling - this.eyeHeight - 0.15;
+      if (this.vel.y > 0) this.vel.y = 0;
+    }
     // the eye follows the feet with a little lag so curbs and steps don't pop
     this.viewY = this.onGround ? THREE.MathUtils.damp(this.viewY ?? this.pos.y, this.pos.y, 16, dt) : this.pos.y;
 
