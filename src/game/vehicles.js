@@ -513,6 +513,8 @@ export class Vehicles {
     }
     this.flashBeacons(this.g.time || 0);
     if (!playing) return;
+    // (co-op: the cars stay parked for now; driving is single-player)
+    if (!this.active && this.g.mode && this.g.mode !== 'solo') { this.hud.classList.remove('on'); return; }
     if (!this.active) {
       const near = !p.dead && this.nearest();
       if (near && !g.director.nearestStation() && !g.stairs?.near()) {

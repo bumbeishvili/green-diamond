@@ -22,7 +22,7 @@ export const MESSAGES = {
 
 // Timers from a worker keep running at full speed in a background tab, where the page's own
 // timers are slowed to once a second (or once a minute after a while).
-const ticker = (() => {
+export const ticker = (() => {
   let w = null, n = 0;
   const waiting = new Map();
   try {
@@ -68,6 +68,11 @@ export class Session {
   constructor({ onchange = () => {} } = {}) {
     this.sim = new NetSim();
     this.onchange = onchange;
+    // the game plugs in here: messages it understands, and players arriving / leaving
+    this.onGame = null;          // (peerId, kind, data) data: ArrayBuffer or parsed JSON
+    this.onPeerOpen = null;      // (peerId)
+    this.onPeerClose = null;     // (peerId, reason)
+    this.onEnded = null;         // (message) the session is over (host left, lost, ...)
     this.reset();
     addEventListener('pagehide', () => this.leave());
   }
@@ -147,6 +152,7 @@ export class Session {
     this.message = message;
     this.room = null;
     this.changed();
+    this.onEnded?.(message);
   }
 
   leave() {
@@ -276,6 +282,7 @@ export class Session {
         this.message = 'Connected.';
       }
       this.changed();
+      this.onPeerOpen?.(id);
     };
     p.onclose = (reason) => this.dropped(p, reason);
     p.onmessage = (kind, data) => this.receive(p, kind, data);
@@ -292,6 +299,7 @@ export class Session {
 
   dropped(p, reason) {
     this.peers.delete(p.id);
+    if (p.open) this.onPeerClose?.(p.id, reason);
     if (this.role === 'host') {
       signaling.leave(this.room, p.id, this.id);            // give the place back
       this.roster = this.roster.filter((q) => q.id !== p.id);
@@ -314,6 +322,7 @@ export class Session {
   }
 
   receive(p, kind, data) {
+    if (typeof data !== 'string') { this.onGame?.(p.id, kind, data); return; }
     let m;
     try { m = JSON.parse(data); } catch { return; }
     switch (m.t) {
@@ -339,9 +348,28 @@ export class Session {
       case 'table': if (this.role === 'client') { this.table = m.table; this.changed(); } break;
       case 'end': this.hostLeft = true; this.fail(MESSAGES.hostLeft); break;
       case 'bye': if (this.role === 'host') p.close('left'); break;
-      default: break;
+      default: this.onGame?.(p.id, kind, m); break;
     }
   }
+
+  // to one player (host: any client; client: the host). Objects go as JSON.
+  sendTo(id, kind, data) {
+    const p = this.peers.get(id);
+    if (!p) return false;
+    return p.send(kind, typeof data === 'string' || data instanceof ArrayBuffer ? data : JSON.stringify(data));
+  }
+
+  sendAll(kind, data) {
+    const d = typeof data === 'string' || data instanceof ArrayBuffer ? data : JSON.stringify(data);
+    for (const p of this.peers.values()) p.send(kind, d);
+  }
+
+  slotOfId(id) {
+    const r = this.roster.find((q) => q.id === id);
+    return r ? r.slot : -1;
+  }
+
+  get connected() { return this.state === 'connected'; }
 
   // ---- heartbeat, pings, stats ----
 

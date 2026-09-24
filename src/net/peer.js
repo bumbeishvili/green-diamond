@@ -47,6 +47,7 @@ export class Peer {
   attach(c) {
     if (!(c.label in this.ch)) return;
     this.ch[c.label] = c;
+    c.binaryType = 'arraybuffer';
     c.onopen = () => {
       if (this.open || this.ch.unrel?.readyState !== 'open' || this.ch.rel?.readyState !== 'open') return;
       this.open = true;

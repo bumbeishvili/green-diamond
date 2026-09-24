@@ -23,6 +23,10 @@ export const TYPES = {
   crow: { species: 'crow', hp: 0.2, speed: [10, 12.5], dmg: 0.11, scale: [0.9, 1.1] },
 };
 const MODEL_KEYS = { city: /city/i, thin: /thin/i, office: /office/i, hazmat: /hazmat/i };
+const TYPE_KEYS = Object.keys(TYPES);
+// states on the wire (crows send their flight state instead of 'chase')
+const NET_STATES = ['chase', 'attack', 'scream', 'dead', 'climb', 'circle', 'dive', 'away'];
+const HIST = 32;   // ticks of position history kept for lag compensation
 
 // ------------------------------------------------------------------------------------------
 // Procedural stand-ins (used when a downloaded model is missing): boxes skinned to a few bones
@@ -216,28 +220,42 @@ export class Zombies {
     this.groundFn = null;      // (x, z, y) -> floor height, car-park aware
     this.tmpA = new THREE.Vector3(); this.tmpB = new THREE.Vector3(); this.tmpC = new THREE.Vector3();
     this.dir = { x: 0, z: 0 };
+    // co-op: the players the horde can go for (null: just this.player). Each zombie takes the
+    // nearest one. Hits and kills carry the shooter's slot (by).
+    this.targets = null;
+    this.onFx = null;          // (kind, point, dir) blood etc., for the other players to see
+    this.nidSeq = 0;           // network ids
+    this.byNid = new Map();
+    this.puppets = false;      // client: zombies are drawn from the host's snapshots, no AI here
   }
 
   get alive() { let n = 0; for (const z of this.list) if (z.state !== 'dead') n++; return n; }
   count(type) { let n = 0; for (const z of this.list) if (z.state !== 'dead' && z.type === type) n++; return n; }
 
-  build(type) {
+  build(type, variant = -1) {
     const def = TYPES[type];
     if (def.species === 'dog') {
       const m = this.animals[def.model || 'dog'] || this.animals.dog;
-      return m ? fromModel(m, type, def, this.matCache) : proceduralDog(this.material);
+      return { ...(m ? fromModel(m, type, def, this.matCache) : proceduralDog(this.material)), variant: 0 };
     }
-    if (def.species === 'crow') return this.animals.crow ? fromModel(this.animals.crow, type, def, this.matCache) : proceduralCrow();
+    if (def.species === 'crow') return { ...(this.animals.crow ? fromModel(this.animals.crow, type, def, this.matCache) : proceduralCrow()), variant: 0 };
     const keys = def.models.filter((k) => this.models[k]);
-    if (!keys.length) return proceduralHuman(this.material);
-    const model = this.models[pick(keys)];
-    return { ...fromModel(model, type, def, this.matCache), model: model.name };
+    if (!keys.length) return { ...proceduralHuman(this.material), variant: 0 };
+    const key = variant >= 0 && keys.includes(def.models[variant]) ? def.models[variant] : pick(keys);
+    const model = this.models[key];
+    return { ...fromModel(model, type, def, this.matCache), model: model.name, variant: def.models.indexOf(key) };
   }
+
+  poolKey(type, variant) { return `${type}:${variant}`; }
 
   spawn(x, z, { type = 'walker', hp = 100, speed = null, speedMul = 1, damage = 40, roof = null, stair = null, y = null } = {}) {
     const def = TYPES[type] || TYPES.walker;
-    const pool = this.pools.get(type);
-    const zb = (pool && pool.pop()) || Object.assign(this.build(type), { type });
+    let zb = null;
+    for (const [k, pool] of this.pools) if (k.startsWith(`${type}:`) && pool.length) { zb = pool.pop(); break; }
+    zb ||= Object.assign(this.build(type), { type });
+    zb.nid = this.nextNid();
+    this.byNid.set(zb.nid, zb);
+    if (zb.hist) zb.hist.fill(-1);
     const scale = rnd(...def.scale);
     const w = def.wide || 1;
     zb.root.scale.set(scale * w, scale, scale * w);
@@ -280,15 +298,19 @@ export class Zombies {
   }
 
   // Ray vs hit spheres. Returns {z, t, point, head} for the nearest hit.
-  raycast(o, d, maxDist, exclude = null) {
+  // rewind(zb) -> [dx, dy, dz] | null: where it was when the shooter saw it (lag compensation)
+  raycast(o, d, maxDist, exclude = null, rewind = null) {
     let best = null;
     for (const zb of this.list) {
       if (zb.state === 'dead' || zb.state === 'climb' || (exclude && exclude.includes(zb))) continue;
-      const tx = zb.pos.x - o.x, tz = zb.pos.z - o.z;
+      const off = rewind ? rewind(zb) : null;
+      const ox = off ? off[0] : 0, oy = off ? off[1] : 0, oz = off ? off[2] : 0;
+      const tx = zb.pos.x + ox - o.x, tz = zb.pos.z + oz - o.z;
       const along = tx * d.x + tz * d.z;
       if (along < -2 || along > maxDist + 2) continue;
       let mine = null, headT = Infinity;
-      for (const [cx, cy, cz, r, head] of this.spheres(zb)) {
+      for (let [cx, cy, cz, r, head] of this.spheres(zb)) {
+        cx += ox; cy += oy; cz += oz;
         const lx = o.x - cx, ly = o.y - cy, lz = o.z - cz;
         const b = lx * d.x + ly * d.y + lz * d.z, c = lx * lx + ly * ly + lz * lz - r * r, disc = b * b - c;
         if (disc < 0) continue;
@@ -344,22 +366,24 @@ export class Zombies {
     ];
   }
 
-  damage(zb, amount, point, dir, head, weapon) {
+  damage(zb, amount, point, dir, head, weapon, by = 0) {
     if (zb.state === 'dead') return false;
     zb.hp -= amount;
+    this.onFx?.(zb.species === 'crow' ? 'feathers' : zb.def.explode ? 'bile' : 'blood', point, dir);
     if (zb.species === 'crow') this.fx.emit(point, 10, { color: [0.05, 0.05, 0.06], speed: 2.2, spread: 1.6, up: 1, life: 1.4, size: 0.07, gravity: 1.5 });
     else if (zb.def.explode) this.fx.emit(point, 12, { color: [0.35, 0.75, 0.15], speed: 2.5, spread: 1.2, up: 1, life: 0.8, size: 0.09, dir });
     else this.fx.bloodBurst(point, dir);
     this.audio.play('flesh', { pos: point, vol: 0.7 });
-    if (zb.hp <= 0) { this.kill(zb, dir, head, weapon); return true; }
+    if (zb.hp <= 0) { this.kill(zb, dir, head, weapon, by); return true; }
     zb.hitT = zb.def.shove ? 0.08 : 0.25;
     if (zb.species === 'dog') zb.hitT = 0.15;
     if (zb.anim === 'model' && zb.actions.hit && zb.state === 'chase' && Math.random() < 0.3 && !zb.def.shove) { this.play(zb, 'hit', 0.05); zb.hitAnim = 0.4; }
     return false;
   }
 
-  kill(zb, dir, head, weapon) {
+  kill(zb, dir, head, weapon, by = 0) {
     if (zb.state === 'dead') return;
+    zb.killedBy = by;
     const wasClimbing = zb.state === 'climb';
     zb.state = 'dead';
     zb.deadT = 0;
@@ -379,7 +403,7 @@ export class Zombies {
     // bloaters burst a moment later (chains through a crowd of them)
     if (zb.def.explode && !wasClimbing) { zb.exploding = true; zb.fuse = weapon === 'fuse' ? 0.7 : 0.15; }
     if (wasClimbing) zb.deadT = 8;
-    if (this.onKill && weapon !== 'fuse') this.onKill(zb, head, weapon);
+    if (this.onKill && weapon !== 'fuse') this.onKill(zb, head, weapon, by);
   }
 
   killAll() { for (const zb of this.list) if (zb.state !== 'dead') this.kill(zb, null, false, 'nuke'); }
@@ -391,8 +415,18 @@ export class Zombies {
 
   release(zb) {
     this.scene.remove(zb.root);
-    if (!this.pools.has(zb.type)) this.pools.set(zb.type, []);
-    this.pools.get(zb.type).push(zb);
+    if (this.byNid.get(zb.nid) === zb) this.byNid.delete(zb.nid);
+    const k = this.poolKey(zb.type, zb.variant ?? 0);
+    if (!this.pools.has(k)) this.pools.set(k, []);
+    this.pools.get(k).push(zb);
+  }
+
+  nextNid() {
+    for (let i = 0; i < 65536; i++) {
+      this.nidSeq = (this.nidSeq + 1) & 0xffff;
+      if (this.nidSeq && !this.byNid.has(this.nidSeq)) return this.nidSeq;
+    }
+    return 0;
   }
 
   groundOf(zb) { return zb.roof != null ? zb.roof : this.floorAt(zb.pos.x, zb.pos.z, zb.pos.y); }
@@ -400,8 +434,7 @@ export class Zombies {
   levelOf(x, z, y) { return this.underground ? this.underground.at(x, z, y + 0.3) : null; }
 
   // Blast damage (grenades, bloaters): zombies and the player in range, not through walls.
-  explode(x, y, z, radius, dmgZombie, dmgPlayer, source = 'explosion') {
-    const pl = this.player;
+  explode(x, y, z, radius, dmgZombie, dmgPlayer, source = 'explosion', by = 0) {
     let kills = 0;
     const level = this.levelOf(x, z, y - 0.6);
     for (const zb of this.list) {
@@ -412,28 +445,52 @@ export class Zombies {
       if (d > radius || !this.col.clear(x, y + 0.3, z, zb.pos.x, cy + 0.2, zb.pos.z)) continue;
       const dir = new THREE.Vector3(zb.pos.x - x, 0.6, zb.pos.z - z).normalize();
       const point = zb.pos.clone(); point.y = cy;
-      const killed = this.damage(zb, dmgZombie * (1 - (d / radius) * 0.7), point, dir, false, source);
+      const killed = this.damage(zb, dmgZombie * (1 - (d / radius) * 0.7), point, dir, false, source, by);
       if (killed) { kills++; zb.blast = dir; }
-      if (this.onBlastHit) this.onBlastHit(zb, killed);
+      if (this.onBlastHit) this.onBlastHit(zb, killed, by);
     }
-    // (a car keeps the blast off you)
-    if (dmgPlayer > 0 && !pl.dead && !(pl.vehicle && pl.vehicle.type === 'car') && this.levelOf(pl.pos.x, pl.pos.z, pl.pos.y) === level) {
+    // every player in range (a car keeps the blast off you)
+    for (const pl of this.targetList()) {
+      if (!(dmgPlayer > 0 && !pl.dead && !(pl.vehicle && pl.vehicle.type === 'car') && this.levelOf(pl.pos.x, pl.pos.z, pl.pos.y) === level)) continue;
       const pd = Math.hypot(pl.pos.x - x, pl.pos.y + 1 - y, pl.pos.z - z);
       if (pd < radius && this.col.clear(x, y + 0.3, z, pl.pos.x, pl.pos.y + 1.2, pl.pos.z)) {
-        pl.damage(dmgPlayer * Math.pow(1 - pd / radius, 0.8), x, z);
+        const amount = dmgPlayer * Math.pow(1 - pd / radius, 0.8);
+        pl.damage(amount, x, z);
         pl.shake = Math.min(1, pl.shake + 0.9);
-        if (this.onPlayerHit) this.onPlayerHit(null);
+        if (this.onPlayerHit) this.onPlayerHit(null, pl, amount, x, z);
       } else if (pd < radius * 4) pl.shake = Math.min(1, pl.shake + 0.5 * (1 - pd / (radius * 4)));
     }
     if (this.onExplode) this.onExplode(x, y, z, radius, source);
     return kills;
   }
 
+  targetList() { return this.targets && this.targets.length ? this.targets : [this.player]; }
+
+  // The nearest living player (re-picked every half second or so).
+  pickTarget(zb, targets, dt) {
+    if (targets.length === 1) return targets[0];
+    zb.retargetT = (zb.retargetT || 0) - dt;
+    if (zb.target && !zb.target.dead && zb.retargetT > 0 && targets.includes(zb.target)) return zb.target;
+    zb.retargetT = 0.45 + Math.random() * 0.3;
+    const mine = this.levelOf(zb.pos.x, zb.pos.z, zb.pos.y);
+    let best = null, bd = Infinity;
+    for (const t of targets) {
+      if (t.dead) continue;
+      const d = Math.hypot(t.pos.x - zb.pos.x, t.pos.z - zb.pos.z) + Math.abs(t.pos.y - zb.pos.y) * 2 + (t.zLevel !== mine ? 25 : 0);
+      if (d < bd) { bd = d; best = t; }
+    }
+    zb.target = best || (targets.includes(zb.target) ? zb.target : targets[0]);
+    return zb.target;
+  }
+
   update(dt) {
-    const pl = this.player;
-    const ppos = pl.pos;
+    const targets = this.targetList();
+    // where each player is: down in a car park, up on a roof with stairs
+    for (const t of targets) {
+      t.zLevel = this.underground ? this.underground.at(t.pos.x, t.pos.z, t.pos.y + 0.1) : null;
+      t.zStair = t.roof && t.roof.stair && !t.vehicle ? t.roof.stair : null;
+    }
     const nav = this.nav;
-    const up = this.targetStair;
     // spatial hash for separation (walkers on the same level only)
     const grid = new Map();
     for (const zb of this.list) {
@@ -462,10 +519,11 @@ export class Zombies {
         continue;
       }
       if (this.frozen) { this.animate(zb, dt, 0); continue; }
-      if (zb.species === 'crow') { this.updateCrow(zb, dt); continue; }
+      if (zb.species === 'crow') { this.updateCrow(zb, dt, this.pickTarget(zb, targets, dt)); continue; }
       if (zb.state === 'climb') { this.updateClimb(zb, dt); continue; }
       if (zb.buffT > 0) zb.buffT -= dt;
       if (zb.def.explode) this.gas(zb, dt);
+      const pl = this.pickTarget(zb, targets, dt), ppos = pl.pos, up = pl.zStair;
 
       // on a roof the player isn't on: head back to the stairwell door and go down
       const wrongRoof = zb.roof != null && (!up || zb.stair !== up);
@@ -523,8 +581,8 @@ export class Zombies {
           if (dist < reach + 0.45 && dy < 1.5 && !pl.dead && !shielded && !(v && v.type === 'drone')) {
             pl.damage(zb.damage, zb.pos.x, zb.pos.z);
             if (zb.def.shove && !v) { pl.vel.x += (dx / (dist || 1)) * zb.def.shove; pl.vel.z += (dz / (dist || 1)) * zb.def.shove; pl.shake = Math.min(1, pl.shake + 0.4); }
-            this.audio.play('bite', { vol: 0.9, rate: dog ? 1.3 : 1 });
-            if (this.onPlayerHit) this.onPlayerHit(zb);
+            this.audio.play('bite', pl === this.player ? { vol: 0.9, rate: dog ? 1.3 : 1 } : { pos: pl.pos, vol: 0.8, rate: dog ? 1.3 : 1 });
+            if (this.onPlayerHit) this.onPlayerHit(zb, pl, zb.damage, zb.pos.x, zb.pos.z);
           }
         }
         if (zb.attackT > total) {
@@ -547,7 +605,7 @@ export class Zombies {
       // --- steering ---
       let wx, wz;
       const onRoof = zb.roof != null;
-      const zU = onRoof ? null : this.levelOf(zb.pos.x, zb.pos.z, zb.pos.y), pU = this.playerLevel;
+      const zU = onRoof ? null : this.levelOf(zb.pos.x, zb.pos.z, zb.pos.y), pU = pl.zLevel;
       const offNav = onRoof || !!zU;   // the ground-level flow field doesn't cover roofs or the car parks
       zb.losT -= dt;
       if (zb.losT <= 0) {
@@ -621,8 +679,10 @@ export class Zombies {
       const ex = p.x - ppos.x, ez = p.z - ppos.z, ed = Math.hypot(ex, ez);
       if (!v && ed < 0.75 && Math.abs(ppos.y - zb.pos.y) < 1.5) {
         const push = (0.75 - ed) / (ed || 1);
-        p.x += ex * push * 0.8; p.z += ez * push * 0.8;
-        pl.pos.x -= ex * push * 0.2; pl.pos.z -= ez * push * 0.2;
+        // (co-op: players aren't nudged, a client couldn't predict it; the zombie gives way)
+        const k = this.targets ? 1 : 0.8;
+        p.x += ex * push * k; p.z += ez * push * k;
+        if (!this.targets) { pl.pos.x -= ex * push * 0.2; pl.pos.z -= ez * push * 0.2; }
       }
       const gy = onRoof ? zb.roof : this.floorAt(p.x, p.z, zb.pos.y);
       if (gy - zb.pos.y < 0.75) {
@@ -647,6 +707,193 @@ export class Zombies {
       this.animate(zb, dt, sp);
       this.place(zb);
     }
+  }
+
+  // ---------------------------------------------------------------- co-op: host side
+  // Where every zombie was over the last half second, so a shot is checked against what the
+  // shooter actually saw (lag compensation).
+  record(tick) {
+    for (const zb of this.list) {
+      const h = zb.hist || (zb.hist = new Float32Array(HIST * 4).fill(-1));
+      const i = (tick % HIST) * 4;
+      h[i] = tick; h[i + 1] = zb.pos.x; h[i + 2] = zb.pos.y + (zb.leap || 0); h[i + 3] = zb.pos.z;
+    }
+  }
+
+  // [dx, dy, dz] from where it is now to where it was at `tick` (fractional), or null
+  rewindOffset(zb, tick) {
+    const h = zb.hist;
+    if (!h) return null;
+    const t0 = Math.floor(tick), f = tick - t0;
+    const a = (t0 % HIST) * 4, b = ((t0 + 1) % HIST) * 4;
+    if (h[a] !== t0) return null;
+    let x = h[a + 1], y = h[a + 2], z = h[a + 3];
+    if (f > 0 && h[b] === t0 + 1) { x += (h[b + 1] - x) * f; y += (h[b + 2] - y) * f; z += (h[b + 3] - z) * f; }
+    return [x - zb.pos.x, y - zb.pos.y - (zb.leap || 0), z - zb.pos.z];
+  }
+
+  // what the other players need to draw one zombie
+  netState(zb) {
+    const st = zb.state === 'dead' ? 3 : zb.species === 'crow' ? NET_STATES.indexOf(zb.crowState) : Math.max(0, NET_STATES.indexOf(zb.state));
+    const hs = Math.hypot(zb.vel.x, zb.vel.z);
+    return {
+      nid: zb.nid, type: TYPE_KEYS.indexOf(zb.type), variant: zb.variant ?? 0, state: st,
+      x: zb.pos.x, y: zb.pos.y, z: zb.pos.z, heading: zb.heading,
+      rate: zb.current ? zb.current.timeScale : 1,
+      extra: zb.species === 'crow' ? -Math.atan2(zb.vel.y, hs) * 0.7 : zb.leap || 0,
+      scale: zb.scale,
+      flags: (!zb.root.visible && zb.state !== 'climb' ? 1 : 0) | (zb.hitAnim > 0 || zb.hitT > 0 ? 2 : 0) | (zb.buffT > 0 ? 4 : 0) | (zb.exploding ? 8 : 0),
+    };
+  }
+
+  // ---------------------------------------------------------------- co-op: client side
+  // The host's zombies arrive in snapshots; here they're puppets: no AI, just drawn where the
+  // host had them a moment ago (interpolated), with their animations and sounds.
+  netUpdate(list, tick) {
+    const now = performance.now();
+    for (const s of list) {
+      let zb = this.byNid.get(s.nid);
+      if (zb && zb.typeIdx !== s.type) { this.dropPuppet(zb); zb = null; }   // the id was reused
+      if (!zb) zb = this.makePuppet(s);
+      if (!zb) continue;
+      zb.seenAt = now;
+      const b = zb.buf;
+      if (b.length && b[b.length - 1].tick >= tick) continue;
+      b.push({ tick, x: s.x, y: s.y, z: s.z, h: s.heading, st: s.state, rate: s.rate, ex: s.extra, fl: s.flags });
+      if (b.length > 16) b.shift();
+    }
+  }
+
+  makePuppet(s) {
+    const type = TYPE_KEYS[s.type];
+    const def = TYPES[type];
+    if (!def) return null;
+    const pool = this.pools.get(this.poolKey(type, s.variant));
+    const zb = (pool && pool.pop()) || Object.assign(this.build(type, s.variant), { type });
+    Object.assign(zb, {
+      nid: s.nid, typeIdx: s.type, def, species: def.species || 'human', scale: s.scale || 1, roof: null, stair: null,
+      state: '', t: 0, phase: Math.random() * 10, deadT: 0, attackT: 0, hitT: 0, hitAnim: 0, leap: 0, fallDir: 1, fallV: 0,
+      small: def.species === 'dog' || def.species === 'crow' || !!def.crawl, crowState: 'circle', exploding: false,
+      lean: 0.1 + Math.random() * 0.2, tilt: (Math.random() - 0.5) * 0.5, armAsym: (Math.random() - 0.5) * 0.5,
+      pos: new THREE.Vector3(s.x, s.y, s.z), vel: new THREE.Vector3(), heading: s.heading, buf: [], groanT: 2 + Math.random() * 6,
+    });
+    const w = def.wide || 1;
+    zb.root.scale.set(zb.scale * w, zb.scale, zb.scale * w);
+    zb.root.rotation.set(0, zb.heading, 0);
+    zb.root.position.copy(zb.pos);
+    zb.root.visible = true;
+    if (zb.anim === 'model') { zb.mixer.stopAllAction(); zb.current = null; }
+    this.scene.add(zb.root);
+    this.list.push(zb);
+    this.byNid.set(zb.nid, zb);
+    return zb;
+  }
+
+  dropPuppet(zb) {
+    const i = this.list.indexOf(zb);
+    if (i >= 0) this.list.splice(i, 1);
+    this.release(zb);
+  }
+
+  updatePuppets(dt, renderTick, listener) {
+    const now = performance.now();
+    for (let i = this.list.length - 1; i >= 0; i--) {
+      const zb = this.list[i];
+      if (now - zb.seenAt > 1200) { this.list.splice(i, 1); this.release(zb); continue; }
+      const b = zb.buf;
+      if (!b.length) continue;
+      // the two snapshots around renderTick (hold the newest if we run past it)
+      let a = b[0], c = b[b.length - 1];
+      for (let k = 0; k < b.length; k++) {
+        if (b[k].tick <= renderTick) a = b[k];
+        if (b[k].tick >= renderTick) { c = b[k]; break; }
+      }
+      if (a.tick > c.tick) c = a;
+      const f = c.tick > a.tick ? THREE.MathUtils.clamp((renderTick - a.tick) / (c.tick - a.tick), 0, 1) : 0;
+      const cur = renderTick >= c.tick ? c : a;
+      const px = zb.pos.x, py = zb.pos.y, pz = zb.pos.z;
+      zb.pos.set(a.x + (c.x - a.x) * f, a.y + (c.y - a.y) * f, a.z + (c.z - a.z) * f);
+      zb.heading = lerpAngle(a.h, c.h, f);
+      if (dt > 0) zb.vel.set((zb.pos.x - px) / dt, (zb.pos.y - py) / dt, (zb.pos.z - pz) / dt);
+      zb.t += dt;
+      this.puppetState(zb, NET_STATES[cur.st] || 'chase');
+      const fl = cur.fl;
+      zb.leap = zb.species === 'dog' && zb.state === 'attack' ? Math.max(0, a.ex + (c.ex - a.ex) * f) : 0;
+      if (zb.state === 'dead') {
+        zb.deadT += dt;
+        if (fl & 1) zb.root.visible = false;
+        if (zb.species === 'crow') {
+          zb.root.position.copy(zb.pos);
+          if (zb.vel.y < -0.5) zb.root.rotation.z += dt * 7;
+          if (zb.anim === 'model') zb.mixer.update(0);
+        } else this.animateDeath(zb, dt);
+        continue;
+      }
+      if (zb.state === 'climb') continue;
+      zb.root.visible = !(fl & 1);
+      // a flinch when hit
+      if (fl & 2) {
+        zb.hitT = 0.2;
+        if (zb.anim === 'model' && zb.actions.hit && zb.hitAnim <= 0 && zb.state === 'chase' && !zb.def.shove && Math.random() < 0.3) { this.play(zb, 'hit', 0.05); zb.hitAnim = 0.4; }
+      }
+      if (zb.hitT > 0) zb.hitT -= dt;
+      if (zb.hitAnim > 0) { zb.hitAnim -= dt; if (zb.hitAnim <= 0 && zb.state === 'chase') this.play(zb, this.moveClip(zb)); }
+      const sp = Math.hypot(zb.vel.x, zb.vel.z);
+      if (zb.species === 'crow') {
+        zb.crowState = zb.state;
+        this.animate(zb, dt, sp);
+        zb.root.position.copy(zb.pos);
+        zb.root.rotation.set(a.ex + (c.ex - a.ex) * f, zb.heading, 0, 'YXZ');
+      } else {
+        if (zb.state === 'chase') zb.phase += sp * dt * (zb.species === 'dog' ? 2.4 : zb.def.move === 'run' ? 1.9 : 2.6);
+        if (zb.state === 'attack' || zb.state === 'scream') zb.attackT += dt;
+        if (zb.anim === 'model' && zb.current && zb.state === 'chase' && !(zb.hitAnim > 0)) zb.current.timeScale = THREE.MathUtils.clamp(cur.rate || 1, 0.3, 2);
+        this.animate(zb, dt, sp);
+        this.place(zb);
+      }
+      // groans and growls, near the listener
+      zb.groanT -= dt;
+      if (zb.groanT <= 0) {
+        const dog = zb.species === 'dog', crow = zb.species === 'crow';
+        zb.groanT = crow ? 3 + Math.random() * 6 : dog ? 2 + Math.random() * 3 : 3 + Math.random() * 7;
+        if (!listener || Math.hypot(listener.x - zb.pos.x, listener.z - zb.pos.z) < 45) {
+          this.audio.play(crow ? 'caw' : dog ? 'growl' : 'groan', { pos: zb.pos, vol: crow ? 0.45 : dog ? 0.5 : 0.6, rate: zb.def.shove ? 0.72 : 0.9 + Math.random() * 0.2 });
+        }
+      }
+    }
+  }
+
+  // a new state from the host: start its animation and sound
+  puppetState(zb, st) {
+    if (st === zb.state) return;
+    const prev = zb.state;
+    zb.state = st;
+    const dog = zb.species === 'dog', crow = zb.species === 'crow';
+    if (prev === 'climb') zb.root.visible = true;
+    if (st === 'dead') {
+      zb.deadT = 0; zb.fallDir = Math.random() < 0.65 ? 1 : -1; zb.fallV = 0; zb.leap = 0;
+      if (prev) this.audio.play(crow ? 'caw' : dog ? 'yelp' : 'zdeath', { pos: zb.pos, vol: 0.8, rate: zb.def.shove ? 0.75 : 1 });
+      if (zb.anim === 'model') {
+        if (zb.def.crawl || !zb.actions.death) { if (zb.current) zb.current.timeScale = 0; }
+        else this.play(zb, 'death', 0.1);
+      }
+      if (!crow && prev && prev !== 'climb') { const p = zb.pos.clone(); p.y = this.floorAt(p.x, p.z, p.y) + 0.03; this.fx.blood.add(p, UP, dog ? 0.8 : 1.2); }
+      return;
+    }
+    if (st === 'climb') { zb.root.visible = false; return; }
+    if (st === 'attack') {
+      zb.attackT = 0;
+      this.play(zb, 'attack', 0.1);
+      if (prev) this.audio.play(dog ? 'growl' : 'attack', { pos: zb.pos, vol: 0.9, rate: zb.def.shove ? 0.7 : 1 });
+    } else if (st === 'scream') {
+      zb.attackT = 0;
+      this.play(zb, 'scream', 0.1);
+      if (prev) this.audio.play('scream', { pos: zb.pos, vol: 1.2 });
+    } else if (st === 'dive') {
+      if (prev) this.audio.play('caw', { pos: zb.pos, vol: 0.7 });
+      if (zb.actions && zb.actions.attack) this.play(zb, 'attack', 0.15);
+    } else if (crow) this.play(zb, 'fly', 0.2);
+    else this.play(zb, this.moveClip(zb));
   }
 
   // Into the stairwell: gone for a few seconds, then out of the door at the other end.
@@ -689,8 +936,7 @@ export class Zombies {
   }
 
   // Crows circle overhead, dive at your head, then climb away and come round again.
-  updateCrow(zb, dt) {
-    const pl = this.player;
+  updateCrow(zb, dt, pl = this.player) {
     const hx = pl.pos.x, hy = pl.pos.y + 1.55, hz = pl.pos.z;
     if (zb.crowState === 'circle') {
       zb.orbit += dt * (0.55 + zb.speed * 0.03);
@@ -701,7 +947,7 @@ export class Zombies {
       zb.vel.y = THREE.MathUtils.damp(zb.vel.y, (ty / tl) * sp, 3, dt);
       zb.vel.z = THREE.MathUtils.damp(zb.vel.z, (tz / tl) * sp, 3, dt);
       zb.diveT -= dt;
-      if (zb.diveT <= 0 && !pl.dead && tl < 14 && !this.playerLevel && !(pl.vehicle && pl.vehicle.type === 'car')) { zb.crowState = 'dive'; this.audio.play('caw', { pos: zb.pos, vol: 0.7 }); if (zb.actions && zb.actions.attack) this.play(zb, 'attack', 0.15); }
+      if (zb.diveT <= 0 && !pl.dead && tl < 14 && !pl.zLevel && !(pl.vehicle && pl.vehicle.type === 'car')) { zb.crowState = 'dive'; this.audio.play('caw', { pos: zb.pos, vol: 0.7 }); if (zb.actions && zb.actions.attack) this.play(zb, 'attack', 0.15); }
     } else if (zb.crowState === 'dive') {
       const tx = hx - zb.pos.x, ty = hy - zb.pos.y, tz = hz - zb.pos.z, tl = Math.hypot(tx, ty, tz) || 1;
       const sp = zb.speed * 1.3;
@@ -712,8 +958,8 @@ export class Zombies {
         const safe = pl.vehicle && (pl.vehicle.type === 'car' || (pl.vehicle.type === 'bike' && Math.abs(pl.vehicle.speed) > 2.5));
         if (!safe) {
           pl.damage(zb.damage, zb.pos.x, zb.pos.z);
-          this.audio.play('bite', { vol: 0.6, rate: 1.8 });
-          if (this.onPlayerHit) this.onPlayerHit(zb);
+          this.audio.play('bite', pl === this.player ? { vol: 0.6, rate: 1.8 } : { pos: pl.pos, vol: 0.6, rate: 1.8 });
+          if (this.onPlayerHit) this.onPlayerHit(zb, pl, zb.damage, zb.pos.x, zb.pos.z);
         }
         zb.crowState = 'away';
         zb.climbT = 1.3;

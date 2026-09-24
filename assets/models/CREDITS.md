@@ -180,3 +180,11 @@ The fallback number-plate texture (Georgian format, made-up number "PR-010-US"; 
 | File | Name | Author | Source |
 |---|---|---|---|
 | `vehicles/leaf.glb` | Nissan Leaf (ZE0), light-blue SECURITY car | Franz Albers (body); Isidor Goo / AirplaneChef (wheels) | https://github.com/FranzAlbers/nissan_leaf_launch, https://sketchfab.com/3d-models/toyota-prius-aa599d492d3d4618a1bf5f3786e1bbd9 |
+
+## Player avatar (added 2026-09-24)
+
+| File | Name | Author | Source |
+|---|---|---|---|
+| `players/survivor.glb` | Survivor / SWAT operator (co-op teammate avatar): the 'SWAT' character and 21 of its clips from the Ultimate Modular Men Pack; 7 clips (Crouch_Idle, Crouch_Walk, Jump_Start, Jump_Loop, Jump_Land, Sprint, Death_2) retargeted from the Universal Animation Library [Standard]; the 14 Rifle_* clips and the Weapon_R hand socket were made for this project | Quaternius (rifle clips, socket, retargeting and arm lengthening: original, CC0) | https://poly.pizza/m/Btfn3G5Xv4 (pack: https://quaternius.com/packs/ultimatemodularcharacters.html), https://quaternius.com/packs/universalanimationlibrary.html (download: https://quaternius.itch.io/universal-animation-library) |
+
+CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/): no attribution required. The licence was checked on the poly.pizza model page, on the quaternius.com pages of both packs, on the itch.io page and in the License.txt inside the Universal Animation Library download. Suggested credit: "Survivor built from the SWAT character (Ultimate Modular Men Pack) and the Universal Animation Library by Quaternius (CC0)". Changes: normalised to metres, +Z forward and 1.78 m; parts joined into one mesh; arms lengthened; bones renamed from .L/.R to _L/_R; materials renamed (Swat to Outfit, Swat_Black to Gear) with metallic set to 0; 3 clips dropped and 2 renamed; the Run loops closed; Death and Roll kept above the floor; 7 UAL clips retargeted; 14 two-handed rifle clips and the Weapon_R socket authored. Details are in manifest_extra.json.

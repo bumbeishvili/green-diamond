@@ -131,6 +131,7 @@ export class Pickups {
   // A free spot on the ground inside the complex (or, sometimes, on a roof with stairs).
   randomSpot(minFromPlayer, roofChance = 0.18) {
     const g = this.g, p = g.player.pos, [x0, y0, x1, y1] = this.bounds;
+    const far = (x, z) => (g.players || [g.player]).every((q) => Math.hypot(x - q.pos.x, z - q.pos.z) >= minFromPlayer);
     if (Math.random() < roofChance && g.stairs && g.stairs.list.length) {
       const s = g.stairs.list[Math.floor(Math.random() * g.stairs.list.length)];
       for (let k = 0; k < 20; k++) {
@@ -146,7 +147,7 @@ export class Pickups {
     }
     if (Math.random() < 0.12 && g.underground) {
       const spot = g.underground.randomSpot(this.list);
-      if (spot && Math.hypot(spot.x - p.x, spot.z - p.z) >= minFromPlayer) return spot;
+      if (spot && Math.hypot(spot.x - p.x, spot.z - p.z) >= minFromPlayer && far(spot.x, spot.z)) return spot;
     }
     for (let k = 0; k < 300; k++) {
       const mx = x0 + Math.random() * (x1 - x0), my = y0 + Math.random() * (y1 - y0);
@@ -154,7 +155,7 @@ export class Pickups {
       const x = mx, z = -my;
       const nav = g.nav;
       if (!nav.walkable(x, z) || !nav.walkable(x + 1, z) || !nav.walkable(x - 1, z) || !nav.walkable(x, z + 1) || !nav.walkable(x, z - 1)) continue;
-      if (Math.hypot(x - p.x, z - p.z) < minFromPlayer) continue;
+      if (Math.hypot(x - p.x, z - p.z) < minFromPlayer || !far(x, z)) continue;
       if (this.list.some((it) => Math.hypot(it.x - x, it.z - z) < 14)) continue;
       if (g.director && g.director.stations.some((st) => Math.hypot(st.x - x, st.z - z) < 5)) continue;
       const y = g.hm.atWorld(x, z);
@@ -166,7 +167,36 @@ export class Pickups {
 
   spawn(kind, spot) {
     const amount = kind === 'cash' ? 50 * (2 + Math.floor(Math.random() * Math.random() * 5)) : 0;
-    this.list.push({ kind, x: spot.x, y: spot.y, z: spot.z, phase: Math.random() * 6.28, amount, t: 0 });
+    const it = { id: this.seq = (this.seq || 0) + 1, kind, x: spot.x, y: spot.y, z: spot.z, phase: Math.random() * 6.28, amount, t: 0 };
+    this.list.push(it);
+    if (this.g.mode === 'host') this.g.net.pickupAdd(it);
+  }
+
+  // co-op client: the host's loot, [id, kind, x, y, z, amount]
+  add([id, kind, x, y, z, amount]) {
+    if (this.list.some((it) => it.id === id)) return;
+    this.list.push({ id, kind, x, y, z, amount, phase: Math.random() * 6.28, t: 0 });
+  }
+
+  // co-op client: someone took one (if it was us: the ammo goes in our pockets)
+  taken(id, mine, kind, amount) {
+    const i = this.list.findIndex((it) => it.id === id);
+    if (i >= 0) this.list.splice(i, 1);
+    if (!mine) return;
+    const g = this.g;
+    if (kind === 'ammo') { g.weapons.topUp(); g.hud.notice('Ammo can: spare magazines and a grenade'); g.audio.play('pickup', { vol: 0.9 }); }
+    else if (kind === 'health') { g.hud.notice('First aid kit: +50 health'); g.audio.play('heal', { vol: 0.9 }); }
+    else { g.hud.notice(`${amount} lari (+${amount} points)`); g.audio.play('cash', { vol: 0.9 }); }
+  }
+
+  // co-op host: a client's player walked over one
+  collectRemote(it, p) {
+    const g = this.g;
+    if (it.kind === 'health') {
+      if (p.health >= p.maxHealth - 0.5) return false;
+      p.health = Math.min(p.maxHealth, p.health + 50);
+    } else if (it.kind === 'cash') g.director.addPoints(it.amount, false, p.slot);
+    return true;
   }
 
   // top every kind back up to its count, away from the player
@@ -203,16 +233,21 @@ export class Pickups {
 
   update(dt) {
     if (!this.meshes) return;
-    const g = this.g, p = g.player;
+    const g = this.g;
     this.t += dt;
     const counts = { ammo: 0, health: 0, cash: 0 };
     let rings = 0;
+    // (a co-op client only draws them: the host says who took what)
+    const players = g.mode === 'client' ? [] : g.players || [g.player];
     for (let i = this.list.length - 1; i >= 0; i--) {
       const it = this.list[i];
       it.t += dt;
-      if (!p.dead && Math.abs(it.x - p.pos.x) < 1.25 && Math.abs(it.z - p.pos.z) < 1.25 && Math.abs(it.y - p.pos.y) < 1.7 && this.collect(it)) {
+      for (const p of players) {
+        if (p.dead || Math.abs(it.x - p.pos.x) >= 1.25 || Math.abs(it.z - p.pos.z) >= 1.25 || Math.abs(it.y - p.pos.y) >= 1.7) continue;
+        if (!(p === g.player ? this.collect(it) : this.collectRemote(it, p))) continue;
         this.list.splice(i, 1);
-        continue;
+        if (g.mode === 'host') g.net.pickupGone(it, p === g.player ? g.localSlot ?? 0 : p.slot);
+        break;
       }
     }
     for (const it of this.list) {

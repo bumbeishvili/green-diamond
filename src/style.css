@@ -191,3 +191,34 @@ canvas#game { position: fixed; inset: 0; width: 100vw; height: 100vh; display: b
 #net label { display: grid; grid-template-columns: 44px 1fr 60px; align-items: center; gap: 6px; }
 #net input[type=range] { width: 100%; }
 #net .net-foot { margin-top: 4px; color: #6d6a64; font-size: 10px; }
+
+/* ---------- co-op HUD ---------- */
+#mclock { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); font-family: var(--head); font-size: 30px; letter-spacing: .06em;
+  color: #f2efe9; text-shadow: 0 2px 6px rgba(0,0,0,.8); }
+#mclock.late { color: #ff6b5b; }
+#team { position: absolute; top: 236px; left: 18px; width: 210px; display: flex; flex-direction: column; gap: 4px; font-family: var(--body); font-size: 12px; }
+#team .mate { display: grid; grid-template-columns: 10px 1fr 64px 44px; align-items: center; gap: 6px; background: rgba(8,9,11,.55); padding: 3px 6px; border-radius: 3px; }
+#team .mate i { width: 9px; height: 9px; border-radius: 50%; display: block; }
+#team .mate b { font-weight: 600; color: #f2efe9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#team .mate.me b { color: #fff; }
+#team .mate .hp { height: 6px; background: rgba(255,255,255,.12); border-radius: 3px; overflow: hidden; }
+#team .mate .hp em { display: block; height: 100%; background: #5fd35f; }
+#team .mate .down { color: #ff8a80; font-size: 11px; }
+#team .mate .pts { text-align: right; color: #ffd36b; font-family: var(--head); font-size: 13px; }
+#team .mate.dead b { color: #9a948a; text-decoration: line-through; }
+#downmsg { position: absolute; left: 50%; top: 58%; transform: translateX(-50%); font-family: var(--head); font-size: 26px; letter-spacing: .04em; color: #ffb3a8;
+  text-shadow: 0 2px 8px rgba(0,0,0,.9); opacity: 0; transition: opacity .3s; pointer-events: none; text-align: center; }
+#downmsg.on { opacity: 1; }
+#hud.down-state #crosshair { display: none; }
+#clicktoplay { position: fixed; inset: 0; z-index: 21; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  background: rgba(5,6,8,.55); cursor: pointer; color: #f2efe9; }
+#clicktoplay b { font-family: var(--head); font-size: 40px; letter-spacing: .08em; font-weight: 400; }
+#clicktoplay span { color: var(--muted); font-size: 14px; }
+#mp-start { margin-top: 4px; font-size: 22px; padding: 10px 40px; }
+#mp #mp-name { width: 130px; }
+#go-sub { color: var(--muted); font-size: 15px; margin-top: -8px; }
+#go-stats.table { display: grid; grid-template-columns: auto repeat(4, auto); gap: 6px 22px; }
+#go-stats.table .h { color: var(--muted); font-size: 13px; text-align: right; }
+#go-stats.table span { text-align: right; }
+#go-stats.table span.n { text-align: left; font-weight: 600; }
+#gameover h2.win { color: #e8f5ea; text-shadow: 0 0 24px rgba(63, 208, 122, .45), 0 4px 0 #0b3d22; }

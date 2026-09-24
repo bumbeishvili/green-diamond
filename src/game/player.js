@@ -43,6 +43,7 @@ export class Player {
     this.parking = null;       // the one you're down in
     this.onFall = null;        // callback(damage) for a hard landing
     this.speedWeapon = 1;      // heavy guns slow you down, the knife speeds you up
+    this.quiet = false;        // co-op: replaying ticks, no footsteps or landing thumps
   }
 
   roofObj(x, z) {
@@ -167,7 +168,7 @@ export class Player {
         this.health -= dmg;
         this.regenDelay = 4;
         if (this.health <= 0) { this.health = 0; this.dead = true; }
-        if (this.onFall) this.onFall(dmg);
+        if (this.onFall && !this.quiet) this.onFall(dmg);
       }
       this.pos.y = ground;
       this.vel.y = 0;
@@ -191,7 +192,7 @@ export class Player {
       this.bob += moved * (this.sprinting ? 1.25 : 1.55);
       this.stepDist += moved;
       const stride = this.sprinting ? 2.1 : this.crouch > 0.5 ? 1.2 : 1.7;
-      if (this.stepDist > stride) { this.stepDist = 0; if (this.onStep) this.onStep(); }
+      if (this.stepDist > stride) { this.stepDist = 0; if (this.onStep && !this.quiet) this.onStep(); }
     }
     this.bobAmount = THREE.MathUtils.damp(this.bobAmount, this.onGround && this.moving ? (this.sprinting ? 1.4 : 1) : 0, 8, dt);
 
@@ -210,20 +211,23 @@ export class Player {
     this.applyCamera();
   }
 
-  applyCamera() {
-    const eye = this.eyeHeight;
+  // at: {x, y, z} to put the eye somewhere else than the feet (co-op: between two ticks)
+  applyCamera(at = null) {
+    // (co-op: down on the ground until you're back)
+    const eye = this.dead ? 0.32 : this.eyeHeight;
     const bobY = Math.abs(Math.sin(this.bob * Math.PI)) * 0.055 * this.bobAmount * (1 - this.ads * 0.8);
     const bobX = Math.cos(this.bob * Math.PI) * 0.035 * this.bobAmount * (1 - this.ads * 0.8);
     const sh = this.shake * this.shake;
     const t = performance.now() / 1000;
     const sx = (Math.sin(t * 43) + Math.sin(t * 71)) * 0.01 * sh, sy = (Math.cos(t * 37) + Math.sin(t * 59)) * 0.01 * sh;
-    this.camera.position.set(this.pos.x, (this.viewY ?? this.pos.y) + eye + bobY, this.pos.z);
+    if (at) this.camera.position.set(at.x, at.y + eye + bobY, at.z);
+    else this.camera.position.set(this.pos.x, (this.viewY ?? this.pos.y) + eye + bobY, this.pos.z);
     this.camera.position.x += Math.cos(this.yaw) * bobX;
     this.camera.position.z -= Math.sin(this.yaw) * bobX;
     this.camera.rotation.order = 'YXZ';
     this.camera.rotation.y = this.yaw + this.punch.y + sx;
     this.camera.rotation.x = this.pitch + this.punch.x + sy;
-    this.camera.rotation.z = -bobX * 0.4;
+    this.camera.rotation.z = this.dead ? 0.45 : -bobX * 0.4;
     const fov = this.fovBase * (1 - this.ads * (this.adsZoom ?? 0.22)) * (this.sprinting ? 1.05 : 1);
     if (Math.abs(this.camera.fov - fov) > 0.01) {
       this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, fov, 0.25);

@@ -2560,5 +2560,963 @@
   },
   "preview": "assets/previews/models/extra_leaf.jpg",
   "preview_kind": "Blender 4.1 EEVEE render of the delivered GLB (front 3/4, rear 3/4, high chase, left side, right side, night with the lamps and light bar lit); glTF axes at the origin: +X red, +Y green, +Z blue."
+ },
+ {
+  "file": "assets/models/players/survivor.glb",
+  "category": "player",
+  "name": "Survivor / SWAT operator (co-op teammate avatar)",
+  "source_url": "https://poly.pizza/m/Btfn3G5Xv4",
+  "extra_sources": [
+   "https://quaternius.com/packs/universalanimationlibrary.html",
+   "https://quaternius.itch.io/universal-animation-library"
+  ],
+  "download_note": "SWAT GLB from poly.pizza (no login). Universal Animation Library [Standard] zip (UAL1_Standard.glb) from itch.io through the free 'No thanks, just take me to the downloads' path (no login). Licence checked on the poly.pizza model page (CC0 1.0), the quaternius.com pages of both packs (License CC0), the itch.io page (Creative Commons Zero v1.0 Universal) and the License.txt in the zip (CC0 1.0 Universal).",
+  "source_pack": "Quaternius, Ultimate Modular Men Pack (https://quaternius.com/packs/ultimatemodularcharacters.html, https://poly.pizza/bundle/Ultimate-Modular-Men-Pack-ZiH8muWqwQ); Quaternius, Universal Animation Library [Standard] (https://quaternius.com/packs/universalanimationlibrary.html)",
+  "author": "Quaternius ('SWAT' character and 21 of its clips; 7 clips retargeted from the Universal Animation Library); rifle clip set, Weapon_R socket, arm lengthening and retargeting made for this project",
+  "license": "CC0 1.0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "size_bytes": 1551600,
+  "sha1": "2059ed805ea93e1b6563eb68895e706edd57d81d",
+  "triangles": 7752,
+  "bbox": {
+   "min": [
+    -0.9238,
+    0,
+    -0.1436
+   ],
+   "max": [
+    0.9238,
+    1.8247,
+    0.2125
+   ],
+   "size": [
+    1.8476,
+    1.8247,
+    0.3561
+   ],
+   "space": "metres, glTF axes, default node pose = rest T-pose (skinned, three.js Box3.setFromObject precise)"
+  },
+  "bbox_idle": {
+   "min": [
+    -0.309,
+    -0.0016,
+    -0.2382
+   ],
+   "max": [
+    0.3237,
+    1.78,
+    0.3936
+   ],
+   "size": [
+    0.6327,
+    1.7816,
+    0.6318
+   ],
+   "space": "metres, glTF axes, Idle clip at t=0 (skinned, three.js r186)"
+  },
+  "forward_axis": "+Z (chest / visor; the character's right hand is on -X)",
+  "up_axis": "+Y",
+  "right_axis": "-X",
+  "scale_to_m": 1.0,
+  "size_m": [
+   0.633,
+   1.782,
+   0.632
+  ],
+  "height_m": {
+   "idle_top_of_helmet": 1.78,
+   "rest_tpose": 1.825,
+   "visor_eye_line_idle": 1.6,
+   "crouch_idle_top": 1.084,
+   "rifle_crouch_idle_top": 1.141
+  },
+  "origin": "on the ground between the feet (soles at y=0); the root node 'Survivor' has an identity transform",
+  "skinned": true,
+  "joints": 60,
+  "meshes": 1,
+  "primitives": 4,
+  "materials": 4,
+  "material_names": {
+   "Outfit": "uniform: sleeves, trousers, respirator hoses (base colour linear [0.0625, 0.0692, 0.0818], blue-grey); tint this per player",
+   "Gear": "armour vest, helmet, gloves, boots, knee/elbow pads (near-black)",
+   "Skin": "exposed fingers only (the face is covered by the helmet, visor and respirator)",
+   "Visor": "helmet visor (metallic 0.3, roughness 0.25)"
+  },
+  "textures": [],
+  "extensions_used": [],
+  "animations": [
+   {
+    "name": "Crouch_Idle",
+    "duration": 2.917
+   },
+   {
+    "name": "Crouch_Walk",
+    "duration": 2
+   },
+   {
+    "name": "Death",
+    "duration": 1.042
+   },
+   {
+    "name": "Death_2",
+    "duration": 2.417
+   },
+   {
+    "name": "Gun_Shoot",
+    "duration": 0.583
+   },
+   {
+    "name": "HitReact",
+    "duration": 0.542
+   },
+   {
+    "name": "HitReact_2",
+    "duration": 0.542
+   },
+   {
+    "name": "Idle",
+    "duration": 1.667
+   },
+   {
+    "name": "Idle_Gun",
+    "duration": 1.667
+   },
+   {
+    "name": "Idle_Gun_Pointing",
+    "duration": 1.667
+   },
+   {
+    "name": "Idle_Gun_Shoot",
+    "duration": 0.667
+   },
+   {
+    "name": "Idle_Neutral",
+    "duration": 1.667
+   },
+   {
+    "name": "Interact",
+    "duration": 1.25
+   },
+   {
+    "name": "Jump_Land",
+    "duration": 1.25
+   },
+   {
+    "name": "Jump_Loop",
+    "duration": 2.5
+   },
+   {
+    "name": "Jump_Start",
+    "duration": 1.333
+   },
+   {
+    "name": "Punch_Left",
+    "duration": 0.833
+   },
+   {
+    "name": "Punch_Right",
+    "duration": 0.833
+   },
+   {
+    "name": "Rifle_Crouch_Idle",
+    "duration": 2.917
+   },
+   {
+    "name": "Rifle_Crouch_Walk",
+    "duration": 2
+   },
+   {
+    "name": "Rifle_Idle",
+    "duration": 1.667
+   },
+   {
+    "name": "Rifle_Jump_Land",
+    "duration": 1.25
+   },
+   {
+    "name": "Rifle_Jump_Loop",
+    "duration": 2.5
+   },
+   {
+    "name": "Rifle_Jump_Start",
+    "duration": 1.333
+   },
+   {
+    "name": "Rifle_Reload",
+    "duration": 1.792
+   },
+   {
+    "name": "Rifle_Run",
+    "duration": 0.833
+   },
+   {
+    "name": "Rifle_Run_Back",
+    "duration": 0.833
+   },
+   {
+    "name": "Rifle_Run_Left",
+    "duration": 0.833
+   },
+   {
+    "name": "Rifle_Run_Right",
+    "duration": 0.833
+   },
+   {
+    "name": "Rifle_Shoot",
+    "duration": 0.25
+   },
+   {
+    "name": "Rifle_Sprint",
+    "duration": 0.667
+   },
+   {
+    "name": "Rifle_Walk",
+    "duration": 1.333
+   },
+   {
+    "name": "Roll",
+    "duration": 1.333
+   },
+   {
+    "name": "Run",
+    "duration": 0.833
+   },
+   {
+    "name": "Run_Back",
+    "duration": 0.833
+   },
+   {
+    "name": "Run_Left",
+    "duration": 0.833
+   },
+   {
+    "name": "Run_Right",
+    "duration": 0.833
+   },
+   {
+    "name": "Run_Shoot",
+    "duration": 0.833
+   },
+   {
+    "name": "Sprint",
+    "duration": 0.667
+   },
+   {
+    "name": "Sword_Slash",
+    "duration": 1
+   },
+   {
+    "name": "Walk",
+    "duration": 1.333
+   },
+   {
+    "name": "Wave",
+    "duration": 1.667
+   }
+  ],
+  "loops": [
+   "Idle",
+   "Idle_Neutral",
+   "Idle_Gun",
+   "Idle_Gun_Pointing",
+   "Walk",
+   "Run",
+   "Run_Back",
+   "Run_Left",
+   "Run_Right",
+   "Run_Shoot",
+   "Sprint",
+   "Crouch_Idle",
+   "Crouch_Walk",
+   "Jump_Loop",
+   "Wave",
+   "Rifle_Idle",
+   "Rifle_Walk",
+   "Rifle_Run",
+   "Rifle_Run_Back",
+   "Rifle_Run_Left",
+   "Rifle_Run_Right",
+   "Rifle_Sprint",
+   "Rifle_Crouch_Idle",
+   "Rifle_Crouch_Walk",
+   "Rifle_Jump_Loop"
+  ],
+  "one_shots": [
+   "Death",
+   "Death_2",
+   "Gun_Shoot",
+   "HitReact",
+   "HitReact_2",
+   "Idle_Gun_Shoot",
+   "Interact",
+   "Jump_Land",
+   "Jump_Start",
+   "Punch_Left",
+   "Punch_Right",
+   "Rifle_Jump_Land",
+   "Rifle_Jump_Start",
+   "Rifle_Reload",
+   "Rifle_Shoot",
+   "Roll",
+   "Sword_Slash"
+  ],
+  "clip_guide": {
+   "unarmed_or_knife": [
+    "Idle",
+    "Idle_Neutral",
+    "Walk",
+    "Run",
+    "Run_Back",
+    "Run_Left",
+    "Run_Right",
+    "Sprint",
+    "Crouch_Idle",
+    "Crouch_Walk",
+    "Jump_Start",
+    "Jump_Loop",
+    "Jump_Land",
+    "Sword_Slash (one-handed swing, use for the knife)",
+    "Punch_Left",
+    "Punch_Right",
+    "Interact (reach / pick up / use)",
+    "Wave",
+    "Roll"
+   ],
+   "pistol_one_handed": [
+    "Idle_Gun (gun lowered)",
+    "Idle_Gun_Pointing (aim)",
+    "Idle_Gun_Shoot (aimed shot)",
+    "Gun_Shoot (raise and fire)",
+    "Run_Shoot (run while aiming)"
+   ],
+   "rifle_two_handed": [
+    "Rifle_Idle",
+    "Rifle_Walk",
+    "Rifle_Run",
+    "Rifle_Run_Back",
+    "Rifle_Run_Left",
+    "Rifle_Run_Right",
+    "Rifle_Sprint (low-port carry)",
+    "Rifle_Crouch_Idle",
+    "Rifle_Crouch_Walk",
+    "Rifle_Shoot (0.25 s recoil kick; loop it for automatic fire)",
+    "Rifle_Reload",
+    "Rifle_Jump_Start",
+    "Rifle_Jump_Loop",
+    "Rifle_Jump_Land"
+   ],
+   "hit_and_death": [
+    "HitReact",
+    "HitReact_2",
+    "Death (falls backwards)",
+    "Death_2 (drops back to sitting, then lies down)"
+   ],
+   "speeds": "Run suits walkSpeed 4.3 m/s, Sprint / Rifle_Sprint sprintSpeed 6.9 m/s, Crouch_Walk / Rifle_Crouch_Walk crouchSpeed 2.2 m/s, Walk slow moves (scale timeScale to the actual speed)",
+   "airborne": "Jump_Start (skip its first 0.1 s crouch when the jump has already started), Jump_Loop while !onGround, Jump_Land on touchdown (and the Rifle_ versions)",
+   "file_order": "the GLB stores the clips in this order: Idle, Idle_Neutral, Walk, Run, Run_Back, Run_Left, Run_Right, Sprint, Crouch_Idle, Crouch_Walk, Jump_Start, Jump_Loop, Jump_Land, HitReact, HitReact_2, Death, Death_2, Interact, Wave, Roll, Idle_Gun, Idle_Gun_Pointing, Idle_Gun_Shoot, Gun_Shoot, Run_Shoot, Punch_Left, Punch_Right, Sword_Slash, Rifle_Idle, Rifle_Walk, Rifle_Run, Rifle_Run_Back, Rifle_Run_Left, Rifle_Run_Right, Rifle_Sprint, Rifle_Crouch_Idle, Rifle_Crouch_Walk, Rifle_Shoot, Rifle_Reload, Rifle_Jump_Start, Rifle_Jump_Loop, Rifle_Jump_Land (Idle first, so code that takes the first clip matching /walk|idle/ gets Idle, not Crouch_Idle)"
+  },
+  "translation_channels": {
+   "Crouch_Idle": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0,
+     0
+    ],
+    "range_xyz": [
+     0.0078,
+     0.0077,
+     0.0023
+    ]
+   },
+   "Crouch_Walk": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0,
+     0
+    ],
+    "range_xyz": [
+     0.0377,
+     0.0623,
+     0.0098
+    ]
+   },
+   "Death": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     -0.6848,
+     -0.6669
+    ],
+    "range_xyz": [
+     0,
+     0.711,
+     0.6669
+    ]
+   },
+   "Death_2": {
+    "node": "Body",
+    "net_xyz": [
+     0.0072,
+     -0.7022,
+     -0.469
+    ],
+    "range_xyz": [
+     0.0512,
+     0.7274,
+     0.4795
+    ]
+   },
+   "Gun_Shoot": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     -0.0004,
+     -0.0001
+    ],
+    "range_xyz": [
+     0,
+     0.0279,
+     0.008
+    ]
+   },
+   "HitReact": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     -0.0007,
+     -0.0011
+    ],
+    "range_xyz": [
+     0,
+     0.0347,
+     0.105
+    ]
+   },
+   "HitReact_2": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     -0.0001,
+     0
+    ],
+    "range_xyz": [
+     0,
+     0.0034,
+     0.0014
+    ]
+   },
+   "Idle": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0,
+     0
+    ],
+    "range_xyz": [
+     0,
+     0.0073,
+     0
+    ]
+   },
+   "Idle_Gun": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0,
+     0
+    ],
+    "range_xyz": [
+     0,
+     0.0073,
+     0
+    ]
+   },
+   "Idle_Gun_Pointing": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0,
+     0
+    ],
+    "range_xyz": [
+     0,
+     0.0073,
+     0
+    ]
+   },
+   "Idle_Gun_Shoot": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0,
+     0
+    ],
+    "range_xyz": [
+     0,
+     0.0039,
+     0.0148
+    ]
+   },
+   "Idle_Neutral": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0,
+     0
+    ],
+    "range_xyz": [
+     0,
+     0.0015,
+     0.0006
+    ]
+   },
+   "Interact": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0.0003,
+     0
+    ],
+    "range_xyz": [
+     0,
+     0.0159,
+     0
+    ]
+   },
+   "Jump_Land": {
+    "node": "Body",
+    "net_xyz": [
+     0.0374,
+     -0.0498,
+     0.0076
+    ],
+    "range_xyz": [
+     0.0479,
+     0.5121,
+     0.1218
+    ]
+   },
+   "Jump_Loop": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0,
+     0
+    ],
+    "range_xyz": [
+     0.0315,
+     0.0014,
+     0.005
+    ]
+   },
+   "Jump_Start": {
+    "node": "Body",
+    "net_xyz": [
+     -0.0398,
+     0.3675,
+     0.1063
+    ],
+    "range_xyz": [
+     0.0617,
+     0.3931,
+     0.1675
+    ]
+   },
+   "Punch_Left": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0,
+     0
+    ],
+    "range_xyz": [
+     0,
+     0.0593,
+     0.0638
+    ]
+   },
+   "Punch_Right": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0,
+     0
+    ],
+    "range_xyz": [
+     0,
+     0.0593,
+     0.0638
+    ]
+   },
+   "Rifle_Crouch_Idle": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0,
+     0
+    ],
+    "range_xyz": [
+     0.0078,
+     0.0077,
+     0.0023
+    ]
+   },
+   "Rifle_Crouch_Walk": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0,
+     0
+    ],
+    "range_xyz": [
+     0.0377,
+     0.0623,
+     0.0098
+    ]
+   },
+   "Rifle_Idle": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0,
+     0
+    ],
+    "range_xyz": [
+     0,
+     0.0073,
+     0
+    ]
+   },
+   "Rifle_Jump_Land": {
+    "node": "Body",
+    "net_xyz": [
+     0.0374,
+     -0.0498,
+     0.0076
+    ],
+    "range_xyz": [
+     0.0479,
+     0.5121,
+     0.1218
+    ]
+   },
+   "Rifle_Jump_Loop": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0,
+     0
+    ],
+    "range_xyz": [
+     0.0315,
+     0.0014,
+     0.005
+    ]
+   },
+   "Rifle_Jump_Start": {
+    "node": "Body",
+    "net_xyz": [
+     -0.0398,
+     0.3675,
+     0.1063
+    ],
+    "range_xyz": [
+     0.0617,
+     0.3931,
+     0.1675
+    ]
+   },
+   "Rifle_Reload": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0.0008,
+     0
+    ],
+    "range_xyz": [
+     0,
+     0.0073,
+     0
+    ]
+   },
+   "Rifle_Run": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0,
+     0
+    ],
+    "range_xyz": [
+     0,
+     0.0754,
+     0
+    ]
+   },
+   "Rifle_Run_Back": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0,
+     0
+    ],
+    "range_xyz": [
+     0,
+     0.0754,
+     0
+    ]
+   },
+   "Rifle_Run_Left": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0,
+     0
+    ],
+    "range_xyz": [
+     0,
+     0.0754,
+     0
+    ]
+   },
+   "Rifle_Run_Right": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0,
+     0
+    ],
+    "range_xyz": [
+     0,
+     0.0754,
+     0
+    ]
+   },
+   "Rifle_Shoot": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0.0017,
+     0
+    ],
+    "range_xyz": [
+     0,
+     0.0017,
+     0
+    ]
+   },
+   "Rifle_Sprint": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0.0001,
+     0
+    ],
+    "range_xyz": [
+     0.0516,
+     0.1332,
+     0.0005
+    ]
+   },
+   "Rifle_Walk": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0,
+     0
+    ],
+    "range_xyz": [
+     0.0431,
+     0.0679,
+     0
+    ]
+   },
+   "Roll": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     -0.0003,
+     0.0031
+    ],
+    "range_xyz": [
+     0,
+     0.7278,
+     0.3204
+    ]
+   },
+   "Run": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0,
+     0
+    ],
+    "range_xyz": [
+     0,
+     0.0754,
+     0
+    ]
+   },
+   "Run_Back": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0,
+     0
+    ],
+    "range_xyz": [
+     0,
+     0.0754,
+     0
+    ]
+   },
+   "Run_Left": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0,
+     0
+    ],
+    "range_xyz": [
+     0,
+     0.0754,
+     0
+    ]
+   },
+   "Run_Right": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0,
+     0
+    ],
+    "range_xyz": [
+     0,
+     0.0754,
+     0
+    ]
+   },
+   "Run_Shoot": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0,
+     0
+    ],
+    "range_xyz": [
+     0,
+     0.0754,
+     0
+    ]
+   },
+   "Sprint": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0.0001,
+     0
+    ],
+    "range_xyz": [
+     0.0516,
+     0.1332,
+     0.0005
+    ]
+   },
+   "Sword_Slash": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     -0.0004,
+     0.0013
+    ],
+    "range_xyz": [
+     0.0117,
+     0.019,
+     0.2182
+    ]
+   },
+   "Walk": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0,
+     0
+    ],
+    "range_xyz": [
+     0.0431,
+     0.0679,
+     0
+    ]
+   },
+   "Wave": {
+    "node": "Body",
+    "net_xyz": [
+     0,
+     0,
+     0
+    ],
+    "range_xyz": [
+     0,
+     0.019,
+     0
+    ]
+   }
+  },
+  "nodes": {
+   "root": "Survivor (identity) > Root (bone) + Survivor_Mesh (one skinned mesh, 4 primitives)",
+   "root_motion_bone": "Body (hips; all locomotion is in place)",
+   "spine": "Root > Body > Hips > Abdomen > Torso > Chest > Neck > Head",
+   "head_bone": "Head",
+   "right_hand_bone": "Wrist_R (the hand; fingers Index1_R..Thumb3_R are its children)",
+   "left_hand_bone": "Wrist_L",
+   "weapon_socket": "Weapon_R (child of Wrist_R): +X muzzle, +Y up, origin in the fist where a pistol grip sits; same convention as every weapons/*.glb (origin at the grip, +X muzzle, +Y up), so add the weapon's scene under it with identity position/rotation and its own scale_to_m",
+   "aim_pitch_bones": "Chest (and some Torso): rotate about the character's local X after mixer.update to aim up/down; arms, socket and weapon follow",
+   "feet": "Foot_L / Foot_R are children of Root (IK-style rig, keyed with translation), not of LowerLeg_L / LowerLeg_R",
+   "bone_names": "the source's '.L' / '.R' suffixes were renamed '_L' / '_R' because three.js strips '.' from node names ('Wrist.R' would load as 'WristR')"
+  },
+  "sockets": {
+   "Weapon_R": {
+    "parent": "Wrist_R",
+    "translation": [
+     0.0141,
+     0.1659,
+     0.0017
+    ],
+    "rotation": [
+     0.0587,
+     0.0699,
+     0.7246,
+     0.6831
+    ],
+    "frame": "+X muzzle, +Y up, +Z weapon right; origin = pistol-grip position in the fist"
+   }
+  },
+  "notes": "Player avatar for co-op teammates: the 'SWAT' character of Quaternius' Ultimate Modular Men Pack (CC0): tactical uniform, armour vest, helmet with a dark visor and respirator (no face or hair visible), pads, gloves and boots; realistic-ish low-poly proportions, 7,752 tris, 4 flat-colour materials, no textures or UVs, 60 joints. Changes (Blender 4.1 scripts, then re-exported and optimised): (1) FBX2glTF's x100 armature scale and Y-up rotation baked out: metres, +Y up, facing +Z, soles at y=0 with the origin between the feet; scaled x0.984 so the standing Idle is 1.78 m to the top of the helmet (T-pose 1.825 m, visor/eye line ~1.60 m; the game's eyeHeight is 1.66). (2) The four part meshes (legs, body, head, feet) joined into one skinned mesh; unused UVs dropped; bone names '.L/.R' renamed '_L/_R'; the two unweighted IK pole-target bones removed (62 -> 60 joints). (3) The pack's stylised short arms lengthened in the rest pose (upper arm x1.4: 0.179 -> 0.251 m, forearm x1.12: 0.230 -> 0.257 m); bones were only translated, so every clip stays valid, and the mesh was re-skinned with its own weights: hands now hang at mid-thigh and a rifle can be held two-handed. (4) Materials renamed Swat -> Outfit and Swat_Black -> Gear (Skin, Visor unchanged); base colours kept; metallic 0.4 -> 0 (Visor 0.3), roughness 0.85 / 0.7 / 0.65 / 0.25. (5) 21 of the pack's 24 clips kept (Idle_Sword, Kick_Left, Kick_Right dropped; HitRecieve / HitRecieve_2 renamed HitReact / HitReact_2) and made self-contained (the pack relied on the file's default node pose for unkeyed channels, e.g. the staggered feet of Idle). Run, Run_Left and Run_Right were exported by the pack without their closing frame (every limb jumped at the wrap); they now end on it (0.833 s like Run_Back, seamless). Death and Roll were lifted where they sank below the floor (6 / 16 cm). (6) 7 clips retargeted from Quaternius' Universal Animation Library [Standard] (CC0): Crouch_Idle, Crouch_Walk, Jump_Start, Jump_Loop, Jump_Land, Sprint, Death_2 (world-space rotation retarget, hips scaled by leg length, leg IK so the rigid boots keep the source's ground contact; Death_2 kept on the floor). (7) 14 two-handed rifle clips authored for this project on those bases with an IK upper-body override (bladed stance, rifle riding the chest, right hand on the pistol grip at Weapon_R, left hand at a vertical-foregrip position 22 cm ahead of and 5 cm below the grip): Rifle_Idle, Rifle_Walk, Rifle_Run, Rifle_Run_Back/Left/Right, Rifle_Sprint (low-port carry, muzzle down-left), Rifle_Crouch_Idle/Walk (rifle level at eye height), Rifle_Shoot (0.25 s kick), Rifle_Reload (1.8 s: rifle canted, support hand to the magazine, the vest pouch and back), Rifle_Jump_Start/Loop/Land. (8) Weapon_R socket added under Wrist_R (derived from the pack's own pistol grip in Idle_Gun_Pointing), so it also fits the one-handed pistol clips (Idle_Gun, Idle_Gun_Pointing, Idle_Gun_Shoot, Gun_Shoot, Run_Shoot); checked in three.js with m4.glb (x0.162) and pistol.glb (x0.105) attached with identity transforms. (9) GLB optimised with a numpy script: channels equal to the node default dropped (three.js fills missing tracks from it), keys reduced (<= 0.001 rad / 0.5 mm), skin weights stored as normalised bytes. Game notes: all locomotion plays in place ('Body' only bobs; nothing to strip, and src/assets.js stripRootMotion would not match 'Body' anyway). Tint per player by cloning the 'Outfit' material (SkeletonUtils.clone shares materials) and setting its colour; blue/green/orange/purple read well and the respirator hoses follow the team colour. Jump_Loop / Rifle_Jump_Loop keep the hips at standing height with the feet up to 0.14 m below the root, so play them only while airborne; Roll dips up to 7 cm below the floor for an instant mid-tumble. Four players are 31k tris and 16 draw calls (4 materials each) plus weapons.",
+  "validation": {
+   "glb_magic": true,
+   "json_chunk_parsed": true,
+   "glb_chunks": [
+    [
+     "JSON",
+     658056
+    ],
+    [
+     "BIN",
+     893516
+    ]
+   ],
+   "khronos_validator": {
+    "errors": 0,
+    "warnings": 1,
+    "codes": [
+     "I:NODE_EMPTY",
+     "W:NODE_SKINNED_MESH_NON_ROOT"
+    ]
+   },
+   "threejs_r186_load": "ok (GLTFLoader in headless Chromium, served from http://127.0.0.1:8765/assets/models/players/survivor.glb: 42 clips, 60 bones, 7752 tris, 4 SkinnedMesh / 4 MeshStandardMaterial, Wrist_R / Wrist_L / Weapon_R found, Idle bbox height 1.78 m, Run for 1 s turns 17 bones by up to 73 deg, every clip sampled for floor contact, no console errors)"
+  },
+  "preview": "assets/previews/models/extra_survivor.jpg",
+  "preview_kind": "three.js r186 render (headless Chromium) of the delivered GLB: front / side with the glTF axes at the origin (+X red, +Y green, +Z blue), a Run frame, Rifle_Idle holding m4.glb in Weapon_R, a back 3/4 view, four Outfit tints, and one frame of each of the 42 clips (m4.glb or pistol.glb attached where the clip uses one)."
  }
 ]

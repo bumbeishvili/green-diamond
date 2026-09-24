@@ -63,11 +63,23 @@ export class Stairs {
   }
 
   teleport() {
-    const { s, down } = this.pending, g = this.g, p = g.player;
+    const { s, down } = this.pending, g = this.g;
     this.pending = null;
-    if (down) {
-      // come out of the lobby door nearest to where you went in (or any)
-      const d = s.doors[Math.floor(Math.random() * s.doors.length)];
+    // come out of a random lobby door (going down), or the roof door
+    const code = this.code(s, down, Math.floor(Math.random() * s.doors.length));
+    // co-op client: the move is part of the next input tick, so the host makes the same one
+    if (g.mode === 'client') g.net.queueStairs(code);
+    else this.applyCode(g.player, code);
+  }
+
+  // one number for a stairs trip: which stairwell, which way, which door
+  code(s, down, door) { return (this.list.indexOf(s) << 5) | (down ? 16 : 0) | (door & 15); }
+
+  applyCode(p, code) {
+    const g = this.g, s = this.list[code >> 5];
+    if (!s) return;
+    if (code & 16) {
+      const d = s.doors[(code & 15) % s.doors.length];
       p.pos.set(d.x, g.hm.atWorld(d.x, d.z), d.z);
       p.yaw = d.yaw;
     } else {

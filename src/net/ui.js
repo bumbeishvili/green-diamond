@@ -1,4 +1,6 @@
-import { Session, MAX_PLAYERS, TICK_HZ } from './session.js';
+import { Session, MAX_PLAYERS } from './session.js';
+import { URLFLAGS } from '../config.js';
+import { TICK_HZ } from './protocol.js';
 
 // "Play with friends" in the menu, and the network overlay: role, tick rate, and every player's
 // ping and packet loss, with the debug sliders for simulated lag, jitter and loss. F8 shows/hides it.
@@ -6,12 +8,20 @@ import { Session, MAX_PLAYERS, TICK_HZ } from './session.js';
 const $ = (id) => document.getElementById(id);
 
 export class NetUI {
-  constructor() {
+  constructor(game) {
+    this.game = game;
     this.session = new Session({ onchange: () => this.render() });
     this.hidden = false;
     this.pass = $('mp-pass');
+    this.nameEl = $('mp-name');
     this.status = $('mp-status');
     this.overlay = $('net');
+    try { this.nameEl.value = URLFLAGS.name || localStorage.getItem('gd-name') || ''; } catch { /* no storage */ }
+    game.playerName = this.nameEl.value.trim();
+    this.nameEl.addEventListener('input', () => {
+      game.playerName = this.nameEl.value.trim();
+      try { localStorage.setItem('gd-name', game.playerName); } catch { /* no storage */ }
+    });
     $('mp-form').addEventListener('submit', (e) => {
       e.preventDefault();
       const pw = this.pass.value;
@@ -19,6 +29,8 @@ export class NetUI {
       this.session.join(pw);
     });
     $('mp-leave').addEventListener('click', () => this.session.leave());
+    $('mp-start').addEventListener('click', () => { if (game.ready && game.net && game.net.role === 'host') game.net.start(); });
+    if (URLFLAGS.mp) { this.pass.value = URLFLAGS.mp; setTimeout(() => this.session.join(URLFLAGS.mp), 50); }
     addEventListener('keydown', (e) => { if (e.code === 'F8') { this.hidden = !this.hidden; this.render(); } });
 
     const sim = this.session.sim;
@@ -43,18 +55,31 @@ export class NetUI {
   }
 
   render() {
-    const s = this.session, active = s.state !== 'idle' && s.state !== 'ended';
+    const s = this.session, active = s.state !== 'idle' && s.state !== 'ended', g = this.game;
+    g.attachSession?.(s);
     $('mp-join').classList.toggle('hidden', active);
     $('mp-leave').classList.toggle('hidden', !active);
     this.pass.disabled = active;
-    this.status.textContent = s.message;
+    this.nameEl.disabled = active;
+    // in a room, the match replaces solo play: the host starts it, the others wait for that
+    const inRoom = s.state === 'connected';
+    const host = inRoom && s.role === 'host';
+    $('play').classList.toggle('hidden', inRoom);
+    $('mp-start').classList.toggle('hidden', !host || !!(g.net && g.net.inMatch));
+    const ready = g.net && g.net.ready ? g.net.ready.size + 1 : s.roster.length, loading = Math.max(0, s.roster.length - ready);
+    $('mp-start').textContent = `Start match (${ready} player${ready === 1 ? '' : 's'}${loading ? `, ${loading} still loading` : ''})`;
+    this.status.textContent = inRoom && s.role === 'client' && !(g.net && g.net.inMatch) ? 'Connected. Waiting for the host to start the match…' : s.message;
     this.status.className = s.state === 'ended' ? 'err' : s.state === 'connected' ? 'ok' : '';
     this.overlay.classList.toggle('hidden', this.hidden || !active);
     if (!active || this.hidden) return;
 
-    const loc = s.local, f = this.f, sim = s.sim;
+    const loc = s.local, f = this.f, sim = s.sim, net = g.net;
     f.role.textContent = s.role === 'host' ? 'HOST' : 'CLIENT';
-    f.tick.textContent = s.state === 'connected' ? `tick ${loc ? Math.round(loc.hz) : TICK_HZ} Hz` : s.state;
+    // in a match: the host's 60 Hz tick, and the snapshot rate as it arrives here
+    const snaps = net && net.inMatch && net.role === 'client' ? net.snapRate : 0;
+    f.tick.textContent = s.state !== 'connected' ? s.state
+      : net && net.inMatch ? (net.role === 'host' ? `tick ${TICK_HZ} Hz · snap 30 Hz` : `snap ${Math.round(snaps)} Hz`)
+        : `tick ${loc ? Math.round(loc.hz) : 30} Hz`;
     f.ping.textContent = `ping ${loc && s.role === 'client' ? `${loc.ping} ms` : '—'}`;
     f.loss.textContent = `loss ${loc && s.role === 'client' ? `${(loc.loss * 100).toFixed(1)}%` : '—'}`;
     f.sim.textContent = sim.on ? `on: +${sim.lag} ms ±${sim.jitter}, ${Math.round(sim.loss * 100)}% loss` : '';

@@ -80,7 +80,7 @@ const VIEW = {
   shotgun: { pos: [0.16, -0.16, -0.42], ads: [0.0, -0.085, -0.3], rot: [0, 0, 0] },
   sniper: { pos: [0.15, -0.16, -0.36], ads: [0.0, -0.075, -0.18], rot: [0, 0, 0] },
   autosniper: { pos: [0.15, -0.165, -0.34], ads: [0.0, -0.08, -0.18], rot: [0, 0, 0] },
-  mg: { pos: [0.16, -0.19, -0.36], ads: [0.0, -0.11, -0.24], rot: [0, 0, 0] },
+  mg: { pos: [0.22, -0.215, -0.44], ads: [0.0, -0.11, -0.26], rot: [0, 0, 0] },
   bow: { pos: [-0.03, -0.05, 0.03], ads: [0.0, 0.0, 0.0], rot: [0.02, 0.05, 0.26] },
   knife: { pos: [0.17, -0.15, -0.3], ads: [0.17, -0.15, -0.3], rot: [0.3, 0.35, 0.15] },
 };
@@ -106,6 +106,35 @@ function arms(g, right, left) {
     add(new RoundedBoxGeometry(0.075, 0.058, 0.11, 3, 0.02), glove, left, [0, 0, 0]);
     add(new THREE.CylinderGeometry(0.041, 0.045, 0.06, 12), cuff, [left[0] - 0.05, left[1] - 0.04, left[2] + 0.07], [1.05, -0.55, 0]);
     add(new THREE.CylinderGeometry(0.045, 0.055, 0.5, 12), sleeve, [left[0] - 0.13, left[1] - 0.12, left[2] + 0.23], [1.05, -0.55, 0]);
+  }
+}
+
+// Hands on a long gun: a glove on the pistol grip and one wrapped under the forend, forearms
+// running down and back out of the view (so they read as arms, not as blobs pointing at you).
+function longArms(g, right, left) {
+  armMats ||= { glove: M(0x2b2c29, 0.85, 0.05), cuff: M(0x1d1e1c, 0.9), sleeve: M(0x3f4a3a, 0.9) };
+  const { glove, cuff, sleeve } = armMats;
+  const V = (p, d) => new THREE.Vector3(p[0] + d[0], p[1] + d[1], p[2] + d[2]);
+  const limb = (mat, a, b, rWrist, rElbow) => {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(rElbow, rWrist, a.distanceTo(b), 12), mat);
+    m.position.copy(a).add(b).multiplyScalar(0.5);
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
+    g.add(m);
+  };
+  const box = (geo, mat, p, r) => { const m = new THREE.Mesh(geo, mat); m.position.set(...p); m.rotation.set(...r); g.add(m); };
+  if (right) {
+    box(new RoundedBoxGeometry(0.066, 0.082, 0.095, 3, 0.022), glove, right, [0.15, 0, 0]);
+    box(new RoundedBoxGeometry(0.02, 0.026, 0.06, 2, 0.009), glove, [right[0] - 0.036, right[1] + 0.028, right[2] - 0.03], [0.2, 0, 0.3]); // thumb
+    limb(cuff, V(right, [0.005, -0.03, 0.045]), V(right, [0.02, -0.075, 0.1]), 0.036, 0.042);
+    limb(sleeve, V(right, [0.015, -0.06, 0.085]), V(right, [0.11, -0.34, 0.37]), 0.043, 0.056);
+  }
+  if (left) {
+    // palm under the forend, fingers up its far side, thumb along the near side
+    box(new RoundedBoxGeometry(0.07, 0.04, 0.115, 3, 0.016), glove, [left[0], left[1], left[2]], [0, 0, 0]);
+    box(new RoundedBoxGeometry(0.018, 0.05, 0.1, 2, 0.008), glove, [left[0] + 0.038, left[1] + 0.03, left[2]], [0, 0, 0.12]);
+    box(new RoundedBoxGeometry(0.018, 0.035, 0.07, 2, 0.008), glove, [left[0] - 0.037, left[1] + 0.022, left[2] + 0.012], [0, 0, -0.12]);
+    limb(cuff, V(left, [-0.01, -0.025, 0.055]), V(left, [-0.03, -0.07, 0.11]), 0.036, 0.042);
+    limb(sleeve, V(left, [-0.02, -0.055, 0.09]), V(left, [-0.17, -0.34, 0.38]), 0.043, 0.056);
   }
 }
 
@@ -437,6 +466,7 @@ export class Weapons {
     this.ignoreItems = null; // collider items bullets pass through (the car you're sitting in)
     this.arrows = [];
     this.nades = [];
+    this.projSeq = 0;          // ids for arrows and grenades (co-op: the same id on every screen)
     this.arrowGeo = arrowGeometry();
     this.arrowMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.5, metalness: 0.25 });
     this.nadeTemplate = grenadeMesh();
@@ -473,7 +503,14 @@ export class Weapons {
       if (acts.reload) { acts.reload.setLoop(THREE.LoopOnce, 1); acts.reload.clampWhenFinished = true; }
       if (acts.idle) acts.idle.play();
       let skinned = false;
-      s.traverse((o) => { if (o.isMesh) { o.frustumCulled = false; o.castShadow = false; } if (o.isSkinnedMesh) skinned = true; });
+      s.traverse((o) => {
+        if (o.isMesh) {
+          o.frustumCulled = false; o.castShadow = false;
+          // (some exports mark the whole gun as alpha-blended: it draws see-through; cut out instead)
+          for (const m of [].concat(o.material)) if (m.transparent && !/glass|lens/i.test(m.name || '')) { m.transparent = false; m.alphaTest = 0.5; m.depthWrite = true; }
+        }
+        if (o.isSkinnedMesh) skinned = true;
+      });
       root.visible = false;
       this.holder.add(root);
       // rig: first-person arms authored for a camera at the origin looking down -Z (use as is)
@@ -603,6 +640,42 @@ export class Weapons {
     m.updateMatrixWorld(true);
     box = new THREE.Box3().setFromObject(m, true);
     const pistol = length < 0.4;
+    // Long guns don't always have their origin at the grip (the Mossberg's is 16 cm above it): find
+    // the pistol grip, from the trigger if the file names one, else from the shape (the lowest part
+    // of the back half), and bring it to the hand.
+    let forendY = null;
+    if (!pistol) {
+      v.root.updateMatrixWorld(true);
+      const pts = [];
+      m.traverse((o) => {
+        if (!o.isMesh) return;
+        const pos = o.geometry.attributes.position, p = new THREE.Vector3();
+        const step = Math.max(1, Math.floor(pos.count / 4000));
+        for (let i = 0; i < pos.count; i += step) { p.fromBufferAttribute(pos, i); if (o.isSkinnedMesh) o.applyBoneTransform(i, p); pts.push(v.root.worldToLocal(p.applyMatrix4(o.matrixWorld))); }
+      });
+      const trig = m.getObjectByName('Trigger');
+      let grip;
+      if (trig) {
+        const t = v.root.worldToLocal(trig.getWorldPosition(new THREE.Vector3()));
+        grip = new THREE.Vector3(t.x, t.y - 0.035, t.z + 0.045);
+      } else {
+        // the grip hangs lowest in the back 45% of the gun, on its centre line (a belt box or a
+        // magazine hanging off the side doesn't count)
+        const xs = pts.map((q) => q.x).sort((p0, p1) => p0 - p1), cx = xs[Math.floor(xs.length / 2)] || 0;
+        const z0 = box.max.z - length * 0.45;
+        let low = null;
+        for (const q of pts) if (Math.abs(q.x - cx) < 0.015 && q.z > z0 && q.z < box.max.z - length * 0.08 && (!low || q.y < low.y)) low = q;
+        grip = low ? new THREE.Vector3(cx, low.y + 0.075, low.z - 0.01) : new THREE.Vector3(0, 0, 0);
+      }
+      m.position.sub(grip);
+      m.updateMatrixWorld(true);
+      box = new THREE.Box3().setFromObject(m, true);
+      // where the left hand holds the forend: the underside of the gun there
+      const fz = -length * 0.36;
+      let under = Infinity;
+      for (const q of pts) { const z = q.z - grip.z; if (Math.abs(z - fz) < 0.04 && Math.abs(q.x - grip.x) < 0.05) under = Math.min(under, q.y - grip.y); }
+      if (isFinite(under)) forendY = under;
+    }
     v.muzzle = new THREE.Vector3(0, (box.max.y + box.min.y) / 2 + (pistol ? 0.03 : 0.02), box.min.z);
     // aim over the top of the gun just in front of the grip
     let top = -Infinity;
@@ -621,7 +694,7 @@ export class Weapons {
     const slide = m.getObjectByName('Slide');
     if (slide) { v.slide = slide; v.slideX = slide.position.x; }
     if (pistol) arms(v.root, [0, -0.06, 0.02], [0.012, -0.085, 0.025]);
-    else arms(v.root, [0, -0.07, 0.04], [0, -0.045, -length * 0.36]);
+    else longArms(v.root, [0, -0.07, 0.04], [0, forendY != null ? forendY - 0.012 : -0.045, -length * 0.36]);
   }
 
   equip(kind, instant = false) {
@@ -822,14 +895,13 @@ export class Weapons {
     const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * spread;
     const dir = fwd.clone().addScaledVector(right, Math.cos(a) * r).addScaledVector(up, Math.sin(a) * r).normalize();
     const speed = THREE.MathUtils.lerp(def.speedMin, def.speedMax, k);
-    const mesh = new THREE.Mesh(this.arrowGeo, this.arrowMat);
     const pos = origin.clone().addScaledVector(up, -0.03);
-    mesh.position.copy(pos);
-    mesh.quaternion.setFromUnitVectors(FWD, dir);
-    g.scene.add(mesh);
-    this.arrows.push({ pos, vel: dir.clone().multiplyScalar(speed), mesh, t: 0, stuck: false, dmg: def.dmg * (0.2 + 0.8 * k * k), pierce: k > 0.85 ? 1 : 0, hit: [] });
-    // keep the world tidy: the oldest stuck arrows go first
-    if (this.arrows.length > 40) { const i = this.arrows.findIndex((q) => q.stuck); if (i >= 0) this.removeArrow(i); }
+    const vel = dir.clone().multiplyScalar(speed), dmg = def.dmg * (0.2 + 0.8 * k * k), pierce = k > 0.85 ? 1 : 0;
+    const slot = g.localSlot ?? 0, id = this.nextProjId(slot);
+    // co-op: on a client the host flies the real arrow; this one is for show (and to pick up again)
+    this.spawnArrow(pos, vel, { dmg, pierce, by: slot, id, mine: true, visual: g.mode === 'client' });
+    if (g.mode === 'client') g.net.arrow(id, pos, vel, dmg, pierce);
+    else if (g.mode === 'host') g.net.arrowFx(id, pos, vel, slot);
     g.audio.play('bow', { vol: 0.9 });
     p.kick(0.25, (Math.random() - 0.5) * 0.2);
     this.kick = 0.3;
@@ -838,10 +910,28 @@ export class Weapons {
     if (this.onShoot) this.onShoot();
   }
 
+  nextProjId(slot) { this.projSeq = (this.projSeq + 1) & 0xffffff; return slot * 0x1000000 + this.projSeq; }
+
+  // an arrow in flight: real (it hits zombies, credited to `by`) or visual (walls only)
+  spawnArrow(pos, vel, { dmg = 0, pierce = 0, by = 0, id = 0, mine = false, visual = false } = {}) {
+    const mesh = new THREE.Mesh(this.arrowGeo, this.arrowMat);
+    mesh.position.copy(pos);
+    mesh.quaternion.setFromUnitVectors(FWD, this.tmpDir.copy(vel).normalize());
+    this.g.scene.add(mesh);
+    this.arrows.push({ pos: pos.clone(), vel: vel.clone(), mesh, t: 0, stuck: false, dmg, pierce, hit: [], by, id, mine, visual });
+    // keep the world tidy: the oldest stuck arrows go first
+    if (this.arrows.length > 40) { const i = this.arrows.findIndex((q) => q.stuck); if (i >= 0) this.removeArrow(i); }
+  }
+
   removeArrow(i) {
     const a = this.arrows[i];
     this.g.scene.remove(a.mesh);
     this.arrows.splice(i, 1);
+  }
+
+  removeArrowById(id) {
+    const i = this.arrows.findIndex((a) => a.id === id && !a.stuck);
+    if (i >= 0) this.removeArrow(i);
   }
 
   updateArrows(dt) {
@@ -851,7 +941,7 @@ export class Weapons {
       a.t += dt;
       if (a.stuck) {
         // walk over a stuck arrow to take it back
-        if (this.owned.bow && !p.vehicle && Math.abs(a.pos.x - p.pos.x) < 1.1 && Math.abs(a.pos.z - p.pos.z) < 1.1 && a.pos.y - p.pos.y < 2.2 && a.pos.y - p.pos.y > -0.8
+        if (a.mine && this.owned.bow && !p.vehicle && Math.abs(a.pos.x - p.pos.x) < 1.1 && Math.abs(a.pos.z - p.pos.z) < 1.1 && a.pos.y - p.pos.y < 2.2 && a.pos.y - p.pos.y > -0.8
           && this.owned.bow.reserve < DEFS.bow.reserve + 6) {
           this.owned.bow.reserve++;
           g.audio.play('pickup', { vol: 0.25, rate: 1.6 });
@@ -866,20 +956,19 @@ export class Weapons {
       const dir = this.tmpDir.copy(a.vel).normalize();
       let remaining = a.vel.length() * dt, removed = false;
       for (let guard = 0; remaining > 0 && guard < 4; guard++) {
-        const res = this.trace(a.pos, dir, remaining, a.hit, null);
+        const res = this.trace(a.pos, dir, remaining, a.hit, null, null, a.visual);
         if (res.zombie) {
           const zb = res.zombie;
           const dmg = this.instaKill > 0 ? 1e6 : a.dmg * (res.head ? DEFS.bow.head : 1);
-          const killed = g.zombies.damage(zb, dmg, res.point, dir, res.head, 'bow');
-          this.stats.hits++; if (res.head) this.stats.heads++;
-          g.hud?.hitmarker(killed, res.head);
-          g.audio.play('hit', { vol: 0.45, jitter: 0 });
-          if (this.onHit) this.onHit(zb, killed, res.head);
+          const killed = g.zombies.damage(zb, dmg, res.point, dir, res.head, 'bow', a.by);
+          this.credit(a.by, killed, res.head);
+          if (this.onHit) this.onHit(zb, killed, res.head, a.by);
           if (killed && a.pierce > 0) {
             a.pierce--; a.hit.push(zb); a.vel.multiplyScalar(0.7);
             remaining -= res.t; a.pos.copy(res.point).addScaledVector(dir, 0.05);
             continue;
           }
+          if (g.mode === 'host') g.net.arrowGone(a.id);
           this.removeArrow(i); removed = true;
           break;
         }
@@ -924,11 +1013,23 @@ export class Weapons {
     vel.y += 3.4;
     const pv = p.vehicle ? p.vehicle.vel : p.vel;
     vel.x += pv.x; vel.z += pv.z;
+    g.audio.play('throw', { vol: 0.5 });
+    // co-op: the host throws the real one (everyone, you included, sees the host's)
+    if (g.mode === 'client') { g.net.grenade(pos, vel); return; }
+    this.spawnGrenade(pos, vel, { by: g.localSlot ?? 0, id: this.nextProjId(g.localSlot ?? 0) });
+  }
+
+  spawnGrenade(pos, vel, { by = 0, id = 0, visual = false, fuse = 3.2 } = {}) {
     const mesh = this.nadeTemplate.clone();
     mesh.position.copy(pos);
-    g.scene.add(mesh);
-    this.nades.push({ pos, vel, fuse: 3.2, mesh, spin: new THREE.Vector2(6 + Math.random() * 8, 4 + Math.random() * 6), rest: false });
-    g.audio.play('throw', { vol: 0.5 });
+    this.g.scene.add(mesh);
+    this.nades.push({ pos: pos.clone(), vel: vel.clone(), fuse, mesh, spin: new THREE.Vector2(6 + Math.random() * 8, 4 + Math.random() * 6), rest: false, by, id, visual });
+    if (this.g.mode === 'host' && !visual) this.g.net.nadeFx(id, pos, vel);
+  }
+
+  removeGrenadeById(id) {
+    const i = this.nades.findIndex((n) => n.id === id);
+    if (i >= 0) { this.g.scene.remove(this.nades[i].mesh); this.nades.splice(i, 1); }
   }
 
   floorAt(x, z, y) {
@@ -945,7 +1046,8 @@ export class Weapons {
       if (n.fuse <= 0) {
         g.scene.remove(n.mesh);
         this.nades.splice(i, 1);
-        g.zombies.explode(n.pos.x, n.pos.y + 0.3, n.pos.z, 7, 700, 85, 'grenade');
+        // a visual copy just disappears: the host's blast arrives as an event
+        if (!n.visual) g.zombies.explode(n.pos.x, n.pos.y + 0.3, n.pos.z, 7, 700, 85, 'grenade', n.by);
         continue;
       }
       const steps = Math.min(12, Math.ceil((n.vel.length() * dt) / 0.07) || 1), h = dt / steps;
@@ -1021,40 +1123,23 @@ export class Weapons {
     const base = THREE.MathUtils.lerp(def.spread, def.adsSpread, p.ads);
     const spread = (base + this.bloomNow * (1 - p.ads * 0.6)) * moving * (p.onGround || p.vehicle ? 1 : 2.2) * (p.vehicle && Math.abs(p.vehicle.speed || 0) > 3 ? 1.6 : 1);
     this.bloomNow = Math.min(def.bloomMax, this.bloomNow + def.bloom);
-    let anyHit = false, anyKill = false, anyHead = false;
     const muzzleWorld = origin.clone().addScaledVector(fwd, 0.6).addScaledVector(right, 0.12).addScaledVector(up, -0.1);
+    const dirs = [];
     for (let k = 0; k < def.pellets; k++) {
       const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * spread;
-      const dir = fwd.clone().addScaledVector(right, Math.cos(a) * r).addScaledVector(up, Math.sin(a) * r).normalize();
-      // a bullet can pass through zombies (pen) and car bodies (penCars), losing damage each time
-      const exclude = [], skip = new Set(this.ignoreItems || []);
-      let o = origin.clone(), range = def.range, mult = 1, travelled = 0;
-      for (let pass = 0; pass < 6; pass++) {
-        const res = this.trace(o, dir, range, exclude, skip);
-        if (res.zombie) {
-          const zb = res.zombie;
-          const dist = travelled + res.t;
-          const fall = THREE.MathUtils.clamp(1 - (dist - def.falloff) / (def.range - def.falloff), 0.35, 1);
-          let dmg = def.dmg * fall * mult * (res.head ? def.head : 1);
-          if (this.instaKill > 0) dmg = 1e6;
-          const killed = g.zombies.damage(zb, dmg, res.point, dir, res.head, this.current);
-          anyHit = true; anyKill = anyKill || killed; anyHead = anyHead || res.head;
-          this.stats.hits++; if (res.head) this.stats.heads++;
-          if (this.onHit) this.onHit(zb, killed, res.head);
-          if (!def.pen || exclude.length >= def.pen) break;
-          exclude.push(zb); mult *= 0.7;
-        } else if (res.point) {
-          g.effects.impact(res.point, res.normal, res.surface);
-          if (k === 0 || Math.random() < 0.3) g.audio.play(res.surface === 'metal' ? 'metal' : 'concrete', { pos: res.point, vol: 0.5 });
-          if (def.penCars && res.item && res.item.kind === 'car' && mult > 0.4) { skip.add(res.item); mult *= 0.6; }
-          else break;
-        } else break;
-        travelled += res.t; range -= res.t;
-        o = res.point.clone().addScaledVector(dir, 0.05);
-      }
-      if (def.tracer && k === 0 && this.shots % (def.tracerEvery || 2) === 0) g.effects.tracer(muzzleWorld, origin.clone().addScaledVector(dir, Math.min(def.range, 120)));
+      dirs.push(fwd.clone().addScaledVector(right, Math.cos(a) * r).addScaledVector(up, Math.sin(a) * r).normalize());
     }
-    if (anyHit) { g.hud?.hitmarker(anyKill, anyHead); g.audio.play('hit', { vol: 0.45, jitter: 0 }); }
+    if (g.mode === 'client') {
+      // co-op: the host decides what the bullets hit (it'll send the hit marker); the walls you
+      // hit you see straight away
+      for (const [k, dir] of dirs.entries()) this.worldImpact(origin, dir, def, k === 0);
+      g.net.shoot(this.current, origin, dirs);
+    } else {
+      const r = this.resolveShot(this.current, origin, dirs, g.localSlot ?? 0, null, this.ignoreItems);
+      if (r.hit) { g.hud?.hitmarker(r.kill, r.head); g.audio.play('hit', { vol: 0.45, jitter: 0 }); }
+      if (g.mode === 'host') g.net.shotFx(g.localSlot ?? 0, this.current, origin, dirs);
+    }
+    if (def.tracer && this.shots % (def.tracerEvery || 2) === 0) g.effects.tracer(muzzleWorld, origin.clone().addScaledVector(dirs[0], Math.min(def.range, 120)));
     // brass flies out to the right
     if (def.brass) {
       g.effects.emit(origin.clone().addScaledVector(fwd, 0.35).addScaledVector(right, 0.14).addScaledVector(up, -0.08), 1,
@@ -1081,10 +1166,66 @@ export class Weapons {
     if (this.onShoot) this.onShoot();
   }
 
-  // Hitscan: zombies vs static world vs ground.
-  trace(o, d, range, exclude = null, skip = null) {
+  // Where a shot's pellets go, and the damage: a bullet can pass through zombies (pen) and car
+  // bodies (penCars), losing damage each time. Runs wherever the zombies are real (solo, the
+  // host), for the host's own shots and every client's; rewind puts the zombies back where the
+  // shooter saw them.
+  resolveShot(key, origin, dirs, slot = 0, rewind = null, ignore = null) {
+    const def = DEFS[key], g = this.g;
+    const out = { hit: false, kill: false, head: false };
+    if (!def || def.melee || def.bow) return out;
+    for (const [k, dir] of dirs.entries()) {
+      const exclude = [], skip = new Set(ignore || []);
+      let o = origin.clone(), range = def.range, mult = 1, travelled = 0;
+      for (let pass = 0; pass < 6; pass++) {
+        const res = this.trace(o, dir, range, exclude, skip, rewind);
+        if (res.zombie) {
+          const zb = res.zombie;
+          const dist = travelled + res.t;
+          const fall = THREE.MathUtils.clamp(1 - (dist - def.falloff) / (def.range - def.falloff), 0.35, 1);
+          let dmg = def.dmg * fall * mult * (res.head ? def.head : 1);
+          if (this.instaKill > 0) dmg = 1e6;
+          const killed = g.zombies.damage(zb, dmg, res.point, dir, res.head, key, slot);
+          out.hit = true; out.kill = out.kill || killed; out.head = out.head || res.head;
+          if (slot === (g.localSlot ?? 0)) { this.stats.hits++; if (res.head) this.stats.heads++; }
+          if (this.onHit) this.onHit(zb, killed, res.head, slot);
+          if (!def.pen || exclude.length >= def.pen) break;
+          exclude.push(zb); mult *= 0.7;
+        } else if (res.point) {
+          g.effects.impact(res.point, res.normal, res.surface);
+          if (k === 0 || Math.random() < 0.3) g.audio.play(res.surface === 'metal' ? 'metal' : 'concrete', { pos: res.point, vol: 0.5 });
+          if (def.penCars && res.item && res.item.kind === 'car' && mult > 0.4) { skip.add(res.item); mult *= 0.6; }
+          else break;
+        } else break;
+        travelled += res.t; range -= res.t;
+        o = res.point.clone().addScaledVector(dir, 0.05);
+      }
+    }
+    return out;
+  }
+
+  // the dust (and the sound) where a bullet meets the world, zombies aside
+  worldImpact(origin, dir, def, loud = true) {
+    const res = this.trace(origin, dir, def.range, null, new Set(this.ignoreItems || []), null, true);
+    if (!res.point) return;
+    this.g.effects.impact(res.point, res.normal, res.surface);
+    if (loud || Math.random() < 0.3) this.g.audio.play(res.surface === 'metal' ? 'metal' : 'concrete', { pos: res.point, vol: 0.5 });
+  }
+
+  // hit marker + stats for whoever landed the hit (on the host: tell a client)
+  credit(slot, killed, head) {
     const g = this.g;
-    const zh = g.zombies.raycast(o, d, range, exclude);
+    if (slot === (g.localSlot ?? 0)) {
+      this.stats.hits++; if (head) this.stats.heads++;
+      g.hud?.hitmarker(killed, head);
+      g.audio.play('hit', { vol: 0.45, jitter: 0 });
+    } else if (g.mode === 'host') g.net.hitFeedback(slot, killed, head);
+  }
+
+  // Hitscan: zombies vs static world vs ground.
+  trace(o, d, range, exclude = null, skip = null, rewind = null, noZombies = false) {
+    const g = this.g;
+    const zh = noZombies ? null : g.zombies.raycast(o, d, range, exclude, rewind);
     const wh = g.colliders.raycast(o.x, o.y, o.z, d.x, d.y, d.z, range, skip && skip.size ? (it) => !skip.has(it) : null);
     let gt = Infinity, ceiling = false;
     // the ground (or the car-park floor, if the shot starts down there)
@@ -1160,8 +1301,16 @@ export class Weapons {
   }
 
   knifeStrike(heavy) {
-    const g = this.g, p = g.player;
-    const fwd = p.forward(new THREE.Vector3()); fwd.y = 0; fwd.normalize();
+    const g = this.g;
+    if (g.mode === 'client') { g.net.melee(heavy); return; }
+    const r = this.meleeFrom(g.player, heavy, g.localSlot ?? 0);
+    if (r) { g.hud?.hitmarker(r.killed, false); g.audio.play('hit', { vol: 0.45, jitter: 0 }); }
+  }
+
+  // the knife of any player (pos + yaw): the nearest zombie in front, in reach
+  meleeFrom(p, heavy, slot = 0) {
+    const g = this.g;
+    const fwd = new THREE.Vector3(-Math.sin(p.yaw), 0, -Math.cos(p.yaw));
     const eye = p.pos.y + 1.5;
     let best = null, bestD = heavy ? 2.1 : 1.9;
     for (const zb of g.zombies.list) {
@@ -1171,14 +1320,13 @@ export class Weapons {
       if (Math.abs(dy) > 1.6) continue;
       if (d < bestD && (dx * fwd.x + dz * fwd.z) / (d || 1) > 0.45) { best = zb; bestD = d; }
     }
-    if (!best) return;
+    if (!best) return null;
     const point = best.pos.clone();
     point.y += best.species === 'crow' ? 0 : best.small ? 0.4 : 1.3;
     const dmg = this.instaKill > 0 ? 1e6 : heavy ? DEFS.knife.heavy : DEFS.knife.dmg;
-    const killed = g.zombies.damage(best, dmg, point, fwd, false, 'knife');
-    g.hud?.hitmarker(killed, false);
-    g.audio.play('hit', { vol: 0.45, jitter: 0 });
-    if (this.onHit) this.onHit(best, killed, false, 'knife');
+    const killed = g.zombies.damage(best, dmg, point, fwd, false, 'knife', slot);
+    if (this.onHit) this.onHit(best, killed, false, slot);
+    return { killed };
   }
 
   animateView(dt, input, view) {

@@ -23,6 +23,9 @@ import { Stairs } from './game/stairs.js';
 import { Pickups } from './game/pickups.js';
 import { Underground } from './world/underground.js';
 import { NetUI } from './net/ui.js';
+import { Host, Client } from './net/netgame.js';
+import { ticker } from './net/session.js';
+import { DEFS } from './game/weapons.js';
 
 const $ = (id) => document.getElementById(id);
 const START_HOUR = 17.25;       // wave 1 starts at 17:15; each wave pushes the clock ~12 minutes
@@ -54,6 +57,11 @@ class Game {
     this.stats = { fps: 0, frames: 0, acc: 0 };
     this.hour = URLFLAGS.time ?? START_HOUR;
     this.frozen = URLFLAGS.freeze;
+    // co-op: 'solo', or 'host' / 'client' of a match (net: the Host or Client from net/netgame.js)
+    this.mode = 'solo';
+    this.net = null;
+    this.localSlot = 0;
+    this.players = null;       // host: everyone the horde is after (our player + the clients')
     addEventListener('resize', () => this.resize());
   }
 
@@ -138,14 +146,19 @@ class Game {
     this.pickups.setup(this.models);
     this.vehicles = new Vehicles(this);
     this.vehicles.setup(this.models);
-    this.zombies.onKill = (zb, head, weapon) => this.director.onKill(zb, head, weapon);
-    this.weapons.onHit = (zb, killed, head) => this.director.onHit(zb, killed, head);
-    this.zombies.onBlastHit = (zb, killed) => this.director.onHit(zb, killed);
-    this.zombies.onPlayerHit = () => { this.hud.damage(); this.audio.play('hurt', { vol: 0.8 }); };
+    this.zombies.onKill = (zb, head, weapon, by) => this.director.onKill(zb, head, weapon, by);
+    this.weapons.onHit = (zb, killed, head, by) => this.director.onHit(zb, killed, head, by);
+    this.zombies.onBlastHit = (zb, killed, by) => this.director.onHit(zb, killed, false, by);
+    this.zombies.onPlayerHit = (zb, pl, amount, x, z) => {
+      if (!pl || pl === this.player) { this.hud.damage(); this.audio.play('hurt', { vol: 0.8 }); }
+      else this.net?.hurt?.(pl, amount, x, z);
+    };
+    this.zombies.onFx = (kind, p, d) => this.net?.blood?.(kind, p, d);
     this.zombies.onExplode = (x, y, z, r, src) => {
       const p = new THREE.Vector3(x, y, z);
       this.effects.explosion(p, r, src === 'bloater' ? 'bile' : 'fire');
       this.audio.play(src === 'bloater' ? 'burst' : 'explosion', { pos: p, vol: 1.3, ref: 10 });
+      this.net?.boom?.(x, y, z, r, src);
     };
 
     // flashlight (always in the scene so shaders never recompile)
@@ -182,9 +195,30 @@ class Game {
   start() {
     $('loading').classList.add('hidden');
     this.bindUI();
+    // A hidden tab gets no animation frames: a co-op host keeps the match going for everyone on a
+    // worker timer until it's back (nothing is drawn meanwhile).
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && !this.bgTick) {
+        let last = performance.now();
+        this.bgTick = ticker.every(1000 / 60, () => {
+          const now = performance.now(), dt = Math.min(0.1, (now - last) / 1000);
+          last = now;
+          if (this.mode === 'host' && this.net && this.net.inMatch) { this.player.update(dt, this.input, false); this.net.frame(dt); }
+        });
+      } else if (!document.hidden && this.bgTick) { ticker.stop(this.bgTick); this.bgTick = null; this.timer.update(); }
+    });
     if (URLFLAGS.autostart) this.beginPlay();
     else { $('menu').classList.remove('hidden'); this.state = 'menu'; }
     this.renderer.setAnimationLoop(() => this.frame());
+    // joined a room while loading: now's the time to say hello
+    if (this.netui) this.attachSession(this.netui.session);
+    // co-op testing: the host starts by itself once enough players are in
+    if (URLFLAGS.mpstart) {
+      const t = setInterval(() => {
+        const s = this.netui.session;
+        if (this.net && this.net.role === 'host' && !this.net.inMatch && this.net.ready.size + 1 >= URLFLAGS.mpstart) { clearInterval(t); this.net.start(); }
+      }, 250);
+    }
   }
 
   bindUI() {
@@ -195,11 +229,14 @@ class Game {
     q.onchange = () => { settings.quality = q.value; saveSettings(); location.reload(); };
     $('play').onclick = () => this.beginPlay();
     $('resume').onclick = () => { $('pause').classList.add('hidden'); this.input.lock(); this.state = 'playing'; };
-    $('quit').onclick = () => location.reload();
-    $('retry').onclick = () => location.reload();
-    $('go-menu').onclick = () => location.reload();
+    // leaving a co-op match: tell the others (the host leaving ends it for everyone)
+    const leave = () => { this.netui?.session.leave(); location.reload(); };
+    $('quit').onclick = () => (this.mode === 'solo' ? location.reload() : leave());
+    $('retry').onclick = () => (this.mode === 'host' && this.net ? this.net.start() : location.reload());
+    $('go-menu').onclick = () => (this.mode === 'solo' ? location.reload() : leave());
+    $('clicktoplay').onclick = () => this.input.lock();
     this.input.onLockChange = (locked) => {
-      if (!locked && this.state === 'playing' && !URLFLAGS.autostart) { this.state = 'paused'; $('pause').classList.remove('hidden'); }
+      if (!locked && this.state === 'playing' && !URLFLAGS.autostart && !URLFLAGS.nolock) { this.state = 'paused'; $('pause').classList.remove('hidden'); }
     };
   }
 
@@ -224,6 +261,198 @@ class Game {
     try { await this.audio.init(); this.audio.resume(); this.audio.play('ambience', { vol: 0.35, loop: true, jitter: 0 }); } catch (e) { /* audio is optional */ }
   }
 
+  // ---------------------------------------------------------------- co-op
+  // the lobby connected us to a room (or we left it): the match controller for our role
+  attachSession(s) {
+    // (not before the game has loaded: the controller says hello to the host when it's ready)
+    if (!this.ready) return;
+    if (s.state === 'connected' && (!this.net || this.net.role !== s.role)) {
+      const was = this.net;
+      this.net = s.role === 'host' ? new Host(this, s) : new Client(this, s);
+      if (s.role === 'host') this.net.names.set('host', this.playerName || '');
+      s.onEnded = (msg) => this.netEnded(msg);
+      if (was && was.inMatch) this.netEnded(s.message);
+    } else if ((s.state === 'idle' || s.state === 'ended') && this.net) {
+      const inMatch = this.net.inMatch;
+      this.net = null;
+      if (inMatch && s.state === 'ended') this.netEnded(s.message);
+    }
+  }
+
+  beginMatch(mode, m = null) {
+    this.mode = mode;
+    this.zombies.puppets = mode === 'client';
+    this.player.slot = this.localSlot;
+    for (const id of ['menu', 'gameover', 'pause']) $(id).classList.add('hidden');
+    this.state = 'playing';
+    if (!URLFLAGS.nolock) this.input.lock();
+    this.hud.show(!URLFLAGS.nohud);
+    this.hud.coop(true);
+    this.hud.points(this.director.points);
+    this.hud.wave(this.director.wave, false);
+    this.hud.weapon(this.weapons.def, this.weapons.ammo);
+    this.hud.slots(this.weapons.owned, this.weapons.current);
+    this.hud.grenades(this.weapons.grenades);
+    if (mode === 'host') {
+      this.players = this.players && this.players[0] === this.player ? this.players : [this.player];
+      this.zombies.targets = this.players;
+      this.director.state = 'intermission';
+      this.director.timer = URLFLAGS.nozombies ? Infinity : 8;
+      if (URLFLAGS.wave) { this.director.wave = URLFLAGS.wave - 1; this.director.timer = 1; }
+      this.pickups.replenish(8);
+    } else {
+      this.players = null;
+      this.zombies.targets = null;
+      if (m) { this.hour = m.hour; this.atmo.setHour(this.hour); this.targetHour = m.targetHour ?? null; }
+      if (m && m.wave) this.hud.wave(m.wave, false);
+    }
+    this.hud.banner('Green Diamond', 'Co-op: hold out for 10 minutes');
+    $('quit').textContent = 'Leave match';
+    $('resume').textContent = 'Back to the fight';
+    this.audio.init().then(() => { this.audio.resume(); if (!this.ambience) { this.ambience = true; this.audio.play('ambience', { vol: 0.35, loop: true, jitter: 0 }); } }).catch(() => {});
+  }
+
+  // the host says it's over (or the host is gone): the team's numbers
+  endMatch(m) {
+    this.state = 'over';
+    this.input.unlock();
+    this.hud.down(0);
+    $('clicktoplay').classList.add('hidden');
+    $('go-title').textContent = m.win ? 'You held Green Diamond' : 'Overrun';
+    $('go-title').classList.toggle('win', !!m.win);
+    $('go-sub').textContent = m.win ? `Ten minutes, ${m.wave} wave${m.wave === 1 ? '' : 's'}, and you're still standing.` : `Everyone went down in wave ${m.wave}.`;
+    const esc = (t) => String(t).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
+    const st = $('go-stats');
+    st.className = 'table';
+    st.innerHTML = '<span class="h"></span><span class="h">Kills</span><span class="h">Headshots</span><span class="h">Downs</span><span class="h">Points</span>'
+      + m.stats.map((q) => `<span class="n" style="color:${['#3fa7ff', '#5fd35f', '#ffa23a', '#c77dff'][q.slot % 4]}">${esc(q.name || `P${q.slot + 1}`)}${q.slot === this.localSlot ? ' (you)' : ''}</span>`
+        + `<span>${q.kills}</span><span>${q.heads}</span><span>${q.deaths}</span><span>${q.points}</span>`).join('');
+    $('retry').textContent = this.mode === 'host' ? 'New match' : 'Waiting for the host…';
+    $('retry').disabled = this.mode !== 'host';
+    $('go-menu').textContent = 'Leave';
+    setTimeout(() => $('gameover').classList.remove('hidden'), 1200);
+  }
+
+  // the connection is gone in the middle of a match
+  netEnded(message) {
+    if (this.mode === 'solo' || this.state === 'over') return;
+    this.endMatch({ win: false, wave: this.director.wave, stats: [] });
+    $('go-title').textContent = 'Match over';
+    $('go-title').classList.remove('win');
+    $('go-sub').textContent = message || 'The connection to the match was lost.';
+    $('retry').textContent = 'Back to the menu';
+    $('retry').disabled = false;
+    $('retry').onclick = () => location.reload();
+    this.mode = 'solo';
+  }
+
+  // everything back to the start, for the next match
+  resetMatch() {
+    const d = this.director, w = this.weapons, p = this.player;
+    this.zombies.clear();
+    for (const q of d.drops) d.dropGroup.remove(q.mesh);
+    Object.assign(d, { drops: [], wave: 0, state: 'intermission', timer: 8, toSpawn: 0, total: 0, spawnT: 0, points: 500, kills: 0, headshots: 0, deaths: 0, double: 0, packs: [], roofT: 0, crowT: 0 });
+    d.team.clear();
+    this.pickups.clear();
+    for (const a of w.arrows) this.scene.remove(a.mesh);
+    for (const n of w.nades) this.scene.remove(n.mesh);
+    w.arrows = []; w.nades = [];
+    w.owned = { pistol: { mag: DEFS.pistol.mag, reserve: DEFS.pistol.reserve }, rifle: { mag: DEFS.rifle.mag, reserve: 90 }, knife: { mag: 0, reserve: 0 } };
+    w.grenades = 2; w.instaKill = 0; w.stats = { shots: 0, hits: 0, heads: 0 };
+    w.equip('pistol', true);
+    p.maxHealth = 100; p.health = 100; p.dead = false; p.speedMul = 1;
+    this.hour = URLFLAGS.time ?? START_HOUR; this.targetHour = null; this.atmo.setHour(this.hour);
+    this.hud.points(500); this.hud.wave(0, false); this.hud.grenades(2);
+    $('go-stats').className = '';
+  }
+
+  clientWave(w, note) {
+    this.director.wave = w;
+    this.hud.wave(w);
+    this.hud.banner(`Wave ${w}`, note || '');
+    if (w === 1) this.audio.play('waveStart', { vol: 0.3, lowpass: 1300, fade: 5, jitter: 0 });
+    else this.audio.play('waveSoft', { vol: 0.8 });
+    this.onWave(w);
+  }
+
+  clientBoom(m) {
+    const p = new THREE.Vector3(m.x, m.y, m.z);
+    this.effects.explosion(p, m.r, m.src === 'bloater' ? 'bile' : 'fire');
+    this.audio.play(m.src === 'bloater' ? 'burst' : 'explosion', { pos: p, vol: 1.3, ref: 10 });
+    if (m.src === 'grenade') {
+      const w = this.weapons;
+      let best = -1, bd = 4;
+      w.nades.forEach((n, i) => { const d = n.pos.distanceTo(p); if (n.visual && d < bd) { bd = d; best = i; } });
+      if (best >= 0) { this.scene.remove(w.nades[best].mesh); w.nades.splice(best, 1); }
+    }
+    const d = this.player.pos.distanceTo(p);
+    if (d < m.r * 4) this.player.shake = Math.min(1, this.player.shake + 0.6 * (1 - d / (m.r * 4)));
+  }
+
+  onTeamDown(slot) {
+    if (slot === this.localSlot) this.audio.play('hurt', { vol: 1 });
+    else this.hud.notice(`${this.hud.nameOf(slot)} is down`);
+  }
+
+  onTeamUp(slot) {
+    if (slot === this.localSlot) this.hud.notice('Back on your feet');
+    else this.hud.notice(`${this.hud.nameOf(slot)} is back`);
+  }
+
+  // co-op bits of the HUD, every frame
+  coopFrame(dt) {
+    const n = this.net;
+    this.hud.matchClock(n.role === 'host' ? n.msLeft() : n.msLeft);
+    this.teamT = (this.teamT || 0) - dt;
+    if (this.teamT <= 0) { this.teamT = 0.2; this.hud.teamPanel(n.teamStates()); }
+    this.hud.down(this.player.dead && this.state !== 'over' ? Math.max(1, n.localRespawnLeft) : 0);
+    this.hud.el.hud.classList.toggle('down-state', this.player.dead);
+    $('clicktoplay').classList.toggle('hidden', this.state !== 'playing' || this.input.locked || !!URLFLAGS.nolock);
+  }
+
+  // The world for one step: the horde's flow fields (towards every player), the zombies, the
+  // waves, the loot. Every frame on your own; on the host every 60 Hz tick.
+  worldStep(dt) {
+    const players = this.players || [this.player];
+    const living = players.filter((p) => !p.dead);
+    const ps = living.length ? living : players;
+    // each player pulls the horde: straight to them, or to their stairwell's lobby doors if
+    // they're up on a roof, or to the ramps of the car park they're down in
+    this.navT = (this.navT || 0) - dt;
+    if (this.navT <= 0 && !this.nav.busy) {
+      const goals = [];
+      for (const p of ps) {
+        const st = p.roof && p.roof.stair;
+        const pU = this.underground.at(p.pos.x, p.pos.z, p.pos.y + 0.1);
+        if (st) goals.push(...st.doors);
+        else if (pU) goals.push(...pU.doors.map((d) => d.out));
+        else goals.push({ x: p.pos.x, z: p.pos.z });
+      }
+      this.nav.request(goals[0].x, goals[0].z, goals.slice(1));
+      this.navT = 0.3;
+    }
+    this.nav.step(this.quality === QUALITY.low ? 9000 : 16000);
+    // car-park flow field: to the players down there, else to the ramp doors (only worth running
+    // while someone is actually down there)
+    if (this.unav) {
+      const down = ps.filter((p) => this.underground.at(p.pos.x, p.pos.z, p.pos.y + 0.1));
+      const anyone = down.length || this.zombies.list.some((z) => z.state !== 'dead' && z.pos.y < -1.5);
+      const goal = down.length ? down.map((p) => this.unav.idx(p.pos.x, p.pos.z)).join(',') : 'doors';
+      this.unavT = (this.unavT || 0) - dt;
+      if (anyone && this.unavT <= 0 && !this.unav.busy && (goal !== this.unavGoal || down.length)) {
+        if (down.length) this.unav.request(down[0].pos.x, down[0].pos.z, down.slice(1).map((p) => ({ x: p.pos.x, z: p.pos.z })));
+        else { const ins = this.underground.doorIns; this.unav.request(ins[0].x, ins[0].z, ins.slice(1)); }
+        this.unavGoal = goal;
+        this.unavT = 0.35;
+      }
+      if (anyone) this.unav.step(5000);
+    }
+    this.zombies.frozen = this.frozen;
+    this.zombies.update(dt, this.time);
+    this.director.update(dt);
+    this.pickups.update(dt);
+  }
+
   onWave(w) {
     if (w <= 2) this.hud.flashKeys(6);
     // the evening goes on: 17:15 at wave 1, sunset around wave 8, night after wave 11
@@ -231,6 +460,7 @@ class Game {
   }
 
   gameOver() {
+    if (this.mode !== 'solo') return;
     this.state = 'dead';
     this.input.unlock();
     const d = this.director, w = this.weapons.stats;
@@ -272,52 +502,29 @@ class Game {
       this.atmo.setHour(this.hour);
     }
 
-    if (!debugCam) {
+    // (a co-op client's player moves in net.frame: ticks, predicted, corrected by the host)
+    if (!debugCam && this.mode !== 'client') {
       this.player.update(dt, this.input, playing);
       if (URLFLAGS.god) { this.player.health = this.player.maxHealth; this.player.dead = false; }
       if (playing && this.player.dead) this.gameOver();
     }
     this.vehicles.update(dt, this.input, playing && !debugCam);
     this.stairs.update(dt, this.input, playing && !debugCam);
-    if (playing) {
-      // flow field towards the player; if they're up on a roof, towards that building's lobby doors
-      const st = this.player.roof && this.player.roof.stair;
-      const pU = this.underground.at(this.player.pos.x, this.player.pos.z, this.player.pos.y + 0.1);
-      this.zombies.targetStair = st || null;
-      this.zombies.playerLevel = pU;
-      this.navT = (this.navT || 0) - dt;
-      if (this.navT <= 0 && !this.nav.busy) {
-        if (st) this.nav.request(st.doors[0].x, st.doors[0].z, st.doors.slice(1));
-        else if (pU) this.nav.request(pU.doors[0].out.x, pU.doors[0].out.z, pU.doors.slice(1).map((d) => d.out));
-        else this.nav.request(this.player.pos.x, this.player.pos.z);
-        this.navT = 0.3;
-      }
-      this.nav.step(this.quality === QUALITY.low ? 9000 : 16000);
-      // car-park flow field: to the player if they're down there, else to the ramp doors (only
-      // worth running while someone is actually down there)
-      if (this.unav) {
-        const anyone = pU || this.zombies.list.some((z) => z.state !== 'dead' && z.pos.y < -1.5);
-        const goal = pU ? `p${this.unav.idx(this.player.pos.x, this.player.pos.z)}` : 'doors';
-        this.unavT = (this.unavT || 0) - dt;
-        if (anyone && this.unavT <= 0 && !this.unav.busy && (goal !== this.unavGoal || pU)) {
-          if (pU) this.unav.request(this.player.pos.x, this.player.pos.z);
-          else { const ins = this.underground.doorIns; this.unav.request(ins[0].x, ins[0].z, ins.slice(1)); }
-          this.unavGoal = goal;
-          this.unavT = 0.35;
-        }
-        if (anyone) this.unav.step(5000);
-      }
-      this.zombies.frozen = this.frozen;
-      this.zombies.update(dt, this.time);
+    // in a co-op match the world goes on while you're in the menu
+    const coop = this.mode !== 'solo' && this.net && this.net.inMatch;
+    if (coop) this.net.frame(dt);
+    if (playing || coop) {
+      if (this.mode === 'solo') this.worldStep(dt);
       const armed = !this.vehicles.hidesWeapons;   // guns away while you drive a car or ride a bike
       this.hud.driving(!armed);
-      this.weapons.update(dt, this.input, !debugCam && armed);
+      this.weapons.update(dt, this.input, playing && !debugCam && armed);
       if (this.forceAds) this.player.ads = 1;
-      this.director.update(dt);
-      this.pickups.update(dt);
-      if (this.input.hit('KeyM')) this.hud.toggleMap();
-      if (this.input.hit('KeyH')) this.hud.toggleKeys();
-      if (this.input.hit('KeyL')) this.flashOn = !this.flashOn;
+      if (this.mode === 'host') this.director.shops(dt);
+      if (this.mode === 'client') { this.director.update(dt); this.pickups.update(dt); }
+      if (coop) this.coopFrame(dt);
+      if (playing && this.input.hit('KeyM')) this.hud.toggleMap();
+      if (playing && this.input.hit('KeyH')) this.hud.toggleKeys();
+      if (playing && this.input.hit('KeyL')) this.flashOn = !this.flashOn;
     }
     // flashlight: on by itself once it's dark, L toggles
     const underground = !!this.underground.at(this.player.pos.x, this.player.pos.z, this.player.pos.y + 0.1);
@@ -328,12 +535,12 @@ class Game {
     this.effects.update(dt);
     this.hud.update(dt);
     this.hud.health(this.player.health, this.player.maxHealth);
-    if ((this.frameCount || 0) % 2 === 0) this.hud.drawMap(this.player, this.zombies.list, [...this.stairs.markers(), ...this.pickups.markers(), ...this.director.markers()]);
+    if ((this.frameCount || 0) % 2 === 0) this.hud.drawMap(this.player, this.zombies.list, [...this.stairs.markers(), ...this.pickups.markers(), ...this.director.markers()], this.net && this.net.inMatch ? this.net.teamStates() : []);
     this.atmo.follow(debugCam ? (this.camera.position.y > 30 ? new THREE.Vector3(0, 0, 0) : this.camera.position) : this.player.pos);
     if (this.audio.ctx) this.audio.setListener(this.camera.position, this.player.forward(new THREE.Vector3()));
 
     this.renderer.render(this.scene, this.camera);
-    if (!debugCam && !this.vehicles.hidesWeapons) this.weapons.render(this.renderer, this.atmo);
+    if (!debugCam && !this.vehicles.hidesWeapons && !this.player.dead) this.weapons.render(this.renderer, this.atmo);
     this.input.endFrame();
 
     const st = this.stats;
@@ -356,9 +563,9 @@ class Game {
 
 const game = new Game();
 window.__game = game;
-// multiplayer: the lobby in the menu and the network overlay (milestone 1: connecting and measuring)
-game.net = new NetUI();
-window.__net = game.net.session;
+// co-op: the lobby in the menu and the network overlay
+game.netui = new NetUI(game);
+window.__net = game.netui.session;
 game.load().then(() => game.start()).catch((e) => {
   console.error(e);
   $('load-text').textContent = 'Failed to load: ' + e.message;

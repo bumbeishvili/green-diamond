@@ -1,5 +1,7 @@
 import { DEFS, CATS } from './weapons.js';
 
+const SLOT_CSS = ['#3fa7ff', '#5fd35f', '#ffa23a', '#c77dff'];
+
 // DOM heads-up display + minimap drawn from the level data.
 const $ = (id) => document.getElementById(id);
 
@@ -204,7 +206,7 @@ export class HUD {
     this.mapCtx = this.el.map.getContext('2d');
   }
 
-  drawMap(player, zombies, markers = []) {
+  drawMap(player, zombies, markers = [], mates = []) {
     const ctx = this.mapCtx, cv = this.el.map;
     const W = cv.width, H = cv.height;
     const big = this.big;
@@ -236,6 +238,19 @@ export class HUD {
       ctx.fillStyle = zc[z.species] || zc.human;
       ctx.beginPath(); ctx.arc(zx, zz, (big ? 3.5 : 2.6) * (z.species === 'crow' ? 0.8 : z.def && z.def.shove ? 1.4 : 1), 0, Math.PI * 2); ctx.fill();
     }
+    // teammates: arrows in their colours
+    for (const m of mates) {
+      if (m.me) continue;
+      const [mx, mz] = toMap(m.pos.x, m.pos.z);
+      ctx.save();
+      ctx.translate(mx, mz);
+      ctx.rotate(-m.yaw);
+      ctx.globalAlpha = m.dead ? 0.45 : 1;
+      ctx.fillStyle = SLOT_CSS[m.slot % 4];
+      ctx.strokeStyle = 'rgba(0,0,0,0.7)'; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(0, -7); ctx.lineTo(5, 6); ctx.lineTo(0, 3); ctx.lineTo(-5, 6); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.restore();
+    }
     ctx.restore();
     // player arrow: on the rotating minimap it always points up (the map turns instead);
     // on the big north-up map it turns with the player's heading
@@ -253,4 +268,51 @@ export class HUD {
   }
 
   setStats(text) { this.el.stats.textContent = text; }
+
+  // ---- co-op ----
+  coop(on) {
+    for (const id of ['mclock', 'team']) document.getElementById(id)?.classList.toggle('hidden', !on);
+    if (!on) this.down(0);
+  }
+
+  // time left in the match, top centre
+  matchClock(ms) {
+    const el = document.getElementById('mclock');
+    if (!el) return;
+    const t = Math.max(0, Math.ceil(ms / 1000)), txt = `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
+    if (txt !== this.clockTxt) { this.clockTxt = txt; el.textContent = txt; el.classList.toggle('late', t <= 60); }
+  }
+
+  team(list) { this.teamNames = new Map(list.map((t) => [t.slot, t.name || `P${t.slot + 1}`])); this.teamKey = ''; }
+  scores(s) { this.teamScores = new Map(s.map((q) => [q[0], q])); this.teamKey = ''; }
+  nameOf(slot) { return (this.teamNames && this.teamNames.get(slot)) || `P${slot + 1}`; }
+
+  // everyone's health and points, top left under the map (redrawn when something changes)
+  teamPanel(states) {
+    const el = document.getElementById('team');
+    if (!el || !states) return;
+    const rows = [...states].sort((a, b) => a.slot - b.slot).map((q) => {
+      const sc = this.teamScores && this.teamScores.get(q.slot);
+      const hp = Math.max(0, Math.round((q.health / (q.maxHealth || 100)) * 100));
+      return { slot: q.slot, me: q.me, dead: q.dead, hp, respawn: Math.ceil(q.respawn || 0), pts: sc ? sc[1] : null, kills: sc ? sc[2] : null };
+    });
+    const key = JSON.stringify(rows);
+    if (key === this.teamKey) return;
+    this.teamKey = key;
+    el.innerHTML = rows.map((r) => `<div class="mate${r.dead ? ' dead' : ''}${r.me ? ' me' : ''}"><i style="background:${SLOT_CSS[r.slot % 4]}"></i>`
+      + `<b>${esc(this.nameOf(r.slot))}${r.me ? ' (you)' : ''}</b>`
+      + (r.dead ? `<span class="down">down · ${r.respawn}s</span>` : `<span class="hp"><em style="width:${r.hp}%"></em></span>`)
+      + `<span class="pts">${r.pts ?? ''}</span></div>`).join('');
+  }
+
+  // you're down: a countdown until you're back
+  down(sec) {
+    const el = document.getElementById('downmsg');
+    if (!el) return;
+    const on = sec > 0;
+    el.classList.toggle('on', on);
+    if (on) { const txt = `You're down. Back in ${Math.ceil(sec)} s, next to your team`; if (el.textContent !== txt) el.textContent = txt; }
+  }
 }
+
+function esc(t) { return String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]); }

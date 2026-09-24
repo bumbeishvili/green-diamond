@@ -93,10 +93,10 @@ export class Audio {
       g.gain.setValueAtTime(1, t + Math.max(0.7, opts.fade - 1.5));
       g.gain.exponentialRampToValueAtTime(0.0001, t + opts.fade);
       g.connect(head); head = g;
-      src.stop(this.ctx.currentTime + opts.fade + 0.1);
     }
     src.connect(head);
     src.start();
+    if (opts.fade) src.stop(this.ctx.currentTime + opts.fade + 0.1);
     return src;
   }
 

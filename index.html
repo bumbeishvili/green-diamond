@@ -41,7 +41,11 @@
     <span><b>V</b> knife</span><span><b>F</b> buy · stairs · drive</span><span><b>L</b> light</span><span><b>M</b> map</span><span><b>H</b> hide keys</span>
   </div>
   <div id="stats"></div>
+  <div id="mclock" class="hidden"></div>
+  <div id="team" class="hidden"></div>
+  <div id="downmsg"></div>
 </div>
+<div id="clicktoplay" class="hidden"><b>Click to play</b><span>the match is on</span></div>
 
 <div id="fade"></div>
 <div id="net" class="hidden"></div>
@@ -66,13 +70,15 @@
     Survive as many waves as you can.</p>
   <button id="play" class="btn">Play</button>
   <div id="mp">
-    <div class="mp-title">Play with friends <span>up to 4 · same password, same match</span></div>
+    <div class="mp-title">Play with friends <span>co-op · up to 4 · same password, same match</span></div>
     <form id="mp-form" autocomplete="off">
+      <input id="mp-name" type="text" placeholder="Your name" maxlength="16" spellcheck="false">
       <input id="mp-pass" type="password" placeholder="Match password" maxlength="128" spellcheck="false">
       <button id="mp-join" class="btn ghost" type="submit">Join</button>
       <button id="mp-leave" class="btn ghost hidden" type="button">Leave</button>
     </form>
     <div id="mp-status"></div>
+    <button id="mp-start" class="btn hidden" type="button">Start match</button>
   </div>
   <div class="settings">
     <label>Mouse sensitivity <input id="sens" type="range" min="0.2" max="3" step="0.05" value="1"></label>
@@ -101,7 +107,8 @@
 </div>
 
 <div id="gameover" class="screen hidden">
-  <h2>You died</h2>
+  <h2 id="go-title">You died</h2>
+  <div id="go-sub"></div>
   <div id="go-stats"></div>
   <button id="retry" class="btn">Play again</button>
   <button id="go-menu" class="btn ghost">Menu</button>

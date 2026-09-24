@@ -24,6 +24,8 @@ export class Director {
     this.points = 500;
     this.kills = 0;
     this.headshots = 0;
+    this.deaths = 0;
+    this.team = new Map();  // co-op: the other players' points and tally, by slot (host)
     this.double = 0;
     this.drops = [];
     this.packs = [];       // dog packs / crow flocks still to come this wave: {at, kind, n}
@@ -156,29 +158,58 @@ export class Director {
   tryBuy(s) {
     const g = this.g, w = g.weapons;
     const cost = this.cost(s);
+    // co-op: points are kept by the host; it says yes (buyOk) or no
+    if (g.mode === 'client') {
+      if (this.points < cost) { g.audio.play('empty'); return; }
+      g.net.buy(this.stations.indexOf(s), cost, !!(this.isGun(s.item) && w.owned[s.item]));
+      return;
+    }
     if (s.item === 'health' && g.player.maxHealth >= 150) return g.hud.banner('Already bought', '');
     if (s.item === 'stamina' && g.player.speedMul > 1) return g.hud.banner('Already bought', '');
     if (this.points < cost) { g.audio.play('empty'); return; }
     this.addPoints(-cost, true);
-    g.audio.play('buy');
-    if (this.isGun(s.item)) w.give(s.item);
-    else if (s.item === 'ammo') w.refillAll();
-    else if (s.item === 'health') { g.player.maxHealth = 150; g.player.health = 150; }
-    else if (s.item === 'stamina') g.player.speedMul = 1.18;
-    else if (s.item === 'double') this.double = 30;
+    this.bought(s.item);
+    if (s.item === 'double') this.g.net?.teamDouble();
   }
 
-  addPoints(n, raw = false) {
-    const v = raw ? n : n * (this.double > 0 ? 2 : 1);
-    this.points += v;
-    this.g.hud.points(this.points);
-    this.g.hud.feed(v);
+  // what a purchase does for the local player (on a client, once the host said yes)
+  bought(item) {
+    const g = this.g, w = g.weapons;
+    g.audio.play('buy');
+    if (this.isGun(item)) w.give(item);
+    else if (item === 'ammo') w.refillAll();
+    else if (item === 'health') { g.player.maxHealth = 150; g.player.health = 150; }
+    else if (item === 'stamina') g.player.speedMul = 1.18;
+    else if (item === 'double') this.double = 30;
   }
+
+  // co-op: each player has their own points and tally; the local player's live on the director
+  tally(slot) {
+    if (slot === (this.g.localSlot ?? 0)) return this;
+    let t = this.team.get(slot);
+    if (!t) this.team.set(slot, t = { points: 500, kills: 0, headshots: 0, deaths: 0 });
+    return t;
+  }
+
+  addPoints(n, raw = false, slot = this.g.localSlot ?? 0) {
+    const v = raw ? n : n * (this.double > 0 ? 2 : 1);
+    const t = this.tally(slot);
+    t.points += v;
+    if (t === this) { this.g.hud.points(this.points); this.g.hud.feed(v); }
+    else this.g.net?.pointsFeed(slot, v);
+  }
+
+  // everyone the horde is after (solo: just you)
+  get players() { return this.g.players || [this.g.player]; }
+  living() { const l = this.players.filter((p) => !p.dead); return l.length ? l : this.players; }
+  focus() { const l = this.living(); return l[Math.floor(Math.random() * l.length)]; }
+  get teamSize() { return Math.max(1, this.players.length); }
 
   // ---- waves ----
-  waveCount(w) { return Math.round(6 + w * 3.2 + w * w * 0.32); }
-  maxAlive(w) { return Math.min(8 + w * 2, 26); }
-  health(w) { return w <= 9 ? 90 + 55 * w : (90 + 55 * 9) * Math.pow(1.09, w - 9); }
+  // bigger teams face more of them, a little tougher (co-op)
+  waveCount(w) { return Math.round((6 + w * 3.2 + w * w * 0.32) * (1 + 0.6 * (this.teamSize - 1))); }
+  maxAlive(w) { return Math.round(Math.min(8 + w * 2, 26) * (1 + 0.4 * (this.teamSize - 1))); }
+  health(w) { return (w <= 9 ? 90 + 55 * w : (90 + 55 * 9) * Math.pow(1.09, w - 9)) * (1 + 0.1 * (this.teamSize - 1)); }
   damage(w) { return 34 + Math.min(26, w * 2); }
 
   startWave() {
@@ -201,15 +232,16 @@ export class Director {
     else g.audio.play('waveSoft', { vol: 0.8 });
     g.pickups?.replenish(25);
     g.onWave?.(w);
+    g.net?.wave(w, note);
   }
 
   pickSpawn() {
-    const g = this.g, p = g.player.pos;
+    const g = this.g, ps = this.living(), p = this.focus().pos;
     const cands = [];
     for (const s of g.level.spawns) {
       const x = s.x, z = -s.y;
       const d = Math.hypot(x - p.x, z - p.z);
-      if (d < 12 || d > 130) continue;
+      if (d > 130 || ps.some((q) => Math.hypot(x - q.pos.x, z - q.pos.z) < 12)) continue;
       let path = g.nav.distanceAt(x, z);
       if (s.f != null) {
         // down in a car park: the walk out to its nearest ramp plus the flow field from there
@@ -218,7 +250,7 @@ export class Director {
       }
       if (!isFinite(path) || path > 160) continue;
       const sy = s.f ?? g.hm.atWorld(x, z);
-      const seen = d < 60 && g.colliders.clear(p.x, p.y + 1.6, p.z, x, sy + 1.4, z);
+      const seen = ps.some((q) => Math.hypot(x - q.pos.x, z - q.pos.z) < 60 && g.colliders.clear(q.pos.x, q.pos.y + 1.6, q.pos.z, x, sy + 1.4, z));
       // prefer spawns about 30 m away on foot, out of sight
       const w = (seen ? 0.08 : 1) * (Math.exp(-(((path - 30) / 20) ** 2)) + 0.03);
       cands.push([w, x, z, s.kind, s.f]);
@@ -248,7 +280,7 @@ export class Director {
   speedMul(type, w) { return type === 'runner' ? 1 + Math.min(0.08, w * 0.01) : 1 + Math.min(0.2, w * 0.02); }
 
   spawnOne() {
-    const g = this.g, w = this.wave, pl = g.player;
+    const g = this.g, w = this.wave, pl = this.focus();
     const type = this.pickType(w);
     const opts = { type, hp: this.health(w), speedMul: this.speedMul(type, w), damage: this.damage(w) };
     // camping on a roof: some come straight out of the roof door (they took the stairs earlier)
@@ -281,7 +313,7 @@ export class Director {
   }
 
   spawnCrows(n) {
-    const g = this.g, p = g.player.pos, w = this.wave;
+    const g = this.g, p = this.focus().pos, w = this.wave;
     const a0 = Math.random() * Math.PI * 2;
     for (let i = 0; i < n; i++) {
       const a = a0 + (Math.random() - 0.5) * 0.8, d = 45 + Math.random() * 15;
@@ -293,34 +325,50 @@ export class Director {
   onScream(zb) {
     const g = this.g;
     g.hud.notice('A screamer called the horde');
+    g.net?.notice('A screamer called the horde');
     // the scream brings company, if there's room
     for (let i = 0; i < 2; i++) if (g.zombies.alive < this.maxAlive(this.wave) + 4) this.spawnOne();
   }
 
-  onKill(zb, head, weapon) {
-    this.kills++;
-    if (head) this.headshots++;
+  onKill(zb, head, weapon, slot = this.g.localSlot ?? 0) {
+    const t = this.tally(slot);
+    t.kills++;
+    if (head) t.headshots++;
     const bonus = zb.type === 'brute' ? 120 : zb.type === 'screamer' || zb.type === 'wolf' ? 60 : zb.species === 'crow' ? 10 : 0;
-    this.addPoints((weapon === 'knife' ? 130 : head ? 100 : 60) + bonus);
+    this.addPoints((weapon === 'knife' ? 130 : head ? 100 : 60) + bonus, false, slot);
     // power-up drop
     if (zb.species !== 'crow' && Math.random() < 0.035 && this.drops.length < 3) this.drop(zb.pos);
   }
 
-  onHit(zb, killed) { if (!killed) this.addPoints(10); }
+  onHit(zb, killed, head, slot = this.g.localSlot ?? 0) { if (!killed) this.addPoints(10, false, slot); }
 
   drop(pos) {
     const keys = Object.keys(POWERUPS);
     const kind = keys[Math.floor(Math.random() * keys.length)];
     const def = POWERUPS[kind];
+    const id = this.dropSeq = (this.dropSeq || 0) + 1;
+    this.addDrop(kind, pos.x, pos.y, pos.z, id);
+    this.g.net?.dropFx(id, kind, pos.x, pos.y, pos.z);
+  }
+
+  addDrop(kind, x, y, z, id) {
+    const def = POWERUPS[kind];
+    if (!def) return;
     const m = new THREE.Mesh(new THREE.OctahedronGeometry(0.35), new THREE.MeshStandardMaterial({ color: def.color, emissive: def.color, emissiveIntensity: 1.6, roughness: 0.3 }));
-    m.position.set(pos.x, pos.y + 1.0, pos.z);
+    m.position.set(x, y + 1.0, z);
     this.dropGroup.add(m);
-    this.drops.push({ kind, mesh: m, t: 0 });
+    this.drops.push({ kind, mesh: m, t: 0, id });
+  }
+
+  removeDrop(id) {
+    const i = this.drops.findIndex((d) => d.id === id);
+    if (i >= 0) { this.dropGroup.remove(this.drops[i].mesh); this.drops.splice(i, 1); }
   }
 
   update(dt) {
     const g = this.g;
     const w = g.weapons, a = w.ammo;
+    if (g.mode === 'client') return this.clientUpdate(dt);
     if (a && !w.def.melee && !w.def.bow && a.mag + a.reserve <= w.def.mag * 1.5 && !this.ammoHinted?.[w.current]) {
       (this.ammoHinted ||= {})[w.current] = true;
       g.hud.notice('Low on ammo: grab an ammo can, or press F at the pool-house crate (750) or 2 Nabiji (600)');
@@ -335,26 +383,17 @@ export class Director {
       d.mesh.rotation.y += dt * 2;
       d.mesh.position.y += Math.sin(d.t * 3) * 0.004;
       d.mesh.visible = d.t < 22 || Math.floor(d.t * 6) % 2 === 0;
-      const p = g.player.pos;
-      if (Math.hypot(d.mesh.position.x - p.x, d.mesh.position.z - p.z) < 1.2 && Math.abs(d.mesh.position.y - 1 - p.y) < 2) {
-        this.collect(d.kind);
+      const by = this.players.find((q) => !q.dead && Math.hypot(d.mesh.position.x - q.pos.x, d.mesh.position.z - q.pos.z) < 1.2 && Math.abs(d.mesh.position.y - 1 - q.pos.y) < 2);
+      if (by) {
+        this.collect(d.kind, by.slot ?? g.localSlot ?? 0);
+        g.net?.dropGone(d.id, d.kind, by.slot ?? 0);
         this.dropGroup.remove(d.mesh); this.drops.splice(i, 1);
-      } else if (d.t > 28) { this.dropGroup.remove(d.mesh); this.drops.splice(i, 1); }
+      } else if (d.t > 28) { g.net?.dropGone(d.id, null, -1); this.dropGroup.remove(d.mesh); this.drops.splice(i, 1); }
     }
-    // shops prompt
-    const s = this.nearestStation();
-    if (s && !g.player.dead) {
-      const owned = this.isGun(s.item) && g.weapons.owned[s.item];
-      const cost = this.cost(s);
-      const what = owned ? `Ammo for the ${DEFS[s.item].name}` : s.label;
-      g.hud.prompt(`Press <b>F</b> — ${what} <b>[${cost}]</b>${this.points < cost ? ' <span style="color:#ff6b6b">not enough points</span>' : ''}`, 3);
-      if (g.input.hit('KeyF')) { g.input.pressed.delete('KeyF'); this.tryBuy(s); }
-    }
-    for (const m of this.stationMeshes) m.rotation.z += dt;
+    if (g.mode !== 'host') this.shops(dt);
 
     // up on a roof or in the drone for a while: the crows find you
-    const pl = g.player;
-    const high = pl.roof || (pl.vehicle && pl.vehicle.type === 'drone' && pl.pos.y - g.hm.atWorld(pl.pos.x, pl.pos.z) > 6);
+    const high = this.players.some((pl) => !pl.dead && (pl.roof || (pl.vehicle && pl.vehicle.type === 'drone' && pl.pos.y - g.hm.atWorld(pl.pos.x, pl.pos.z) > 6)));
     this.roofT = high ? this.roofT + dt : 0;
 
     if (g.frozen) return;
@@ -381,17 +420,53 @@ export class Director {
       g.hud.banner(`Wave ${this.wave} survived`, 'The shops are open: press F to buy');
       g.audio.play('waveEnd', { vol: 0.45 });
       g.onWaveEnd?.(this.wave);
+      g.net?.waveEnd(this.wave);
     }
   }
 
-  collect(kind) {
+  // power-ups work for the whole team
+  collect(kind, slot = this.g.localSlot ?? 0) {
+    const g = this.g;
+    this.powerup(kind);
+    if (kind === 'instakill') g.weapons.instaKill = 30;
+    if (kind === 'nuke') { g.zombies.killAll(); this.addPoints(400, true, slot); }
+  }
+
+  // what everyone sees and gets (a client runs this when the host says a power-up was taken)
+  powerup(kind) {
     const g = this.g, def = POWERUPS[kind];
+    if (!def) return;
     g.hud.banner(def.label, '');
     g.audio.play('pickup', { vol: 1 });
     if (kind === 'maxammo') g.weapons.refillAll();
-    if (kind === 'instakill') g.weapons.instaKill = 30;
     if (kind === 'double') this.double = 30;
-    if (kind === 'nuke') { g.zombies.killAll(); this.addPoints(400, true); }
+  }
+
+  // a client: the shops (the host takes the money) and the power-ups the host dropped
+  clientUpdate(dt) {
+    const g = this.g;
+    if (this.double > 0) this.double -= dt;
+    for (const d of this.drops) {
+      d.t += dt;
+      d.mesh.rotation.y += dt * 2;
+      d.mesh.position.y += Math.sin(d.t * 3) * 0.004;
+      d.mesh.visible = d.t < 22 || Math.floor(d.t * 6) % 2 === 0;
+    }
+    this.shops(dt);
+  }
+
+  // the shop prompt for the local player (every frame; on a co-op host the waves run on ticks)
+  shops(dt) {
+    const g = this.g;
+    const s = this.nearestStation();
+    if (s && !g.player.dead) {
+      const owned = this.isGun(s.item) && g.weapons.owned[s.item];
+      const cost = this.cost(s);
+      const what = owned ? `Ammo for the ${DEFS[s.item].name}` : s.label;
+      g.hud.prompt(`Press <b>F</b> — ${what} <b>[${cost}]</b>${this.points < cost ? ' <span style="color:#ff6b6b">not enough points</span>' : ''}`, 3);
+      if (g.input.hit('KeyF')) { g.input.pressed.delete('KeyF'); this.tryBuy(s); }
+    }
+    for (const m of this.stationMeshes) m.rotation.z += dt;
   }
 
   markers() {

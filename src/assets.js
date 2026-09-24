@@ -250,6 +250,14 @@ async function loadExtras(out) {
     if (g) out.vehicles[key] = g.scene;
   }));
 
+  // co-op: what your teammates look like
+  // (their rifle: a copy of the M4, which fits the model's hand socket as it is)
+  const survivor = await load('assets/models/players/survivor.glb');
+  if (survivor) {
+    const m4 = await load('assets/models/weapons/m4.glb');
+    out.players = { survivor, rifle: m4 ? m4.scene : null };
+  }
+
   const rider = await load('assets/models/vehicles/rider.glb');
   if (rider) {
     rider.scene.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });

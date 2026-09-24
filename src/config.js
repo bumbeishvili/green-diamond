@@ -12,6 +12,13 @@ export const URLFLAGS = {
   quality: params.get('quality'),
   god: params.has('god'),
   freeze: params.has('freeze'),      // stop AI + time (for screenshots)
+  // co-op testing: join a room on load (?mp=password&name=X), the host starts once N are in
+  // (?mpstart=N), no pointer lock / click-to-play overlay (?nolock)
+  mp: params.get('mp'),
+  name: params.get('name'),
+  mpstart: params.has('mpstart') ? parseInt(params.get('mpstart'), 10) || 1 : null,
+  nolock: params.has('nolock'),
+  mptime: params.has('mptime') ? parseFloat(params.get('mptime')) : null,   // match length (s)
 };
 
 export const QUALITY = {

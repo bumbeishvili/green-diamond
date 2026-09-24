@@ -13,16 +13,25 @@ python3 tools/serve.py        # then open http://127.0.0.1:8765
 
 It has to be served over http. Opening `index.html` as a file won't work.
 
-### Play with friends (in progress)
+### Play with friends (co-op)
 
-Up to 4 players join the same match by typing the same password under **Play with friends**
-in the menu. It's peer-to-peer: the first player in hosts and the others connect straight to the
-host over WebRTC. The server only helps them find each other.
+Up to 4 players fight the waves together. Everyone opens the game, types their name and the same
+password under **Play with friends**, and presses **Join**. The first one in hosts. When everyone is
+in, the host presses **Start match**. Two players is enough, and friends can join a match that's
+already running (they turn up next to the team).
 
-Milestone 1 (now): connecting and measuring. The overlay in the top-right corner (F8 hides it)
-shows your role, the tick rate, and each player's ping and packet loss. The "Simulate a bad
-network" sliders (or `?lag=100&jitter=20&loss=5`) add delay, jitter and loss so you can test a bad
-connection on a good one. Movement, shooting and the match itself come in the next milestones.
+- **The match**: hold out for 10 minutes (the clock is at the top). The waves grow with the team.
+- **Going down**: you come back after 15 seconds, next to a teammate. If the whole team is down at
+  once, it's over.
+- **Points and shops**: everyone has their own points, weapons and ammo. Power-ups (max ammo,
+  insta-kill, double points, nuke) work for the whole team.
+- **In co-op, the cars, bikes and drones stay parked** (driving is single-player for now).
+- **Esc** opens the menu, but the match goes on around you. If the host leaves, the match ends
+  for everyone.
+
+The panel in the top-right corner (F8 hides it) shows who's hosting, the tick and snapshot rates,
+and everyone's ping and packet loss. "Simulate a bad network" (or `?lag=100&jitter=20&loss=5`) adds
+delay, jitter and loss so you can feel a bad connection on a good one.
 
 To try it locally (no account needed):
 
@@ -32,15 +41,24 @@ npm run dev                   # then open http://127.0.0.1:8787 in 2 to 4 browse
 ```
 
 How it works:
-- On Vercel, `api/` holds four small functions: `join`, `signal`, `inbox` and `leave`. They keep
-  the handshake state in a private Vercel Blob store.
-- Every read bypasses the cache, and every write is create-only or conditional on the ETag, so
-  function instances never see stale data or overwrite each other.
-- A room is a hash of the password; the password itself is never stored.
-- `tools/dev.mjs` runs the same functions locally, with an in-memory store.
+- It's peer-to-peer: the first player in hosts, the others connect straight to the host over
+  WebRTC. The host runs the whole game (zombies, waves, loot, and a copy of every player moved by
+  their inputs) on a 60 Hz tick, checks every hit, and sends each player a snapshot 30 times a
+  second.
+- Your own movement is predicted on your screen; when the host disagrees, you take its position and
+  replay the inputs it hasn't seen yet, blended in over a few frames. Zombies and teammates are
+  drawn 100 ms in the past, between two snapshots.
+- Lag compensation: shots are checked against where the zombies were on the shooter's screen, up
+  to 300 ms back.
+- The server only introduces players to each other. On Vercel, `api/` holds four small functions
+  (`join`, `signal`, `inbox`, `leave`) that keep the handshake in a private Vercel Blob store: every
+  read bypasses the cache, and every write is create-only or conditional on the ETag, so function
+  instances never see stale data or overwrite each other. A room is a hash of the password; the
+  password itself is never stored. `tools/dev.mjs` runs the same functions locally with an
+  in-memory store.
 - The only outside service is Google's public STUN server. There is no relay (TURN), so a network
   that blocks direct connections gets a clear "can't connect from this network" message after
-  about 15 seconds.
+  about 15 seconds; a phone hotspot usually works.
 
 ### Controls (laptop / trackpad friendly)
 
@@ -147,7 +165,7 @@ Debug URL flags: `?debug` (fps overlay), `?time=19.5`, `?wave=5`, `?god`,
 - Map data © OpenStreetMap contributors (ODbL).
 - Terrain: AWS Terrain Tiles.
 - Imagery: Sentinel-2 cloudless 2024 by EOX IT Services (CC BY-NC-SA 4.0; personal, non-commercial use).
-- 3D models by Quaternius, Kenney, J-Toastie, Rikindle3D, dogchicken, bachosoftdesign, Benjinsmith (zombie crow, CC-BY 3.0), mightydinosaurcol (M60, CC-BY 4.0), jeremy (motorbike, CC-BY 3.0), SirDraco65, Pichuliru, LonesomeDucky, AdamKokrito, Lucian Pavel, Teh_Bucket and others: see `assets/models/CREDITS.md`. The blue 2010 Toyota Prius is "Toyota Prius" by Isidor Goo (AirplaneChef, CC BY 4.0); the Nissan Leaf security car is built on Franz Albers' Nissan Leaf ZE0 (Apache-2.0) with the Prius wheels. The compound bow, arrow and personal drone were modelled for this project.
+- 3D models by Quaternius, Kenney, J-Toastie, Rikindle3D, dogchicken, bachosoftdesign, Benjinsmith (zombie crow, CC-BY 3.0), mightydinosaurcol (M60, CC-BY 4.0), jeremy (motorbike, CC-BY 3.0), SirDraco65, Pichuliru, LonesomeDucky, AdamKokrito, Lucian Pavel, Teh_Bucket and others: see `assets/models/CREDITS.md`. The blue 2010 Toyota Prius is "Toyota Prius" by Isidor Goo (AirplaneChef, CC BY 4.0); the Nissan Leaf security car is built on Franz Albers' Nissan Leaf ZE0 (Apache-2.0) with the Prius wheels. Your co-op teammates are Quaternius's SWAT survivor (CC0) with clips from his Universal Animation Library, plus rifle clips made for this project. The compound bow, arrow and personal drone were modelled for this project.
 - Textures, sounds and HDRIs: see `assets/CREDITS_media.md`.
 - Built with three.js.
 
