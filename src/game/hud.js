@@ -1,6 +1,9 @@
 import { DEFS, CATS, UPGRADES } from './weapons.js';
+import { isPvp, teamOf, TEAM_CSS, TEAM_NAMES } from './pvp.js';
 
 const SLOT_CSS = ['#3fa7ff', '#5fd35f', '#ffa23a', '#c77dff'];
+// how a kill happened, for the feed
+const HOW = { knife: 'knife', grenade: 'grenade', bow: 'bow', car: 'ran over', bike: 'ran over', self: 'blew themselves up', zombie: 'zombies' };
 
 // DOM heads-up display + minimap drawn from the level data.
 const $ = (id) => document.getElementById(id);
@@ -42,6 +45,12 @@ export class HUD {
       this.el.res.textContent = '';
       return;
     }
+    if (def.saw) {
+      this.el.mag.textContent = `${Math.ceil(ammo.mag)}%`;
+      this.el.mag.classList.toggle('low', ammo.mag <= 20);
+      this.el.res.textContent = `+ ${Math.round(ammo.reserve)} fuel`;
+      return;
+    }
     this.el.mag.textContent = ammo.mag;
     this.el.mag.classList.toggle('low', !def.bow && ammo.mag <= Math.ceil(def.mag * 0.25));
     this.el.res.textContent = def.bow ? `+ ${ammo.reserve} arrows` : `/ ${ammo.reserve}`;
@@ -70,7 +79,7 @@ export class HUD {
   notice(text) {
     const n = document.getElementById('notice');
     if (!n) return;
-    n.textContent = text;
+    n.textContent = this.touch ? touchWords(text) : text;
     n.classList.add('on');
     clearTimeout(this.noticeT);
     this.noticeT = setTimeout(() => n.classList.remove('on'), 2600);
@@ -92,6 +101,7 @@ export class HUD {
 
   banner(title, sub = '') {
     const b = this.el.banner;
+    if (this.touch) sub = touchWords(sub);
     b.innerHTML = `${title}${sub ? `<small>${sub}</small>` : ''}`;
     b.classList.remove('on'); void b.offsetWidth; b.classList.add('on');
   }
@@ -105,7 +115,7 @@ export class HUD {
   showPrompt(html) {
     if (html === this.lastPrompt) return;
     this.lastPrompt = html;
-    this.el.prompt.innerHTML = html || '';
+    this.el.prompt.innerHTML = this.touch && html ? touchWords(html) : html || '';
     this.el.prompt.classList.toggle('on', !!html);
   }
 
@@ -115,6 +125,17 @@ export class HUD {
   }
 
   damage() { this.dmgT = 0.6; }
+
+  // the giant's health across the top (null: hide it)
+  boss(frac) {
+    const el = this.bossEl || (this.bossEl = document.getElementById('boss'));
+    if (!el) return;
+    const on = frac != null;
+    if (on !== this.bossOn) { this.bossOn = on; el.classList.toggle('on', on); }
+    if (!on) return;
+    const w = Math.round(Math.max(0, Math.min(1, frac)) * 400) / 4;
+    if (w !== this.bossW) { this.bossW = w; el.lastElementChild.firstElementChild.style.width = `${w}%`; }
+  }
 
   driving(on) {
     if (on === this.isDriving) return;
@@ -245,7 +266,7 @@ export class HUD {
       if (z.state === 'dead' || z.state === 'climb') continue;
       const [zx, zz] = toMap(z.pos.x, z.pos.z);
       ctx.fillStyle = zc[z.species] || zc.human;
-      ctx.beginPath(); ctx.arc(zx, zz, (big ? 3.5 : 2.6) * (z.species === 'crow' ? 0.8 : z.def && z.def.shove ? 1.4 : 1), 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(zx, zz, (big ? 3.5 : 2.6) * (z.species === 'crow' ? 0.8 : z.def && z.def.boss ? 2.4 : z.def && z.def.shove ? 1.4 : 1), 0, Math.PI * 2); ctx.fill();
     }
     // teammates: arrows in their colours
     for (const m of mates) {
@@ -297,9 +318,20 @@ export class HUD {
   nameOf(slot) { return (this.teamNames && this.teamNames.get(slot)) || `P${slot + 1}`; }
 
   // everyone's health and points, top left under the map (redrawn when something changes)
+  // PvP or co-op (the rules from the host; null: solo)
+  pvpMode(rules) {
+    this.rules = rules;
+    this.el.hud.classList.toggle('pvp', isPvp(rules));
+    this.el.hud.classList.toggle('nozombies', isPvp(rules) && !rules.zombies);
+    this.teamKey = '';
+  }
+
+  colorOf(slot) { const t = teamOf(this.rules, slot); return t >= 0 ? TEAM_CSS[t] : SLOT_CSS[slot % 4]; }
+
   teamPanel(states, talking = null) {
     const el = document.getElementById('team');
     if (!el || !states) return;
+    if (isPvp(this.rules)) return this.pvpBoard(el, states, talking);
     const rows = [...states].sort((a, b) => a.slot - b.slot).map((q) => {
       const sc = this.teamScores && this.teamScores.get(q.slot);
       const hp = Math.max(0, Math.round((q.health / (q.maxHealth || 100)) * 100));
@@ -314,14 +346,61 @@ export class HUD {
       + `<span class="pts">${r.pts ?? ''}</span></div>`).join('');
   }
 
-  // you're down: a countdown until you're back
-  down(sec) {
+  // PvP: everyone by kills (your team's health, never your foes'), the teams' totals on top
+  pvpBoard(el, states, talking) {
+    const me = states.find((q) => q.me), mySlot = me ? me.slot : 0, teams = this.rules.mode === 'teams';
+    const foe = (slot) => slot !== mySlot && (!teams || teamOf(this.rules, slot) !== teamOf(this.rules, mySlot));
+    const rows = states.map((q) => {
+      const sc = this.teamScores && this.teamScores.get(q.slot);
+      return { slot: q.slot, me: q.me, dead: q.dead, foe: foe(q.slot), hp: Math.max(0, Math.round((q.health / (q.maxHealth || 100)) * 100)), respawn: Math.ceil(q.respawn || 0),
+        frags: sc ? sc[5] || 0 : 0, deaths: sc ? sc[4] : 0, talk: !!(talking && talking.has(q.slot)) };
+    }).sort((a, b) => b.frags - a.frags || a.slot - b.slot);
+    const tf = [0, 0];
+    if (teams) for (const r of rows) tf[teamOf(this.rules, r.slot)] += r.frags;
+    const key = JSON.stringify([rows, tf]);
+    if (key === this.teamKey) return;
+    this.teamKey = key;
+    el.innerHTML = (teams ? `<div class="score"><b style="color:${TEAM_CSS[0]}">${TEAM_NAMES[0]} ${tf[0]}</b><span>·</span><b style="color:${TEAM_CSS[1]}">${tf[1]} ${TEAM_NAMES[1]}</b>${this.rules.kills ? `<em>to ${this.rules.kills}</em>` : ''}</div>`
+      : this.rules.kills ? `<div class="score"><em>first to ${this.rules.kills}</em></div>` : '')
+      + rows.map((r) => `<div class="mate${r.dead ? ' dead' : ''}${r.me ? ' me' : ''}"><i style="background:${this.colorOf(r.slot)}"></i>`
+        + `<b>${esc(this.nameOf(r.slot))}${r.me ? ' (you)' : ''}${r.talk ? ' <span class="talk">🔊</span>' : ''}</b>`
+        + (r.dead ? `<span class="down">${r.respawn}s</span>` : r.foe ? '<span class="hp foe"></span>' : `<span class="hp"><em style="width:${r.hp}%"></em></span>`)
+        + `<span class="pts">${r.frags}<small>/${r.deaths}</small></span></div>`).join('');
+  }
+
+  // PvP: who killed whom, top right, for a few seconds (null: clear it)
+  killFeed(k, v, how, me) {
+    const el = document.getElementById('killfeed');
+    if (!el) return;
+    if (k === null) { el.innerHTML = ''; return; }
+    const name = (s) => `<b style="color:${this.colorOf(s)}">${esc(s === me ? 'You' : this.nameOf(s))}</b>`;
+    const w = HOW[how] || (DEFS[how] ? DEFS[how].short : how);
+    const row = document.createElement('div');
+    row.className = k === me || v === me ? 'mine' : '';
+    row.innerHTML = k >= 0 ? `${name(k)} <span>${esc(w)}</span> ${name(v)}` : `${name(v)} <span>${esc(w)}</span>`;
+    el.prepend(row);
+    while (el.children.length > 5) el.lastElementChild.remove();
+    setTimeout(() => { row.classList.add('old'); setTimeout(() => row.remove(), 600); }, 6000);
+  }
+
+  // you're down: a countdown until you're back (why: PvP, who got you)
+  down(sec, why = null) {
     const el = document.getElementById('downmsg');
     if (!el) return;
     const on = sec > 0;
     el.classList.toggle('on', on);
-    if (on) { const txt = `You're down. Back in ${Math.ceil(sec)} s, next to your team`; if (el.textContent !== txt) el.textContent = txt; }
+    if (on) { const txt = why ? `${why}. Back in ${Math.ceil(sec)} s` : `You're down. Back in ${Math.ceil(sec)} s, next to your team`; if (el.textContent !== txt) el.textContent = txt; }
   }
+}
+
+// On a phone the keys are buttons: say so ("Press F" is "tap USE", WASD is the stick...)
+function touchWords(t) {
+  return String(t)
+    .replace(/Press <b>F<\/b> — /g, 'Tap <b>USE</b> — ').replace(/Press F\b/g, 'Tap USE').replace(/press F\b/g, 'tap USE')
+    .replace(/WASD drive/g, 'the stick drives').replace(/Space handbrake/g, 'BRAKE').replace(/\bF to get out/g, 'OUT gets out')
+    .replace(/\bF get out/g, 'OUT gets out').replace(/the map \(M\)/g, 'the map').replace(/\(M\)/g, '(tap the map)').replace(/\bR to refuel/g, 'RELOAD refuels')
+    .replace(/hold T\b/g, 'hold TALK').replace(/\bpress F\b/gi, 'tap USE')
+    .replace(/<b>F<\/b> get out/g, '<b>OUT</b> gets out').replace(/<b>F<\/b>/g, '<b>USE</b>');
 }
 
 function esc(t) { return String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]); }

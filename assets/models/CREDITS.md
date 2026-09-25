@@ -188,3 +188,67 @@ The fallback number-plate texture (Georgian format, made-up number "PR-010-US"; 
 | `players/survivor.glb` | Survivor / SWAT operator (co-op teammate avatar): the 'SWAT' character and 21 of its clips from the Ultimate Modular Men Pack; 7 clips (Crouch_Idle, Crouch_Walk, Jump_Start, Jump_Loop, Jump_Land, Sprint, Death_2) retargeted from the Universal Animation Library [Standard]; the 14 Rifle_* clips and the Weapon_R hand socket were made for this project | Quaternius (rifle clips, socket, retargeting and arm lengthening: original, CC0) | https://poly.pizza/m/Btfn3G5Xv4 (pack: https://quaternius.com/packs/ultimatemodularcharacters.html), https://quaternius.com/packs/universalanimationlibrary.html (download: https://quaternius.itch.io/universal-animation-library) |
 
 CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/): no attribution required. The licence was checked on the poly.pizza model page, on the quaternius.com pages of both packs, on the itch.io page and in the License.txt inside the Universal Animation Library download. Suggested credit: "Survivor built from the SWAT character (Ultimate Modular Men Pack) and the Universal Animation Library by Quaternius (CC0)". Changes: normalised to metres, +Z forward and 1.78 m; parts joined into one mesh; arms lengthened; bones renamed from .L/.R to _L/_R; materials renamed (Swat to Outfit, Swat_Black to Gear) with metallic set to 0; 3 clips dropped and 2 renamed; the Run loops closed; Death and Roll kept above the floor; 7 UAL clips retargeted; 14 two-handed rifle clips and the Weapon_R socket authored. Details are in manifest_extra.json.
+
+## Weapons added 2026-09-25: AUG, MSR, chainsaw, ballistic shield, RPG-7 launcher and rocket
+
+All six files are static GLBs in metres (1 unit = 1 m) with the same axes as `m4.glb` and `autosniper.glb`: muzzle / bar / tube / shield face along +X, up +Y, the weapon's right side +Z, one root node with an identity transform. Checked with the Khronos glTF Validator (0 errors) and loaded with three.js r186 GLTFLoader (MeshStandardMaterial only, no console messages).
+
+### CC-BY 4.0 (https://creativecommons.org/licenses/by/4.0/), attribution required
+
+Attribution lines (ready to paste):
+
+- "Low-Poly Aug A1" by TastyTony (https://sketchfab.com/3d-models/low-poly-aug-a1-eaccd7c21e6e4671abbe5f4ad54337c7), licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Used as `assets/models/weapons/aug.glb` (modified: baked to static meshes with the stray one-bone skin removed, scaled to 0.80 m, origin moved to the top of the pistol grip, materials re-authored as flat PBR (olive polymer, black metal, dark steel, scope lens), magazine split into its own node, attach points added).
+- "Low-Poly Tan Remington MSR" by Kaan (Sketchfab user swagmasterkaan, formerly KaansArsenal) (https://sketchfab.com/3d-models/low-poly-tan-remington-msr-53d712519d6540f99a08badd34bf7520), licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Used as `assets/models/weapons/msr.glb` (modified: scaled to 1.17 m, origin moved to the top of the pistol grip, materials re-authored as flat PBR (flat dark earth chassis, black metal, brass, scope lens), magazine split into its own node, attach points added).
+
+Both were downloaded without a login from the Objaverse mirror on Hugging Face (https://huggingface.co/datasets/allenai/objaverse). Author, licence (CC Attribution) and download permission were checked on the live Sketchfab pages on 2026-09-25.
+
+| File | Name | Author | Source |
+|---|---|---|---|
+| `weapons/aug.glb` | Steyr AUG A1 ("Low-Poly Aug A1") | TastyTony | https://sketchfab.com/3d-models/low-poly-aug-a1-eaccd7c21e6e4671abbe5f4ad54337c7 |
+| `weapons/msr.glb` | Remington MSR, tan ("Low-Poly Tan Remington MSR") | Kaan (swagmasterkaan) | https://sketchfab.com/3d-models/low-poly-tan-remington-msr-53d712519d6540f99a08badd34bf7520 |
+
+### CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/)
+
+| File | Name | Author | Source |
+|---|---|---|---|
+| `weapons/chainsaw.glb` | Chainsaw | loafbrr_1 | https://opengameart.org/content/chainsaw-1 |
+| `weapons/shield.glb` | Ballistic shield | tbbk | https://opengameart.org/content/ballistic-shield |
+| `weapons/launcher.glb` | Low poly RPG7 (launcher with a loaded PG-7 grenade) | Lucian Pavel | https://opengameart.org/content/low-poly-rpg7 |
+| `weapons/missile.glb` | RPG-7 grenade from "Low poly RPG7", tail fins added | Lucian Pavel (fins: made for this project, CC0) | https://opengameart.org/content/low-poly-rpg7 |
+
+Changes (licence checked on each OpenGameArt page, and in the chainsaw's README.txt):
+
+- `chainsaw.glb`: the glTF version from the archive, with its bloodied texture set (base colour, normal, metallic-roughness re-encoded as 1024 px JPEG). Scaled to 0.80 m with the bar along +X (bar and chain on the right side), origin at the rear handle grip; empties `Grip_Front` (top of the front handle), `Bar_Tip` and `Trigger` (4.5 cm ahead of and 3.5 cm above the rear grip, where weapons.js expects a trigger, so its grip finder lands on the rear handle).
+- `shield.glb`: converted from the .blend, turned to face +X, origin at the upper handle (hand grip), 0.60 m wide and 1.00 m tall. Materials re-authored (matte black, steel rim, tinted see-through `Glass` in the viewing window); empties `Handle_Lower` and `Viewport`.
+- `launcher.glb`: converted from FBX, levelled and turned so the tube points along +X, scaled to 1.10 m overall (0.785 m tube plus the loaded grenade), origin at the top of the trigger grip. The loaded grenade is its own node, `Rocket`, so it can be hidden after firing. The tube's front and rear openings are painted dark (`Bore_Dark`). Empties `Attach_Muzzle`, `Attach_Backblast`, `Trigger` and `Grip_Rear`.
+- `missile.glb`: the same grenade as a separate model, 0.45 m long along +X with its origin at its centre; four small tail fins added (flat `Fin_Metal`); empties `Nose` and `Exhaust`.
+
+Crediting loafbrr_1, tbbk and Lucian Pavel is appreciated but not required.
+
+## Honda Civic hero car, "ბექას მანქანა" (added 2026-09-25)
+
+CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/), attribution required. Attribution line (ready to paste):
+
+- "Honda civic" by Aldios (https://sketchfab.com/3d-models/honda-civic-ff844e296f214e709c0d0691d031c68b), licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Used as `assets/models/vehicles/civic.glb`. Modified: re-oriented and scaled to metres, wheels split into pivoted nodes with new tyres and brake discs, materials re-authored as PBR, repainted Modern Steel grey, lamp covers made clear / red, decimated from about 672k to 65k triangles, a simple cabin added, ambient occlusion baked, number plates added. Details are in manifest_extra.json. Downloaded without a login from the Objaverse mirror on Hugging Face (https://huggingface.co/datasets/allenai/objaverse).
+
+| File | Name | Author | Source |
+|---|---|---|---|
+| `vehicles/civic.glb` | Honda Civic sedan, 10th generation (FC; a 2018 in the game), Modern Steel Metallic | Aldios | https://sketchfab.com/3d-models/honda-civic-ff844e296f214e709c0d0691d031c68b |
+
+Made for this project (CC0): the cabin (front seats, rear bench, dashboard, console, steering wheel, parcel shelf), the tyres and brake discs, the number plates and the plate texture `assets/textures/plates/BEKA.png` ("ბექას მანქანა" in the game's Georgian plate style).
+
+Licence note: CC BY 4.0 is the licence the uploader declared on Sketchfab. Author, licence and download permission were checked through the Sketchfab API on 2026-09-25. The uploader describes the model as "Honda Civic 2016", and the original authorship could not be verified independently. One other free Civic was rejected: it matches a 3D Warehouse model by another author.
+
+## Lamborghini Huracán hero car (added 2026-09-25)
+
+CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/), attribution required. Attribution line (ready to paste):
+
+- "Lamborghini Huracan (2020)" by Kirigami (Sketchfab user kirigami318) (https://sketchfab.com/3d-models/lamborghini-huracan-2020-370b7cce49864e0fb4651879d0fee18c), licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Used as `assets/models/vehicles/lambo.glb`. Modified: re-oriented and scaled to metres, wheels split into pivoted nodes with new tyres and brake discs, materials re-authored as PBR, repainted from the source's red to Verde Mantis green, windows made see-through, decimated from about 1.75M to 67k triangles, a simple cabin and wheel-arch liners added, ambient occlusion baked, number plates added. Details are in manifest_extra.json. Downloaded without a login from the Objaverse mirror on Hugging Face (https://huggingface.co/datasets/allenai/objaverse).
+
+| File | Name | Author | Source |
+|---|---|---|---|
+| `vehicles/lambo.glb` | Lamborghini Huracán EVO (2020 look), Verde Mantis green | Kirigami (kirigami318) | https://sketchfab.com/3d-models/lamborghini-huracan-2020-370b7cce49864e0fb4651879d0fee18c |
+
+Made for this project (CC0): the cabin (seats, dashboard, centre tunnel, steering wheel, bulkhead, door cards), the wheel-arch liners, the tyres and brake discs, the number plates and the plate texture `assets/textures/plates/LA-777-MB.png`.
+
+Licence note: CC BY 4.0 is the licence the uploader declared on Sketchfab. Author, licence and download permission were checked through the Sketchfab API on 2026-09-25. The uploader says the car was modelled in Blender (a 24-hour timelapse) and offers it for free, but the original authorship could not be verified independently. Aventador and other Huracán uploads were rejected because their pages or part names mark them as rips from racing games.

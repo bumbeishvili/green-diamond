@@ -1,0 +1,270 @@
+# band 3 (part a: function words, adverbs, verbs, adjectives) — format: w|p|t|ka|ex|e
+himself|pron|grammar|ის თვითონ (კაცი)|He built the house himself.|
+herself|pron|grammar|ის თვითონ (ქალი)|She made the dress herself.|
+themselves|pron|grammar|ისინი თვითონ|The children cleaned the room themselves.|
+whose|pron|grammar|ვისი|Whose bag is this?|
+none|pron|grammar|არცერთი|None of my friends can come.|
+mine|pron|grammar|ჩემი|This book is mine.|
+yours|pron|grammar|შენი, თქვენი|Is this umbrella yours?|
+either|det|grammar|რომელიმე (ორიდან)|You can take either bus.|
+neither|det|grammar|არცერთი (ორიდან)|Neither answer is correct.|
+several|det|grammar|რამდენიმე|I have several friends in London.|
+such|det|grammar|ასეთი|It was such a beautiful day.|
+less|det|grammar|ნაკლები|I want to spend less money.|
+along|prep|grammar|გასწვრივ|We walked along the river.|
+among|prep|grammar|შორის|She was among the best students.|
+except|prep|grammar|გარდა|Everyone came except Nino.|
+towards|prep|grammar|-კენ|She walked towards the door.|
+beside|prep|grammar|გვერდით|Come and sit beside me.|
+unless|conj|grammar|თუ არ|We will go, unless it rains.|
+whether|conj|grammar|თუ არა|I don't know whether he is coming.|
+though|conj|grammar|თუმცაღა|Though it was late, we kept talking.|
+fifteen|num|numbers|თხუთმეტი|The bus leaves in fifteen minutes.|
+thirty|num|numbers|ოცდაათი|I will be there in thirty minutes.|
+forty|num|numbers|ორმოცი|My mother is forty years old.|
+fifty|num|numbers|ორმოცდაათი|This shirt costs fifty lari.|
+million|num|numbers|მილიონი|About a million tourists visit the city every year.|
+else|adv|grammar|კიდევ|Do you want anything else?|
+instead|adv|grammar|სანაცვლოდ|There was no tea, so I had coffee instead.|
+finally|adv|time|როგორც იქნა|The bus finally arrived.|
+suddenly|adv|time|უცებ|Suddenly, the lights went out.|
+exactly|adv|grammar|ზუსტად|The train leaves at exactly six.|
+especially|adv|grammar|განსაკუთრებით|I love fruit, especially apples.|
+anyway|adv|grammar|მაინც|It was raining, but we went anyway.|
+nearly|adv|grammar|კინაღამ|I nearly missed the bus.|
+twice|adv|time|ორჯერ|Brush your teeth twice a day.|
+abroad|adv|travel|საზღვარგარეთ|She wants to study abroad.|
+everywhere|adv|places|ყველგან|I looked everywhere for my keys.|
+somewhere|adv|places|სადღაც|My glasses are somewhere in this room.|
+anywhere|adv|places|სადმე|Have you seen my phone anywhere?|
+perhaps|adv|grammar|იქნებ|Perhaps you are right.|
+certainly|adv|grammar|აუცილებლად|I will certainly come to your party.|
+simply|adv|grammar|მარტივად|Please explain it simply.|
+clearly|adv|communication|გარკვევით|Please speak slowly and clearly.|
+recently|adv|time|ახლახან|I have recently moved to Tbilisi.|
+immediately|adv|time|მაშინვე|Please call me immediately.|
+completely|adv|grammar|სრულიად|I completely forgot about the meeting.|
+easily|adv|qualities|ადვილად|She can easily carry that box.|
+carefully|adv|qualities|ფრთხილად|Please drive carefully in the snow.|
+quietly|adv|qualities|ჩუმად|Please talk quietly, the baby is asleep.|
+upstairs|adv|home|ზემო სართულზე|The bathroom is upstairs.|
+downstairs|adv|home|ქვემო სართულზე|The kitchen is downstairs.|
+unfortunately|adv|grammar|სამწუხაროდ|Unfortunately, the museum is closed today.|
+luckily|adv|grammar|საბედნიეროდ|Luckily, I found my keys.|
+include|v|actions|ჩართვა|Does the price include breakfast?|
+continue|v|actions|გაგრძელება|Let's continue after lunch.|
+set|v|actions|დაყენება|I set my alarm for six.|
+lead|v|work|ხელმძღვანელობა|She will lead the team next year.|
+create|v|actions|შექმნა|He wants to create his own website.|
+offer|v|actions|შეთავაზება|Can I offer you a drink?|
+appear|v|actions|გამოჩენა|Stars appear in the sky at night.|
+expect|v|actions|მოლოდინი|I expect him to call today.|
+serve|v|work|მომსახურება|The waiter will serve you in a moment.|
+reach|v|actions|მიწვდენა|I can't reach the top shelf.|
+remain|v|actions|დარჩენა|Please remain in your seats.|
+suggest|v|communication|შემოთავაზება|I suggest we meet at six.|
+raise|v|actions|აწევა|Raise your hand if you know the answer.|
+report|v|communication|შეტყობინება|Please report any problems to reception.|
+develop|v|work|განვითარება|The company wants to develop new products.|
+receive|v|communication|მიღება|Did you receive my email?|
+support|v|actions|მხარდაჭერა|My parents always support me.|
+produce|v|work|წარმოება|Georgian farmers produce a lot of wine.|
+cover|v|actions|დაფარვა|Cover the pot with a lid.|
+cause|v|actions|გამოწვევა|Smoking can cause serious health problems.|
+realise|v|actions|მიხვედრა|I didn't realise it was so late.|
+prepare|v|actions|მომზადება|I need to prepare for the exam.|
+describe|v|communication|აღწერა|Can you describe the man you saw?|
+apply|v|work|განაცხადის შეტანა|I want to apply for this job.|
+drop|v|actions|დაგდება|Don't drop the eggs!|
+climb|v|sport|ცოცვა|Children love to climb trees.|
+rent|v|home|ქირაობა|We rent a flat near the university.|
+borrow|v|money|სესხად აღება|Can I borrow your car tomorrow?|
+lend|v|money|სესხად მიცემა|Can you lend me ten lari?|
+repeat|v|school|გამეორება|Can you repeat that, please?|
+spell|v|school|დამარცვლა|How do you spell your name?|
+paint|v|actions|ღებვა|We want to paint the kitchen white.|
+hide|v|actions|დამალვა|The cat likes to hide under the bed.|
+feed|v|animals|კვება|Don't forget to feed the cat.|
+collect|v|actions|შეგროვება|My son likes to collect stamps.|
+compare|v|actions|შედარება|Compare the prices before you buy.|
+complain|v|communication|ჩივილი|Don't complain about the weather.|
+discuss|v|communication|განხილვა|We need to discuss the plan.|
+mention|v|communication|ხსენება|Did she mention her new job?|
+promise|v|communication|დაპირება|I promise to call you tomorrow.|
+refuse|v|communication|უარის თქმა|I refuse to pay for this.|
+accept|v|actions|მიღება|Do you accept credit cards?|
+avoid|v|actions|თავის არიდება|I try to avoid sugar.|
+manage|v|work|მართვა|She will manage the new office.|
+join|v|people|შემოერთება|Would you like to join us for dinner?|
+belong|v|actions|ეკუთვნის|This bag doesn't belong to me.|
+contain|v|actions|შეიცავს|These biscuits contain nuts.|
+depend|v|actions|დამოკიდებული ყოფნა|We depend on your help.|
+guess|v|actions|გამოცნობა|Guess what happened today!|
+imagine|v|actions|წარმოდგენა|Imagine a world without cars.|
+notice|v|actions|შემჩნევა|Did you notice her new hairstyle?|
+wonder|v|actions|დაინტერესება|I wonder where he is now.|
+trust|v|feelings|ნდობა|I trust my best friend.|
+blame|v|actions|დადანაშაულება|Don't blame me for the mistake.|
+forgive|v|feelings|პატიება|Please forgive me, I was wrong.|
+earn|v|money|გამომუშავება|How much do you earn a month?|
+afford|v|money|საშუალების ქონა|We can't afford a new car.|
+waste|v|money|ფლანგვა|Don't waste your money on that.|
+lock|v|home|ჩაკეტვა|Don't forget to lock the door.|
+knock|v|home|კაკუნი|Please knock before you come in.|
+touch|v|actions|შეხება|Please don't touch the paintings.|
+shake|v|actions|შენჯღრევა|Shake the bottle well before you open it.|
+lift|v|actions|აწევა|Can you help me lift this box?|
+hang|v|home|ჩამოკიდება|Hang your coat on the hook.|
+pour|v|food|დასხმა|Can you pour me some water?|
+mix|v|food|შერევა|Mix the flour with the milk.|
+boil|v|food|მოხარშვა|Boil the eggs for ten minutes.|
+bake|v|food|გამოცხობა|My mother likes to bake bread.|
+burn|v|actions|დაწვა|Be careful not to burn the toast.|
+tie|v|clothes|შეკვრა|My son is learning to tie his shoes.|
+search|v|technology|ძებნა|I will search for it online.|
+discover|v|actions|აღმოჩენა|Scientists hope to discover a new medicine.|
+invent|v|technology|გამოგონება|I want to invent a useful machine.|
+design|v|work|დიზაინის შექმნა|She wants to design clothes.|
+measure|v|actions|გაზომვა|Measure the room before you buy a carpet.|
+fit|v|clothes|მორგება|These jeans don't fit me anymore.|
+repair|v|home|შეკეთება|Can you repair my watch?|
+replace|v|actions|გამოცვლა|We need to replace the old windows.|
+remove|v|actions|მოხსნა|Please remove my name from the list.|
+reduce|v|actions|შემცირება|We need to reduce our costs.|
+increase|v|actions|გაზრდა|Prices increase every year.|
+rise|v|nature|ამოსვლა|The sun will rise at six tomorrow.|
+connect|v|technology|შეერთება|Can you connect my laptop to the printer?|
+marry|v|family|დაქორწინება|He wants to marry her next year.|
+celebrate|v|society|აღნიშვნა|How do you celebrate New Year?|
+introduce|v|people|გაცნობა|Let me introduce my wife.|
+recommend|v|communication|რეკომენდაციის მიცემა|Can you recommend a good restaurant?|
+advise|v|communication|რჩევა|I advise you to see a doctor.|
+warn|v|communication|გაფრთხილება|I must warn you, the road is icy.|
+protect|v|actions|დაცვა|Sunglasses protect your eyes from the sun.|
+recognise|v|actions|ცნობა|I didn't recognise you with short hair.|
+argue|v|communication|კამათი|My neighbours argue all the time.|
+apologise|v|communication|ბოდიშის მოხდა|You should apologise to your sister.|
+organise|v|work|ორგანიზება|Who will organise the party?|
+deliver|v|shopping|მიტანა|They will deliver the sofa on Monday.|
+print|v|technology|დაბეჭდვა|Can you print this document for me?|
+record|v|technology|ჩაწერა|Can I record our conversation?|
+improve|v|actions|გაუმჯობესება|I want to improve my English.|
+solve|v|actions|გადაჭრა|We need to solve this problem.|
+fail|v|school|ჩაჭრა|I don't want to fail the exam.|
+succeed|v|work|წარმატების მიღწევა|If you work hard, you will succeed.|
+pass|v|school|ჩაბარება|I hope I pass my driving test.|
+pick|v|actions|კრეფა|Let's pick some apples.|
+kick|v|sport|ფეხის დარტყმა|Kick the ball to me!|
+smell|v|food|ყნოსვა|Can you smell the coffee?|
+taste|v|food|გასინჯვა|Taste this sauce, is it too salty?|
+steal|v|law|მოპარვა|Someone tried to steal my bike.|
+pack|v|travel|ჩალაგება|I need to pack my suitcase tonight.|
+download|v|technology|ჩამოტვირთვა|You can download the app for free.|
+sign|v|law|ხელის მოწერა|Please sign the form here.|
+breathe|v|health|სუნთქვა|Breathe in slowly through your nose.|
+shine|v|weather|ნათება|The sun will shine all day tomorrow.|
+blow|v|weather|ქროლა|The wind will blow all night.|
+attend|v|school|დასწრება|Did you attend the meeting?|
+hire|v|work|დაქირავება|We need to hire a new cook.|
+wrap|v|shopping|შეფუთვა|Can you wrap this as a gift?|
+hug|v|feelings|ჩახუტება|She likes to hug her grandchildren.|
+click|v|technology|დაწკაპუნება|Click the red button to start.|
+tidy|v|home|დალაგება|Please tidy your room.|
+exist|v|abstract|არსებობა|Some animals exist only in Australia.|
+achieve|v|work|მიღწევა|You can achieve anything if you try.|
+bite|v|animals|კბენა|Don't worry, my dog doesn't bite.|
+fold|v|home|დაკეცვა|Can you fold the clothes, please?|
+brush|v|home|გახეხვა|Don't forget to brush your teeth.|
+melt|v|nature|დნობა|The snow will melt in spring.|
+freeze|v|weather|გაყინვა|The lake will freeze in winter.|
+fry|v|food|შეწვა|Fry the onions in a little oil.|
+text|v|technology|მიწერა|I will text you when I arrive.|
+able|adj|qualities|შემძლე|Will you be able to come tomorrow?|
+alive|adj|nature|ცოცხალი|The fish is still alive.|
+dead|adj|nature|მკვდარი|This plant looks dead, it needs water.|
+similar|adj|qualities|მსგავსი|Our jobs are very similar.|
+popular|adj|qualities|პოპულარული|This cafe is very popular with students.|
+local|adj|places|ადგილობრივი|We buy vegetables from local farmers.|
+foreign|adj|places|უცხო|Do you speak any foreign languages?|
+international|adj|society|საერთაშორისო|She works for an international company.|
+national|adj|society|ეროვნული|Today is a national holiday.|
+main|adj|qualities|მთავარი|This is the main street of the town.|
+certain|adj|qualities|გარკვეული|Certain shops close early on Sundays.|
+modern|adj|qualities|თანამედროვე|They live in a modern building.|
+huge|adj|qualities|უზარმაზარი|There is a huge tree next to our house.|
+tiny|adj|qualities|პაწაწინა|They live in a tiny flat.|
+lucky|adj|feelings|იღბლიანი|You are so lucky to have such a good job.|
+ugly|adj|qualities|უშნო|What an ugly building!|
+handsome|adj|qualities|სიმპათიური|Her husband is very handsome.|
+excellent|adj|qualities|ჩინებული|Your work is excellent.|
+awful|adj|qualities|ძალიან ცუდი|The food was awful.|
+strange|adj|qualities|უცნაური|I heard a strange noise.|
+normal|adj|qualities|ნორმალური|It is normal to feel nervous before an exam.|
+usual|adj|qualities|ჩვეული|Let's meet at the usual place.|
+serious|adj|qualities|სერიოზული|This is a serious problem.|
+nervous|adj|feelings|ნერვიული|I always feel nervous before a flight.|
+proud|adj|feelings|ამაყი|We are very proud of you.|
+shy|adj|feelings|მორცხვი|My son is very shy with strangers.|
+polite|adj|qualities|თავაზიანი|Please be polite to the guests.|
+rude|adj|qualities|უხეში|The waiter was very rude.|
+honest|adj|qualities|პატიოსანი|He is an honest man.|
+brave|adj|qualities|მამაცი|You are very brave.|
+lazy|adj|qualities|ზარმაცი|Don't be lazy, help me!|
+clever|adj|qualities|ჭკვიანი|She is a very clever girl.|
+silly|adj|qualities|სულელური|That's a silly question.|
+calm|adj|feelings|მშვიდი|Stay calm and listen to me.|
+careful|adj|qualities|ფრთხილი|Be careful when you cross the road.|
+comfortable|adj|home|კომფორტული|These shoes are really comfortable.|
+pleasant|adj|qualities|სასიამოვნო|We had a pleasant evening.|
+fair|adj|qualities|სამართლიანი|The teacher is always fair to everyone.|
+sour|adj|food|მჟავე|This lemon is very sour.|
+salty|adj|food|მარილიანი|I don't like salty snacks.|
+spicy|adj|food|ცხარე|Do you like spicy food?|🌶️
+private|adj|society|კერძო|This is a private beach.|
+public|adj|society|საჯარო|Is there a public toilet near here?|
+personal|adj|qualities|პირადი|Can I ask you a personal question?|
+human|adj|people|ადამიანური|The accident was caused by human error.|
+natural|adj|nature|ბუნებრივი|I prefer natural products.|
+general|adj|qualities|ზოგადი|I have a general question.|
+clear|adj|qualities|გასაგები|Your explanation was very clear.|
+bright|adj|colours|ნათელი|The room is bright and sunny.|
+deep|adj|nature|ღრმა|The lake is very deep here.|
+wide|adj|qualities|ფართო|This street is very wide.|
+thin|adj|qualities|გამხდარი|She is tall and thin.|
+fat|adj|qualities|მსუქანი|Our cat is too fat.|
+purple|adj|colours|იისფერი|She has a purple scarf.|🟣
+upset|adj|feelings|განაწყენებული|She was upset about the news.|
+surprised|adj|feelings|გაკვირვებული|I was surprised to see him there.|😮
+whole|adj|qualities|მთელი|I ate the whole pizza.|
+single|adj|family|დაუოჯახებელი|Is your brother married or single?|
+crazy|adj|qualities|გიჟური|That's a crazy idea!|
+dear|adj|feelings|ძვირფასი|She is a dear friend of mine.|
+own|adj|qualities|საკუთარი|I want my own room.|
+closed|adj|shopping|დაკეტილი|The bank is closed on Sundays.|
+rich|adj|money|მდიდარი|He comes from a rich family.|
+poor|adj|money|ღარიბი|They were very poor when they were young.|
+necessary|adj|qualities|აუცილებელი|Is it necessary to book a table?|
+useful|adj|qualities|სასარგებლო|This app is very useful.|
+impossible|adj|qualities|შეუძლებელი|It is impossible to park here.|
+exciting|adj|feelings|ამაღელვებელი|The match was really exciting.|
+noisy|adj|qualities|ხმაურიანი|Our street is very noisy at night.|
+sunny|adj|weather|მზიანი|It will be sunny tomorrow.|🌞
+cloudy|adj|weather|მოღრუბლული|It is cloudy and cold today.|🌥️
+rainy|adj|weather|წვიმიანი|I don't like rainy days.|☔
+gentle|adj|qualities|ნაზი|Be gentle with the baby.|
+wild|adj|animals|ველური|There are wild horses in the mountains.|
+extra|adj|qualities|დამატებითი|Can I have an extra pillow?|
+daily|adj|time|ყოველდღიური|Exercise is part of my daily routine.|
+electric|adj|technology|ელექტრული|We bought an electric car.|
+cute|adj|qualities|საყვარელი|What a cute puppy!|
+round|adj|qualities|მრგვალი|We have a round table in the kitchen.|
+asleep|adj|home|მძინარე|The children are asleep.|
+awake|adj|home|გაღვიძებული|Are you still awake?|
+available|adj|qualities|ხელმისაწვდომი|Is this room available tonight?|
+likely|adj|qualities|სავარაუდო|It is likely to rain later.|
+false|adj|qualities|მცდარი|Is this sentence true or false?|
+traditional|adj|society|ტრადიციული|We cooked a traditional Georgian meal.|
+bitter|adj|food|მწარე|This coffee is too bitter.|
+sharp|adj|qualities|ბასრი|This knife is very sharp.|
+narrow|adj|qualities|ვიწრო|The streets in the old town are narrow.|
+thick|adj|qualities|სქელი|This book is very thick.|

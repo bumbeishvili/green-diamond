@@ -172,7 +172,7 @@ const EXTRA_ANIMALS = {
   crow: { file: ['animals/crow_evil.glb', 'animals/crow.glb'], length: 0.62, forward: '+z' },
 };
 const EXTRA_VEHICLES = { bike: { file: 'vehicles/bike.glb', length: 1.95 }, drone: { file: 'vehicles/drone.glb', length: 2.75 } };
-const EXTRA_WEAPONS = ['mg', 'knife', 'knife_fps', 'm4', 'deagle', 'autosniper', 'grenade', 'bow'];
+const EXTRA_WEAPONS = ['mg', 'knife', 'knife_fps', 'm4', 'deagle', 'autosniper', 'grenade', 'bow', 'aug', 'msr', 'launcher', 'missile', 'chainsaw'];
 
 // yaw that turns the model's forward axis to +Z (animals) or +X (vehicles)
 function yawFor(forward, to = 'z') {
@@ -252,7 +252,7 @@ async function loadExtras(out) {
 
   // the detailed cars (the Prius and Corolla by Gate 1, the security Leaf): already in metres,
   // nose +X, origin on the ground between the axles
-  await Promise.all(['prius', 'corolla', 'leaf'].map(async (key) => {
+  await Promise.all(['prius', 'corolla', 'leaf', 'civic', 'lambo'].map(async (key) => {
     const g = await load(`assets/models/vehicles/${key}.glb`);
     if (g) out.vehicles[key] = g.scene;
   }));

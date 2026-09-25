@@ -20,9 +20,18 @@ export const URLFLAGS = {
   nolock: params.has('nolock'),
   mptime: params.has('mptime') ? parseFloat(params.get('mptime')) : null,   // match length (s)
   relay: params.has('relay'),   // co-op: through the server's relay from the start (Cloudflare), no direct attempt
+  // (testing PvP: the host's rules, ?pvp=ffa|teams&pvpz=0&pvpkills=N)
+  pvp: params.get('pvp'),
+  pvpz: params.has('pvpz') ? params.get('pvpz') !== '0' : null,
+  pvpkills: params.has('pvpkills') ? parseInt(params.get('pvpkills'), 10) : null,
+  english: params.get('english'),   // English practice for this visit: off / light / normal / intense (test runs: off unless given)
+  // a phone or tablet: touch controls (?touch forces them, for testing)
+  touch: params.has('touch') || (typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches && (navigator.maxTouchPoints || 0) > 0),
 };
 
 export const QUALITY = {
+  // phones: a smaller picture, short soft shadows, fewer trees, fewer zombies at once
+  phone: { pixelRatio: 0.75, shadowMap: 1024, shadowRange: 45, anisotropy: 1, drawTrees: 0.35, grassBlades: 0, envIntensity: 0.9, treeShadows: false, phone: true },
   low: { pixelRatio: 0.85, shadowMap: 1024, shadowRange: 70, anisotropy: 2, drawTrees: 0.6, grassBlades: 0, envIntensity: 0.9, treeShadows: false },
   medium: { pixelRatio: 1.0, shadowMap: 2048, shadowRange: 95, anisotropy: 4, drawTrees: 0.85, grassBlades: 0, envIntensity: 1.0 },
   high: { pixelRatio: 1.35, shadowMap: 4096, shadowRange: 120, anisotropy: 8, drawTrees: 1.0, grassBlades: 1, envIntensity: 1.0 },
@@ -47,6 +56,7 @@ export const toZ = (y) => -y;
 
 // First run: pick graphics quality from the GPU (laptops with integrated graphics get less).
 function guessQuality() {
+  if (URLFLAGS.touch) return 'phone';
   try {
     const gl = document.createElement('canvas').getContext('webgl2');
     const ext = gl && gl.getExtension('WEBGL_debug_renderer_info');
@@ -65,6 +75,8 @@ export const settings = (() => {
     Object.assign(s, saved);
   } catch (e) { /* storage unavailable */ }
   if (!s.quality) s.quality = guessQuality();
+  // (a phone starts light, whatever an older version saved, until you pick one yourself on it)
+  if (URLFLAGS.touch && !s.touchChosen) s.quality = 'phone';
   if (URLFLAGS.quality) s.quality = URLFLAGS.quality;
   return s;
 })();

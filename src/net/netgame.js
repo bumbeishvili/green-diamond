@@ -7,6 +7,7 @@ import {
 } from './protocol.js';
 import { Avatars } from './avatars.js';
 import { URLFLAGS } from '../config.js';
+import { isPvp, PVP_RESPAWN, PvP } from '../game/pvp.js';
 
 // Co-op multiplayer, host-authoritative, over the WebRTC links of net/session.js.
 //
@@ -18,8 +19,15 @@ import { URLFLAGS } from '../config.js';
 // host hasn't seen yet (reconciliation, blended in smoothly). Zombies and the other players are
 // drawn 100 ms in the past, between two snapshots (interpolation).
 
-export const MATCH_MS = 10 * 60 * 1000;
-export const RESPAWN_S = 15;
+export const MATCH_MS = 15 * 60 * 1000;
+export const RESPAWN_S = 4;
+// What the host picks in the lobby (and remembers): co-op, or players against each other
+// ('ffa': everyone for themselves, 'teams': two teams the host arranges), zombies or not, how
+// long, and how many kills win it (0: no limit, the clock decides).
+export const DEFAULT_RULES = { mode: 'coop', zombies: true, minutes: 15, kills: 20, teams: {} };
+function savedRules() {
+  try { return { ...DEFAULT_RULES, ...JSON.parse(localStorage.getItem('gd-rules') || '{}'), teams: {} }; } catch { return { ...DEFAULT_RULES }; }
+}
 const INTERP_MS = 100;
 const MAX_REWIND_TICKS = 18;       // lag compensation reaches back at most 300 ms
 const v3 = (a) => new THREE.Vector3(a[0], a[1], a[2]);
@@ -94,6 +102,7 @@ class Remote {
     if (c.stairs != null) g.stairs.applyCode(p, c.stairs);
     p.yaw = c.yaw; p.pitch = c.pitch; p.ads = c.ads;
     p.speedWeapon = DEFS[WEAPONS[c.weapon]]?.move ?? 1;
+    p.shielding = WEAPONS[c.weapon] === 'shield' && !p.vehicle;
     p.update(TICK, this.input.set(c.bits), true);
     if (p.vehicle) g.vehicles.driveTick(p.vehicle, TICK, this.input);
   }
@@ -120,6 +129,10 @@ export class Host {
     this.localRespawn = 0; this.localWasDead = false; this.localTeleport = 0;
     this.scoreT = 0;
     this.ready = new Set();         // clients whose game has loaded (they said hello)
+    this.rules = savedRules();
+    if (URLFLAGS.pvp) Object.assign(this.rules, { mode: URLFLAGS.pvp, minutes: 10 });
+    if (URLFLAGS.pvpz != null) this.rules.zombies = URLFLAGS.pvpz;
+    if (URLFLAGS.pvpkills != null) this.rules.kills = URLFLAGS.pvpkills;
     session.onGame = (id, kind, data) => this.onMessage(id, kind, data);
     session.onPeerOpen = (id) => this.onJoin(id);
     session.onPeerClose = (id) => this.onLeave(id);
@@ -131,21 +144,69 @@ export class Host {
   get slot() { return this.s.slot ?? 0; }
   get inMatch() { return !!this.match; }
 
+  // ---- the rules (the lobby) ----
+  setRules(patch) {
+    Object.assign(this.rules, patch);
+    try { const { teams, ...keep } = this.rules; localStorage.setItem('gd-rules', JSON.stringify(keep)); } catch { /* no storage */ }
+    this.sendRules();
+    this.g.netui?.render();
+  }
+
+  // everyone in the room by slot: their name
+  slotNames() {
+    const out = { [this.slot]: this.names.get('host') || `P${this.slot + 1}` };
+    for (const p of this.s.roster || []) if (p.id !== this.s.id) out[p.slot] = this.names.get(p.id) || `P${p.slot + 1}`;
+    return out;
+  }
+
+  teamOfSlot(slot) { return this.rules.teams[slot] ?? slot % 2; }
+  toggleTeam(slot) { this.rules.teams[slot] = 1 - this.teamOfSlot(slot); this.setRules({}); }
+  sendRules(to = null) {
+    const m = { t: 'rules', rules: this.rules, names: this.slotNames() };
+    if (to) this.s.sendTo(to, 'rel', m); else this.s.sendAll('rel', m);
+  }
+
   // ---- lobby -> match ----
   start() {
     const g = this.g;
     if (this.match) g.resetMatch();
     g.localSlot = this.slot;
-    this.match = { t0: performance.now(), dur: URLFLAGS.mptime ? URLFLAGS.mptime * 1000 : MATCH_MS, over: false };
+    // the rules for this match (in teams, everyone gets a side)
+    const rules = { ...this.rules, teams: {} };
+    for (const slot of Object.keys(this.slotNames())) rules.teams[slot] = this.teamOfSlot(+slot);
+    Object.assign(this.rules.teams, rules.teams);
+    g.rules = rules;
+    this.avatars.clear();
+    const dur = URLFLAGS.mptime ? URLFLAGS.mptime * 1000 : (rules.minutes || 15) * 60000;
+    this.match = { t0: performance.now(), dur, over: false, rules };
     this.tick = 0; this.acc = 0;
     g.players = [g.player];
-    // everyone in the courtyard by the pool, facing the gates
+    g.player.slot = this.slot;
+    // co-op: everyone in the courtyard by the pool, facing the gates
     place(g.player, spawnSpot(g, null, this.slot), -Math.PI / 2);
+    // (a new match: whoever played the last one starts afresh too, alive, no armour, by the pool)
+    this.localRespawn = 0; this.localWasDead = false;
+    for (const r of this.remotes.values()) {
+      const q = r.player;
+      q.dead = false; q.maxHealth = 100; q.health = 100; q.setArmour(0); q.speedMul = 1; q.lastHit = null; q.shieldT = 0;
+      if (q.vehicle) g.vehicles.release(q.vehicle, q, null);
+      r.respawn = 0; r.wasDead = false; r.teleport++; r.queue.length = 0;
+      place(q, spawnSpot(g, null, r.slot), -Math.PI / 2);
+    }
     // those still loading join as soon as they're ready (their hello), next to the team
     for (const id of this.s.peers.keys()) if (this.s.peers.get(id).open && this.ready.has(id)) this.addRemote(id);
+    g.players = [g.player, ...[...this.remotes.values()].map((q) => q.player)];
+    g.zombies.targets = g.players;
+    // PvP: each team at its own end, or everyone apart
+    if (isPvp(rules)) {
+      const all = [{ p: g.player, slot: this.slot }, ...[...this.remotes.values()].map((r) => ({ p: r.player, slot: r.slot }))];
+      const spots = g.pvp.startSpots(all.map((e) => e.slot));
+      for (const e of all) { const s = spots.get(e.slot); place(e.p, s, g.pvp.faceFrom(s)); e.p.shieldT = 0; e.p.lastHit = null; }
+    }
     g.beginMatch('host');
     for (const r of this.remotes.values()) this.sendStart(r);
     this.teamChanged();
+    this.sendRules();
   }
 
   addRemote(id) {
@@ -154,7 +215,18 @@ export class Host {
     const r = new Remote(g, id, slot, this.names.get(id));
     const living = (g.players || [g.player]).find((p) => !p.dead);
     // at the start everyone lines up by the pool; later arrivals turn up next to the team
-    place(r.player, spawnSpot(g, g.mode === 'host' ? living : null, slot), -Math.PI / 2);
+    // (PvP: late arrivals go to the smaller team, and turn up away from their foes)
+    const rules = this.match && this.match.rules;
+    if (isPvp(rules)) {
+      if (rules.mode === 'teams' && rules.teams[slot] == null) {
+        const n = [0, 0];
+        for (const q of [this.slot, ...[...this.remotes.values()].map((x) => x.slot)]) n[rules.teams[q] ?? q % 2]++;
+        rules.teams[slot] = this.rules.teams[slot] = n[1] < n[0] ? 1 : 0;
+      }
+      const s = g.pvp.spawnSpot(slot);
+      place(r.player, s, g.pvp.faceFrom(s));
+      r.player.shieldT = 2;
+    } else place(r.player, spawnSpot(g, g.mode === 'host' ? living : null, slot), -Math.PI / 2);
     this.remotes.set(id, r);
     g.players = [g.player, ...[...this.remotes.values()].map((q) => q.player)];
     g.zombies.targets = g.players;
@@ -166,7 +238,7 @@ export class Host {
     const g = this.g, d = g.director;
     this.s.sendTo(r.id, 'rel', {
       t: 'start', slot: r.slot, elapsed: performance.now() - this.match.t0, dur: this.match.dur,
-      wave: d.wave, hour: g.hour, targetHour: g.targetHour ?? null, pos: r3(r.player.pos), yaw: r.player.yaw,
+      wave: d.wave, hour: g.hour, targetHour: g.targetHour ?? null, pos: r3(r.player.pos), yaw: r.player.yaw, rules: this.match.rules,
       pickups: g.pickups.list.map((it) => [it.id, it.kind, +it.x.toFixed(2), +it.y.toFixed(2), +it.z.toFixed(2), it.amount]),
       drops: d.drops.map((q) => [q.id, q.kind, q.mesh.position.x, q.mesh.position.y - 1, q.mesh.position.z]),
       team: this.teamList(), tick: this.tick,
@@ -201,6 +273,7 @@ export class Host {
     if (!r) return;
     this.sendStart(r);
     this.teamChanged();
+    this.sendRules();
     if (!had) this.g.hud.notice(`${r.name} joined`);
   }
 
@@ -233,6 +306,7 @@ export class Host {
       this.names.set(id, String(m.name || '').slice(0, 16));
       if (r) r.name = this.names.get(id) || r.name;
       this.onReady(id);
+      this.sendRules();
       return;
     }
     if (!r || !this.match || this.match.over) return;
@@ -244,7 +318,7 @@ export class Host {
         const at = Math.max(this.tick - MAX_REWIND_TICKS, Math.min(this.tick, +m.rt || this.tick));
         const rewind = at < this.tick && !this.noRewind ? (zb) => g.zombies.rewindOffset(zb, at) : null;
         const dirs = m.d.slice(0, 12).map(v3).map((d) => d.normalize());
-        const res = g.weapons.resolveShot(m.w, v3(m.o), dirs, r.slot, rewind, null, g.weapons.damageMult(m.w, r.slot, !!m.a), p.vehicle);
+        const res = g.weapons.resolveShot(m.w, v3(m.o), dirs, r.slot, rewind, null, g.weapons.damageMult(m.w, r.slot, !!m.a), p.vehicle, this.noRewind ? null : at);
         if (res.hit) this.s.sendTo(id, 'rel', { t: 'hit', k: res.kill, h: res.head });
         this.shotFx(r.slot, m.w, v3(m.o), dirs, id);
         break;
@@ -260,15 +334,49 @@ export class Host {
         if (p.dead) return;
         g.weapons.spawnGrenade(v3(m.p), v3(m.v), { by: r.slot, id: g.weapons.nextProjId(r.slot) });
         break;
+      case 'saw': {
+        // (a tenth of a second of a client's chainsaw; no faster than it could really come)
+        const now = performance.now();
+        if (p.dead || now - (r.sawAt || 0) < 80) return;
+        r.sawAt = now;
+        if (g.weapons.sawFrom(p, r.slot)) this.s.sendTo(id, 'rel', { t: 'hit', k: false, h: false });
+        this.fx.push(['w', r.slot]);
+        break;
+      }
+      case 'bash':
+        if (p.dead) return;
+        if (g.weapons.bashFrom(p, r.slot)) this.s.sendTo(id, 'rel', { t: 'hit', k: false, h: false });
+        break;
+      case 'msl':
+        if (p.dead) return;
+        g.weapons.spawnMissile(v3(m.p), v3(m.v), { by: r.slot, id: m.id });
+        this.missileFx(m.id, v3(m.p), v3(m.v), r.slot, id);
+        break;
       case 'arrow':
         if (p.dead) return;
         g.weapons.spawnArrow(v3(m.p), v3(m.v), { dmg: Math.min(+m.dmg || 0, DEFS.bow.dmg) * g.weapons.damageMult('bow', r.slot, !!m.a), pierce: m.pierce ? 1 : 0, by: r.slot, id: m.id });
         this.arrowFx(m.id, v3(m.p), v3(m.v), r.slot, id);
         break;
       case 'buy': this.buy(r, m); break;
+      case 'learn': this.learnReward(r, m); break;
       case 'enter': this.vehicleEnter(r, m.vid); break;
       case 'exit': this.vehicleExit(r); break;
       default: break;
+    }
+  }
+
+  // ---- English practice: a client's rewards (points, health, a power-up, an upgrade), within reason ----
+  learnReward(r, m) {
+    const g = this.g, d = g.director, p = r.player, now = performance.now() / 1000;
+    const L = r.learn || (r.learn = { t0: now, pts: 0, heal: -1e9, pw: -1e9, up: -1e9 });
+    if (now - L.t0 > 60) Object.assign(L, { t0: now, pts: 0 });
+    if (m.p > 0 && L.pts + m.p <= 4000) { L.pts += m.p; d.addPoints(Math.min(+m.p, 1500), true, r.slot); }
+    if (m.h > 0 && now - L.heal > 15 && !p.dead) { L.heal = now; p.health = Math.min(p.maxHealth, p.health + Math.min(+m.h, 40)); }
+    if (m.pw && now - L.pw > 45 && !p.dead) { L.pw = now; d.drop(p.pos); }
+    if (m.up && now - L.up > 90 && g.weapons.canUpgrade(m.up) && g.weapons.level(m.up, r.slot) < 3) {
+      L.up = now;
+      g.weapons.upgrade(m.up, r.slot);
+      this.s.sendTo(r.id, 'rel', { t: 'buyOk', item: 'upgrade', pts: d.tally(r.slot).points, w: m.up });
     }
   }
 
@@ -321,13 +429,15 @@ export class Host {
   vehicleLeft(v) { this.say({ t: 'veh', vid: v.vid, s: -1, st: vehState(v), who: this.slot }); }
 
   // someone went down (or left) at the wheel: the vehicle stops where it is
-  forceOut(p, slot, local) {
+  forceOut(p, slot, local, why) {
     const vs = this.g.vehicles, v = p.vehicle;
     if (!v) return;
     const spot = vs.exitSpot(v, p) || { x: v.pos.x, y: v.pos.y, z: v.pos.z };
     if (local) vs.dropControls(v);
     vs.release(v, p, spot);
-    this.say({ t: 'veh', vid: v.vid, s: -1, st: vehState(v), who: slot, out: [spot.x, spot.y, spot.z, spot.yaw || 0] });
+    const r = [...this.remotes.values()].find((q) => q.player === p);
+    if (r) r.teleport++;
+    this.say({ t: 'veh', vid: v.vid, s: -1, st: vehState(v), who: slot, out: [spot.x, spot.y, spot.z, spot.yaw || 0], why });
   }
 
   // a client buys something: the host keeps everyone's points (and their upgrades) and says yes or no
@@ -345,7 +455,7 @@ export class Host {
       cost = ARMOUR[p.armour].price;
     } else if (d.isGun(st.item) && m.owned) return no('');
     if (st.item === 'stamina' && p.speedMul > 1) return no('Already bought');
-    if (t.points < cost || Math.hypot(st.x - p.pos.x, st.z - p.pos.z) > 4) return no();
+    if (t.points < cost || Math.hypot(st.x - p.pos.x, st.z - p.pos.z) > 4 || Math.abs(st.y - p.pos.y) > 2.5) return no();
     t.points -= cost;
     if (st.item === 'upgrade') w.upgrade(m.w, r.slot);
     if (st.item === 'armour') p.setArmour(p.armour + 1);
@@ -363,7 +473,7 @@ export class Host {
     if (n === 8) this.acc = 0;       // can't keep up: drop the backlog rather than spiral
     for (const r of this.remotes.values()) {
       const p = r.player;
-      this.avatars.set({ slot: r.slot, x: p.pos.x, y: p.pos.y, z: p.pos.z, yaw: p.yaw, pitch: p.pitch, crouch: p.crouch, dead: p.dead, health: p.health, maxHealth: p.maxHealth, name: r.name, hidden: !!p.vehicle }, dt, !p.vehicle);
+      this.avatars.set({ slot: r.slot, x: p.pos.x, y: p.pos.y, z: p.pos.z, yaw: p.yaw, pitch: p.pitch, crouch: p.crouch, dead: p.dead, health: p.health, maxHealth: p.maxHealth, name: r.name, hidden: !!p.vehicle, weapon: r.weapon }, dt, !p.vehicle);
     }
     this.avatars.update(dt);
   }
@@ -374,6 +484,8 @@ export class Host {
     for (const r of this.remotes.values()) r.step(g);
     g.worldStep(TICK);
     g.zombies.record(this.tick);
+    g.pvp.record(this.tick);
+    g.pvp.tick(TICK);
     this.lifeAndDeath(TICK);
     // (30 a second; 20 to players on the relay, which counts every message)
     if (this.tick % SNAP_EVERY === 0 || this.tick % 3 === 0) this.snapshot();
@@ -385,7 +497,7 @@ export class Host {
 
   // players going down, coming back, and the end of the match
   lifeAndDeath(dt) {
-    const g = this.g, d = g.director;
+    const g = this.g, d = g.director, pvp = isPvp(this.match.rules);
     if (this.match.over) return;
     const all = [{ p: g.player, slot: this.slot, local: true }, ...[...this.remotes.values()].map((r) => ({ p: r.player, slot: r.slot, r }))];
     for (const e of all) {
@@ -393,35 +505,78 @@ export class Host {
       if (e.p.dead && !was) {
         if (e.p.vehicle) this.forceOut(e.p, e.slot, !!e.local);
         d.tally(e.slot).deaths++;
-        if (e.local) this.localRespawn = RESPAWN_S; else e.r.respawn = RESPAWN_S;
-        this.say({ t: 'down', s: e.slot });
+        const wait = pvp ? PVP_RESPAWN : RESPAWN_S;
+        if (e.local) this.localRespawn = wait; else e.r.respawn = wait;
+        if (pvp) this.frag(e.p, e.slot);
+        else this.say({ t: 'down', s: e.slot });
         g.onTeamDown?.(e.slot);
       }
       if (e.local) this.localWasDead = e.p.dead; else e.r.wasDead = e.p.dead;
       if (!e.p.dead) continue;
       const left = e.local ? (this.localRespawn -= dt) : (e.r.respawn -= dt);
       if (left > 0) continue;
+      // (co-op: back next to a teammate who's standing; PvP: somewhere away from your foes)
       const near = all.find((q) => !q.p.dead);
-      if (!near) continue;
-      const spot = spawnSpot(g, near.p, e.slot);
-      place(e.p, spot, near.p.yaw);
-      e.p.dead = false; e.p.health = e.p.maxHealth;
+      if (!near && !pvp) continue;
+      const spot = pvp ? g.pvp.spawnSpot(e.slot) : spawnSpot(g, near.p, e.slot);
+      place(e.p, spot, pvp ? g.pvp.faceFrom(spot) : near.p.yaw);
+      e.p.dead = false; e.p.health = e.p.maxHealth; e.p.lastHit = null;
+      if (pvp) e.p.shieldT = PvP.SHIELD;
       if (e.local) { this.localWasDead = false; this.localTeleport++; } else { e.r.wasDead = false; e.r.teleport++; e.r.queue.length = 0; }
       this.say({ t: 'up', s: e.slot });
       g.onTeamUp?.(e.slot);
     }
-    if (all.every((e) => e.p.dead)) this.end(false);
+    if (this.match.over) return;
+    if (!pvp && all.every((e) => e.p.dead)) this.end(false);
     else if (this.msLeft() <= 0) this.end(true);
   }
 
+  // PvP: someone died; whoever hurt them last (lately) gets the kill, and maybe the match
+  frag(victim, slot) {
+    const g = this.g, d = g.director, rules = this.match.rules;
+    const k = g.pvp.killer(victim), how = victim.lastHit ? victim.lastHit.how : 'zombie';
+    if (k >= 0) {
+      const t = d.tally(k);
+      t.frags = (t.frags || 0) + 1;
+      d.addPoints(how === 'knife' ? 400 : 250, false, k);
+    }
+    const m = { t: 'frag', k, v: slot, w: k >= 0 ? how : victim.lastHit && victim.lastHit.by === slot ? 'self' : 'zombie' };
+    this.say(m);
+    g.onFrag?.(m.k, m.v, m.w);
+    this.scores();
+    // first to the kill limit (a player, or a team) wins
+    if (k < 0 || !rules.kills) return;
+    const score = rules.mode === 'teams' ? this.teamFrags()[g.pvp.team(k)] : d.tally(k).frags;
+    if (score >= rules.kills) this.end(true);
+  }
+
+  teamFrags() {
+    const d = this.g.director, out = [0, 0];
+    for (const t of this.teamList()) out[this.g.pvp.team(t.slot)] += d.tally(t.slot).frags || 0;
+    return out;
+  }
+
   end(win) {
-    const g = this.g, d = g.director;
+    const g = this.g, d = g.director, rules = this.match.rules;
     this.match.over = true;
     const stats = this.teamList().map((t) => {
       const q = d.tally(t.slot);
-      return { slot: t.slot, name: t.name, kills: q.kills, heads: q.headshots, deaths: q.deaths, points: q.points };
+      return { slot: t.slot, name: t.name, kills: q.kills, heads: q.headshots, deaths: q.deaths, points: q.points, frags: q.frags || 0, team: g.pvp.team(t.slot) };
     });
     const msg = { t: 'over', win, wave: d.wave, stats };
+    // PvP: the most kills (a player, or a team); level: a draw
+    if (isPvp(rules)) {
+      msg.pvp = rules.mode;
+      if (rules.mode === 'teams') {
+        const tf = this.teamFrags();
+        msg.teams = tf;
+        msg.winner = tf[0] === tf[1] ? -1 : tf[0] > tf[1] ? 0 : 1;
+      } else {
+        const top = Math.max(...stats.map((q) => q.frags));
+        const best = stats.filter((q) => q.frags === top);
+        msg.winner = best.length === 1 ? best[0].slot : -1;
+      }
+    }
     this.s.sendAll('rel', msg);
     g.endMatch(msg);
   }
@@ -461,14 +616,14 @@ export class Host {
 
   scores() {
     const d = this.g.director;
-    const s = this.teamList().map((t) => { const q = d.tally(t.slot); return [t.slot, q.points, q.kills, q.headshots, q.deaths]; });
+    const s = this.teamList().map((t) => { const q = d.tally(t.slot); return [t.slot, q.points, q.kills, q.headshots, q.deaths, q.frags || 0]; });
     this.s.sendAll('rel', { t: 'score', s });
     this.g.hud.scores?.(s);
   }
 
   // effects the clients should see
   blood(kind, p, dir) {
-    this.fx.push([kind === 'feathers' ? 'f' : kind === 'bile' ? 'g' : 'b', +p.x.toFixed(2), +p.y.toFixed(2), +p.z.toFixed(2), dir ? +dir.x.toFixed(2) : 0, dir ? +dir.y.toFixed(2) : 0, dir ? +dir.z.toFixed(2) : 0]);
+    this.fx.push([kind === 'feathers' ? 'f' : kind === 'bile' ? 'g' : kind === 'spark' ? 'p' : 'b', +p.x.toFixed(2), +p.y.toFixed(2), +p.z.toFixed(2), dir ? +dir.x.toFixed(2) : 0, dir ? +dir.y.toFixed(2) : 0, dir ? +dir.z.toFixed(2) : 0]);
   }
 
   shotFx(slot, w, o, dirs, except = null) {
@@ -485,14 +640,23 @@ export class Host {
   }
 
   arrowGone(id) { this.s.sendAll('rel', { t: 'arrowGone', id }); }
+  missileFx(id, p, v, slot, except = null) {
+    const m = JSON.stringify({ t: 'msl', id, p: r3(p), v: r3(v), s: slot });
+    for (const [pid, peer] of this.s.peers) if (pid !== except) peer.send('rel', m);
+  }
   nadeFx(id, p, v) { this.s.sendAll('rel', { t: 'nade', id, p: r3(p), v: r3(v) }); }
   boom(x, y, z, r, src) { this.s.sendAll('rel', { t: 'boom', x: +x.toFixed(2), y: +y.toFixed(2), z: +z.toFixed(2), r, src }); }
   hitFeedback(slot, killed, head) { const r = this.bySlot(slot); if (r) this.s.sendTo(r.id, 'rel', { t: 'hit', k: killed, h: head }); }
   pointsFeed(slot, n) { const r = this.bySlot(slot); if (r) this.s.sendTo(r.id, 'rel', { t: 'pts', n }); }
   hurt(p, amount, x, z) { const r = p.remote; if (r) this.s.sendTo(r.id, 'rel', { t: 'hurt', a: +amount.toFixed(1), x: +x.toFixed(2), z: +z.toFixed(2) }); }
+  // (a blow on someone's shield: everyone sees the sparks, and its holder feels it)
+  blocked(p, x, z) { const slot = p.slot ?? -1; this.say({ t: 'blk', s: slot, x: +x.toFixed(2), z: +z.toFixed(2) }); }
   wave(w, note) { this.say({ t: 'wave', w, note }); }
   waveEnd(w) { this.say({ t: 'waveEnd', w }); }
   notice(text) { this.say({ t: 'notice', text }); }
+  banner(a, b) { this.say({ t: 'banner', a, b }); }
+  spit(id, o, v) { this.say({ t: 'spit', id, p: r3(o), v: r3(v) }); }
+  splat(id, p, r) { this.say({ t: 'splat', id, p: p.map((q) => +q.toFixed(2)), r }); }
   teamDouble() { this.g.director.double = 30; this.say({ t: 'double' }); }
   pickupAdd(it) { this.say({ t: 'pk+', l: [[it.id, it.kind, +it.x.toFixed(2), +it.y.toFixed(2), +it.z.toFixed(2), it.amount]] }); }
   pickupGone(it, slot) { this.say({ t: 'pk-', id: it.id, s: slot, k: it.kind, a: it.amount }); }
@@ -552,6 +716,8 @@ export class Client {
     const m = data, g = this.g;
     switch (m.t) {
       case 'start': this.begin(m); break;
+      case 'rules': this.rules = m.rules; this.slotNamesIn = m.names || {}; g.netui?.render(); break;
+      case 'frag': g.onFrag?.(m.k, m.v, m.w); break;
       case 'who': this.s.sendTo(this.s.hostId, 'rel', { t: 'hello', name: this.g.playerName || '' }); break;
       case 'team': this.team = m.team; g.hud.team?.(m.team); break;
       case 'fx': if (this.match) this.effects(m.l); break;
@@ -567,8 +733,18 @@ export class Client {
         break;
       }
       case 'wave': g.clientWave(m.w, m.note); break;
-      case 'waveEnd': g.hud.banner(`Wave ${m.w} survived`, 'The shops are open: press F to buy'); g.audio.play('waveEnd', { vol: 0.45 }); break;
+      case 'waveEnd': g.hud.banner(`Wave ${m.w} survived`, 'The shops are open: press F to buy'); g.audio.play('waveEnd', { vol: 0.45 }); g.onWaveEnd?.(m.w); break;
       case 'notice': g.hud.notice(m.text); break;
+      case 'banner': g.hud.banner(m.a, m.b); break;
+      case 'blk': {
+        // a blow on a riot shield: ours, or someone's we can see
+        const av = m.s === this.slot ? null : this.avatars.list.get(m.s);
+        const pl = m.s === this.slot ? g.player : av ? { pos: av.pos } : null;
+        if (pl) g.shieldFx(pl, m.x, m.z);
+        break;
+      }
+      case 'spit': if (this.match) g.zombies.spitFx(m.id, m.p, m.v); break;
+      case 'splat': if (this.match) g.zombies.splatFx(m.id, m.p, m.r); break;
       case 'double': g.director.double = 30; g.hud.banner('DOUBLE POINTS', ''); g.audio.play('pickup', { vol: 1 }); break;
       case 'buyOk': g.director.points = m.pts; g.hud.points(m.pts); g.director.bought(m.item, m); break;
       case 'buyNo': g.audio.play('empty'); if (m.why) g.hud.banner(m.why, ''); break;
@@ -580,6 +756,7 @@ export class Client {
       case 'boom': g.clientBoom(m); break;
       case 'arrow': g.weapons.spawnArrow(v3(m.p), v3(m.v), { id: m.id, visual: true, by: m.s }); g.audio.play('bow', { pos: v3(m.p), vol: 0.6 }); break;
       case 'arrowGone': g.weapons.removeArrowById(m.id); break;
+      case 'msl': g.weapons.spawnMissile(v3(m.p), v3(m.v), { id: m.id, visual: true, by: m.s }); break;
       case 'veh': this.onVehicle(m); break;
       case 'crash': { const vs = this.g.vehicles, v = vs.byVid(m.vid); if (v && m.e) vs.applyDamage(v, m.e, v !== vs.active); break; }
       case 'vehNo': g.audio.play('empty'); if (m.why) g.hud.notice(m.why); break;
@@ -593,8 +770,11 @@ export class Client {
   begin(m) {
     const g = this.g;
     if (this.match) g.resetMatch();
-    this.match = { over: false };
+    this.match = { over: false, rules: m.rules || { ...DEFAULT_RULES } };
+    g.rules = this.match.rules;
+    this.avatars.clear();
     g.localSlot = m.slot;
+    g.player.slot = m.slot;
     this.team = m.team || [];
     this.msLeft = m.dur - m.elapsed;
     this.seq = 0; this.hist = []; this.snaps = []; this.offset = null; this.acc = 0; this.teleport = -1;
@@ -615,7 +795,7 @@ export class Client {
   frame(dt) {
     const g = this.g, p = g.player, input = g.input;
     if (!this.match) return;
-    const playing = g.state === 'playing';
+    const playing = g.state === 'playing' && !g.practice?.open;
     // looking around is per frame; moving is per tick (like on the host)
     if (playing && !p.dead) p.look(input, true);
     if (playing && input.hit('Space')) this.jump = true;
@@ -815,6 +995,7 @@ export class Client {
     if (mine) {
       vs.dropControls(v);
       vs.release(v, g.player, m.out ? { x: m.out[0], y: m.out[1], z: m.out[2], yaw: m.out[3] } : null);
+      if (m.why === 'dragged') vs.draggedFx();
     } else vs.release(v, v.who || { vel: new THREE.Vector3(), pos: new THREE.Vector3() }, null);
   }
 
@@ -882,7 +1063,7 @@ export class Client {
       this.avatars.set({
         slot: pb.slot, x: pa.x + (pb.x - pa.x) * f, y: pa.y + (pb.y - pa.y) * f, z: pa.z + (pb.z - pa.z) * f,
         yaw: pa.yaw + dyaw * f, pitch: pa.pitch + (pb.pitch - pa.pitch) * f, crouch: pa.crouch + (pb.crouch - pa.crouch) * f,
-        dead: !!(pb.flags & PF.dead), health: pb.health, maxHealth: pb.maxHealth, name, hidden: !!(pb.flags & PF.vehicle),
+        dead: !!(pb.flags & PF.dead), health: pb.health, maxHealth: pb.maxHealth, name, hidden: !!(pb.flags & PF.vehicle), weapon: pb.weapon,
       }, dt, false);
     }
     for (const slot of [...this.avatars.list.keys()]) if (!seen.has(slot)) this.avatars.remove(slot);
@@ -924,8 +1105,12 @@ export class Client {
       } else if (e[0] === 'k') {
         const av = this.avatars.list.get(e[1]);
         if (av) g.audio.play('knife', { pos: av.pos, vol: 0.6 });
+      } else if (e[0] === 'w') {
+        const av = e[1] !== this.slot && this.avatars.list.get(e[1]);
+        if (av) g.audio.play('saw', { pos: av.pos, vol: 0.8 });
       } else {
         const p = new THREE.Vector3(e[1], e[2], e[3]), d = new THREE.Vector3(e[4], e[5], e[6]);
+        if (e[0] === 'p') { g.effects.emit(p, 8, { color: [1, 0.85, 0.5], speed: 4, spread: 0.9, up: 0.6, life: 0.25, size: 0.04, gravity: 6 }); g.audio.play('metal', { pos: p, vol: 0.7 }); continue; }
         if (e[0] === 'b') g.effects.bloodBurst(p, d);
         else if (e[0] === 'f') g.effects.emit(p, 10, { color: [0.05, 0.05, 0.06], speed: 2.2, spread: 1.6, up: 1, life: 1.4, size: 0.07, gravity: 1.5 });
         else g.effects.emit(p, 12, { color: [0.35, 0.75, 0.15], speed: 2.5, spread: 1.2, up: 1, life: 0.8, size: 0.09, dir: d });
@@ -937,6 +1122,10 @@ export class Client {
   // ---- what we tell the host ----
   shoot(w, o, dirs, aimed) { this.s.sendTo(this.s.hostId, 'rel', { t: 'shot', w, o: r3(o), d: dirs.slice(0, 12).map(r4), rt: +this.renderTick().toFixed(2), a: aimed ? 1 : 0 }); }
   melee(heavy) { this.s.sendTo(this.s.hostId, 'rel', { t: 'melee', heavy }); }
+  saw() { this.s.sendTo(this.s.hostId, 'rel', { t: 'saw' }); }
+  learnReward(m) { this.s.sendTo(this.s.hostId, 'rel', { t: 'learn', ...m }); }
+  bash() { this.s.sendTo(this.s.hostId, 'rel', { t: 'bash' }); }
+  missile(id, p, v) { this.s.sendTo(this.s.hostId, 'rel', { t: 'msl', id, p: r3(p), v: r3(v) }); }
   grenade(p, v) { this.s.sendTo(this.s.hostId, 'rel', { t: 'nade', p: r3(p), v: r3(v) }); }
   arrow(id, p, v, dmg, pierce, aimed) { this.s.sendTo(this.s.hostId, 'rel', { t: 'arrow', id, p: r3(p), v: r3(v), dmg, pierce, a: aimed ? 1 : 0 }); }
   buy(i, cost, owned, w) { this.s.sendTo(this.s.hostId, 'rel', { t: 'buy', i, cost, owned, w }); }

@@ -25,6 +25,10 @@ import { Underground } from './world/underground.js';
 import { NetUI } from './net/ui.js';
 import { Voice } from './net/voice.js';
 import { Host, Client } from './net/netgame.js';
+import { PvP, isPvp, teamOf, TEAM_NAMES, TEAM_CSS } from './game/pvp.js';
+import { SLOT_CSS } from './net/avatars.js';
+import { Touch } from './game/touch.js';
+import { Practice } from './learn/practice.js';
 import { ticker } from './net/session.js';
 import { DEFS } from './game/weapons.js';
 
@@ -55,6 +59,8 @@ class Game {
     this.state = 'loading';
     this.systems = [];
     this.input = new Input(this.canvas);
+    // phones and tablets: touch controls over the game
+    if (URLFLAGS.touch) { this.input.touch = true; this.touch = new Touch(this); document.body.classList.add('touch'); }
     this.audio = new Audio();
     this.stats = { fps: 0, frames: 0, acc: 0 };
     this.hour = URLFLAGS.time ?? START_HOUR;
@@ -136,6 +142,7 @@ class Game {
     this.stairs = new Stairs(this, this.buildings.stairs);
     this.player.roofs = this.buildings.heights.map((h) => ({ id: h.id, pts: h.pts, top: h.roof, stair: this.stairs.byId.get(h.id) || null }));
     this.hud = new HUD(this.level);
+    this.hud.touch = !!this.touch;   // (on a phone the prompts name the buttons, not the keys)
     this.zombies = new Zombies(this.scene, { colliders: this.colliders, hm: this.hm, nav: this.nav, effects: this.effects, audio: this.audio, player: this.player, models: this.models });
     this.zombies.stairs = this.stairs.list;
     this.zombies.underground = this.underground;
@@ -144,7 +151,12 @@ class Game {
     this.weapons = new Weapons(this);
     this.weapons.setup(this.models);
     this.director = new Director(this);
+    // players against players (the rules come from the host's lobby; solo: none)
+    this.rules = null;
+    this.pvp = new PvP(this);
+    this.zombies.pvp = this.pvp;
     this.pickups = new Pickups(this);
+    this.practice = new Practice(this);   // English practice (off unless you switch it on)
     this.pickups.setup(this.models);
     this.vehicles = new Vehicles(this);
     this.vehicles.setup(this.models);
@@ -164,6 +176,13 @@ class Game {
     };
     // (and every car and bike near a blast takes it: dents, glass, parts, a shove)
     this.zombies.onBlastVehicles = (x, y, z, r, power) => this.vehicles?.blast(x, y, z, r, power);
+    // (and they claw at the car you're sitting in)
+    this.zombies.onClawCar = (v, zb) => this.vehicles.clawHit(v, zb);
+    // (a blow stopped by someone's riot shield: sparks off it, a clank)
+    this.zombies.onBlocked = (pl, x, z) => { this.shieldFx(pl, x, z); if (pl !== this.player) this.net?.blocked?.(pl, x, z); };
+    // (spitters' acid: the others draw the globs and puddles)
+    this.zombies.onSpit = (id, o, v) => this.net?.spit?.(id, o, v);
+    this.zombies.onSplat = (id, p, r) => this.net?.splat?.(id, p, r);
 
     // flashlight (always in the scene so shaders never recompile)
     this.flashlight = new THREE.SpotLight(0xfff2dd, 0, 38, 0.42, 0.45, 1.4);
@@ -191,13 +210,35 @@ class Game {
     this.player.speedMul = 1;
   }
 
+  // The title plays while the game loads; the first time, it stays a moment more (a click, a key or
+  // a tap skips it). Then it fades into the menu. (Straight through when you come back from a game,
+  // or arrive with an invite link.)
+  intro(then) {
+    const el = $('loading');
+    let seen = 0;
+    try { seen = +sessionStorage.getItem('gd-intro') || 0; sessionStorage.setItem('gd-intro', String(Date.now())); } catch { /* no storage */ }
+    const quick = Date.now() - seen < 30 * 60e3 || !!this.netui?.invite || !!URLFLAGS.mp || matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el.classList.add('done');   // (loaded: just the title for the moment left)
+    let done = false;
+    const go = () => {
+      if (done) return;
+      done = true;
+      clearTimeout(t);
+      removeEventListener('pointerdown', go, true); removeEventListener('keydown', go, true);
+      el.classList.add('out');
+      setTimeout(() => el.classList.add('hidden'), 650);
+      then();
+    };
+    const t = setTimeout(go, quick ? 0 : Math.max(0, 3200 - performance.now()));
+    addEventListener('pointerdown', go, true); addEventListener('keydown', go, true);
+  }
+
   credits() {
     $('credits').textContent = 'Map data © OpenStreetMap contributors (ODbL) · Terrain: AWS Terrain Tiles · Imagery: Sentinel-2 cloudless 2024 by EOX (CC BY-NC-SA 4.0) · '
-      + 'Models: Quaternius, Kenney, J-Toastie, Rikindle3D, dogchicken, bachosoftdesign, Benjinsmith, mightydinosaurcol, jeremy, SirDraco65, Pichuliru, LonesomeDucky, Lucian Pavel, Isidor Goo (Prius), Franz Albers (Leaf) & others (see assets/models/CREDITS.md) · Textures: ambientCG, Poly Haven · three.js';
+      + 'Models: Quaternius, Kenney, J-Toastie, Rikindle3D, dogchicken, bachosoftdesign, Benjinsmith, mightydinosaurcol, jeremy, SirDraco65, Pichuliru, LonesomeDucky, Lucian Pavel, Isidor Goo (Prius), Franz Albers (Leaf), Aldios (Civic), Kirigami (Lamborghini), TastyTony (AUG), Kaan (MSR), loafbrr_1 (chainsaw) & others (see assets/models/CREDITS.md) · Textures: ambientCG, Poly Haven · three.js';
   }
 
   start() {
-    $('loading').classList.add('hidden');
     this.bindUI();
     // A hidden tab gets no animation frames: a co-op host keeps the match going for everyone on a
     // worker timer until it's back (nothing is drawn meanwhile).
@@ -211,8 +252,8 @@ class Game {
         });
       } else if (!document.hidden && this.bgTick) { ticker.stop(this.bgTick); this.bgTick = null; this.timer.update(); }
     });
-    if (URLFLAGS.autostart) this.beginPlay();
-    else { $('menu').classList.remove('hidden'); this.state = 'menu'; }
+    if (URLFLAGS.autostart) { $('loading').classList.add('hidden'); this.beginPlay(); }
+    else this.intro(() => { $('menu').classList.remove('hidden'); this.state = 'menu'; });
     this.renderer.setAnimationLoop(() => this.frame());
     // joined a room while loading: now's the time to say hello
     if (this.netui) this.attachSession(this.netui.session);
@@ -230,7 +271,7 @@ class Game {
     sens.value = settings.sens; vol.value = settings.vol; q.value = settings.quality;
     sens.oninput = () => { settings.sens = +sens.value; saveSettings(); };
     vol.oninput = () => { settings.vol = +vol.value; this.audio.setVolume(settings.vol); saveSettings(); };
-    q.onchange = () => { settings.quality = q.value; saveSettings(); this.reload(); };
+    q.onchange = () => { settings.quality = q.value; if (this.touch) settings.touchChosen = true; saveSettings(); this.reload(); };
     $('play').onclick = () => this.beginPlay();
     $('resume').onclick = () => { $('pause').classList.add('hidden'); this.input.lock(); this.state = 'playing'; };
     // leaving a co-op match: tell the others (the host leaving ends it for everyone)
@@ -239,9 +280,49 @@ class Game {
     $('retry').onclick = () => (this.mode === 'host' && this.net ? this.net.start() : this.reload());
     $('go-menu').onclick = () => (this.mode === 'solo' ? this.reload() : leave());
     $('clicktoplay').onclick = () => this.input.lock();
+    for (const id of ['fs', 'fs2']) $(id).onclick = () => this.toggleFullscreen();
+    // the credits: a line on the menu, the lot behind it
+    $('credits-btn').onclick = (e) => { e.stopPropagation(); $('credits').classList.toggle('hidden'); };
+    addEventListener('pointerdown', (e) => { if (!e.target.closest?.('#credits, #credits-btn')) $('credits').classList.add('hidden'); });
     this.input.onLockChange = (locked) => {
-      if (!locked && this.state === 'playing' && !URLFLAGS.autostart && !URLFLAGS.nolock) { this.state = 'paused'; $('pause').classList.remove('hidden'); }
+      if (!locked && this.state === 'playing' && !this.practice?.open && !URLFLAGS.autostart && !URLFLAGS.nolock) { this.state = 'paused'; $('pause').classList.remove('hidden'); }
+      if (locked && this.mode === 'solo') $('clicktoplay').classList.add('hidden');
     };
+    // English practice: how much, Georgian hints, and your progress
+    const lm = $('learn'), lk = $('learnka');
+    lm.value = this.practice.mode; lk.checked = settings.learnHints !== false;
+    lm.onchange = lk.onchange = () => this.practice.setMode(lm.value, lk.checked);
+    $('learnme').onclick = () => this.practice.panel();
+  }
+
+  // sparks off a riot shield where a blow landed, and the clank (yours shakes in your hands)
+  shieldFx(pl, x, z) {
+    const dx = x - pl.pos.x, dz = z - pl.pos.z, d = Math.hypot(dx, dz) || 1;
+    const at = new THREE.Vector3(pl.pos.x + (dx / d) * 0.55, pl.pos.y + 1.15, pl.pos.z + (dz / d) * 0.55);
+    this.effects.emit(at, 10, { color: [1, 0.85, 0.5], speed: 3.5, spread: 1, up: 0.6, life: 0.25, size: 0.04, gravity: 6 });
+    this.audio.play('clank', pl === this.player ? { vol: 1 } : { pos: at, vol: 0.9 });
+    if (pl === this.player) { pl.shake = Math.min(1, pl.shake + 0.2); this.weapons.blockT = 0.2; }
+  }
+
+  // (touch: the pause button; with a mouse, Esc does it by letting go of the pointer)
+  pause() {
+    if (this.state !== 'playing') return;
+    this.state = 'paused';
+    this.touch?.reset();
+    $('pause').classList.remove('hidden');
+  }
+
+  // Full screen, from the menu, the pause screen or the touch controls (on a phone: landscape too).
+  // An iPhone only plays full screen from the home screen (Share, Add to Home Screen).
+  toggleFullscreen() {
+    const d = document, el = d.documentElement;
+    if (d.fullscreenElement || d.webkitFullscreenElement) { (d.exitFullscreen || d.webkitExitFullscreen)?.call(d); return; }
+    const req = el.requestFullscreen || el.webkitRequestFullscreen;
+    const note = 'On iPhone: tap Share, then Add to Home Screen, and play from there for full screen';
+    if (!req) { for (const id of ['fs-note', 'fs2-note']) $(id).textContent = note; this.hud.notice(note); return; }
+    Promise.resolve(req.call(el, { navigationUI: 'hide' }))
+      .then(() => screen.orientation?.lock?.('landscape'))
+      .catch(() => {});
   }
 
   async beginPlay() {
@@ -301,11 +382,15 @@ class Game {
     this.weapons.hudWeapon();
     this.hud.slots(this.weapons.owned, this.weapons.current);
     this.hud.grenades(this.weapons.grenades);
+    const rules = this.rules, pvp = isPvp(rules);
+    this.hud.pvpMode(rules);
+    this.killedBy = null;
     if (mode === 'host') {
       this.players = this.players && this.players[0] === this.player ? this.players : [this.player];
       this.zombies.targets = this.players;
       this.director.state = 'intermission';
-      this.director.timer = URLFLAGS.nozombies ? Infinity : 8;
+      // (PvP: the zombies a little later, or not at all)
+      this.director.timer = URLFLAGS.nozombies || (pvp && !rules.zombies) ? Infinity : pvp ? 12 : 6;
       if (URLFLAGS.wave) { this.director.wave = URLFLAGS.wave - 1; this.director.timer = 1; }
       this.pickups.replenish(8);
     } else {
@@ -314,7 +399,10 @@ class Game {
       if (m) { this.hour = m.hour; this.atmo.setHour(this.hour); this.targetHour = m.targetHour ?? null; }
       if (m && m.wave) this.hud.wave(m.wave, false);
     }
-    this.hud.banner('Green Diamond', 'Co-op: hold out for 10 minutes');
+    const mins = (rules && rules.minutes) || 15, team = teamOf(rules, this.localSlot ?? 0);
+    this.hud.banner(!pvp ? 'Green Diamond' : rules.mode === 'teams' ? `${TEAM_NAMES[team]} team` : 'Everyone for themselves',
+      !pvp ? `Co-op: hold out for ${mins} minutes`
+        : `${rules.kills ? `First ${rules.mode === 'teams' ? 'team ' : ''}to ${rules.kills} kills` : `Most kills in ${mins} minutes`}${rules.zombies ? ', and the zombies are about' : ''}`);
     $('quit').textContent = 'Leave match';
     $('resume').textContent = 'Back to the fight';
     this.audio.init().then(() => { this.audio.resume(); if (!this.ambience) { this.ambience = true; this.audio.play('ambience', { vol: 0.35, loop: true, jitter: 0 }); } }).catch(() => {});
@@ -326,15 +414,31 @@ class Game {
     this.input.unlock();
     this.hud.down(0);
     $('clicktoplay').classList.add('hidden');
+    const mins = Math.round(((this.rules && this.rules.minutes) || 15));
     $('go-title').textContent = m.win ? 'You held Green Diamond' : 'Overrun';
     $('go-title').classList.toggle('win', !!m.win);
-    $('go-sub').textContent = m.win ? `Ten minutes, ${m.wave} wave${m.wave === 1 ? '' : 's'}, and you're still standing.` : `Everyone went down in wave ${m.wave}.`;
+    $('go-sub').textContent = m.win ? `${mins} minutes, ${m.wave} wave${m.wave === 1 ? '' : 's'}, and you're still standing.` : `Everyone went down in wave ${m.wave}.`;
     const esc = (t) => String(t).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
     const st = $('go-stats');
     st.className = 'table';
-    st.innerHTML = '<span class="h"></span><span class="h">Kills</span><span class="h">Headshots</span><span class="h">Downs</span><span class="h">Points</span>'
-      + m.stats.map((q) => `<span class="n" style="color:${['#3fa7ff', '#5fd35f', '#ffa23a', '#c77dff'][q.slot % 4]}">${esc(q.name || `P${q.slot + 1}`)}${q.slot === this.localSlot ? ' (you)' : ''}</span>`
-        + `<span>${q.kills}</span><span>${q.heads}</span><span>${q.deaths}</span><span>${q.points}</span>`).join('');
+    const me = this.localSlot ?? 0, who = (q) => `${esc(q.name || `P${q.slot + 1}`)}${q.slot === me ? ' (you)' : ''}`;
+    if (m.pvp) {
+      // PvP: who won, and everyone by kills
+      const teams = m.pvp === 'teams', myTeam = teamOf(this.rules, me);
+      const winnerName = teams ? `${TEAM_NAMES[m.winner]} team` : m.winner === me ? 'You' : esc((m.stats.find((q) => q.slot === m.winner) || {}).name || `P${m.winner + 1}`);
+      const won = m.winner >= 0 && (teams ? m.winner === myTeam : m.winner === me);
+      $('go-title').textContent = m.winner < 0 ? 'A draw' : `${winnerName} win${!teams && m.winner !== me ? 's' : ''}`;
+      $('go-title').classList.toggle('win', won);
+      const top = Math.max(0, ...m.stats.map((q) => q.frags));
+      $('go-sub').textContent = teams ? `Red ${m.teams[0]} · Blue ${m.teams[1]}` : m.winner < 0 ? `Level on ${top} kills` : `${top} kill${top === 1 ? '' : 's'}`;
+      st.innerHTML = '<span class="h"></span><span class="h">Kills</span><span class="h">Deaths</span><span class="h">Zombies</span><span class="h">Points</span>'
+        + [...m.stats].sort((a, b) => b.frags - a.frags || a.deaths - b.deaths).map((q) => `<span class="n" style="color:${teams ? TEAM_CSS[q.team] : SLOT_CSS[q.slot % 4]}">${who(q)}</span>`
+          + `<span>${q.frags}</span><span>${q.deaths}</span><span>${q.kills}</span><span>${q.points}</span>`).join('');
+    } else {
+      st.innerHTML = '<span class="h"></span><span class="h">Kills</span><span class="h">Headshots</span><span class="h">Downs</span><span class="h">Points</span>'
+        + m.stats.map((q) => `<span class="n" style="color:${SLOT_CSS[q.slot % 4]}">${who(q)}</span>`
+          + `<span>${q.kills}</span><span>${q.heads}</span><span>${q.deaths}</span><span>${q.points}</span>`).join('');
+    }
     $('retry').textContent = this.mode === 'host' ? 'New match' : 'Waiting for the host…';
     $('retry').disabled = this.mode !== 'host';
     $('go-menu').textContent = 'Leave';
@@ -361,7 +465,10 @@ class Game {
     this.vehicles.repairAll();
     this.zombies.clear();
     for (const q of d.drops) d.dropGroup.remove(q.mesh);
-    Object.assign(d, { drops: [], wave: 0, state: 'intermission', timer: 8, toSpawn: 0, total: 0, spawnT: 0, points: 500, kills: 0, headshots: 0, deaths: 0, double: 0, packs: [], roofT: 0, crowT: 0 });
+    Object.assign(d, { drops: [], wave: 0, state: 'intermission', timer: 8, toSpawn: 0, total: 0, spawnT: 0, points: 500, kills: 0, headshots: 0, deaths: 0, frags: 0, double: 0, packs: [], roofT: 0, crowT: 0 });
+    p.shieldT = 0; p.lastHit = null;
+    this.pvp.hist.clear();
+    this.hud.killFeed(null);
     d.team.clear();
     this.pickups.clear();
     for (const a of w.arrows) this.scene.remove(a.mesh);
@@ -388,6 +495,7 @@ class Game {
 
   clientBoom(m) {
     const p = new THREE.Vector3(m.x, m.y, m.z);
+    if (m.src === 'missile') this.weapons.removeMissileNear(p);
     this.effects.explosion(p, m.r, m.src === 'bloater' ? 'bile' : 'fire');
     this.audio.play(m.src === 'bloater' ? 'burst' : 'explosion', { pos: p, vol: 1.3, ref: 10 });
     if (m.src === 'grenade') {
@@ -402,12 +510,23 @@ class Game {
 
   onTeamDown(slot) {
     if (slot === this.localSlot) this.audio.play('hurt', { vol: 1 });
-    else this.hud.notice(`${this.hud.nameOf(slot)} is down`);
+    else if (!this.pvp.on) this.hud.notice(`${this.hud.nameOf(slot)} is down`);
   }
 
   onTeamUp(slot) {
-    if (slot === this.localSlot) this.hud.notice('Back on your feet');
-    else this.hud.notice(`${this.hud.nameOf(slot)} is back`);
+    if (slot === this.localSlot) { this.hud.notice(this.pvp.on ? 'Back in' : 'Back on your feet'); this.killedBy = null; }
+    else if (!this.pvp.on) this.hud.notice(`${this.hud.nameOf(slot)} is back`);
+  }
+
+  // PvP: a kill (k: the killer's slot, -1 for the zombies or yourself), for the feed and the notices
+  onFrag(k, v, how) {
+    const me = this.localSlot ?? 0;
+    this.hud.killFeed(k, v, how, me);
+    if (v === me) {
+      this.killedBy = k >= 0 ? `Killed by ${this.hud.nameOf(k)}` : how === 'self' ? 'You got yourself' : 'The zombies got you';
+      if (this.mode === 'client') this.audio.play('hurt', { vol: 1 });   // (the host hears its own in onTeamDown)
+    }
+    else if (k === me) { this.hud.notice(`You killed ${this.hud.nameOf(v)}`); this.audio.play('hit', { vol: 0.8, rate: 0.7, jitter: 0 }); }
   }
 
   // co-op bits of the HUD, every frame
@@ -416,9 +535,9 @@ class Game {
     this.hud.matchClock(n.role === 'host' ? n.msLeft() : n.msLeft);
     this.teamT = (this.teamT || 0) - dt;
     if (this.teamT <= 0) { this.teamT = 0.2; this.hud.teamPanel(n.teamStates(), this.voice ? this.voice.talkingSlots(this.localSlot ?? 0) : null); }
-    this.hud.down(this.player.dead && this.state !== 'over' ? Math.max(1, n.localRespawnLeft) : 0);
+    this.hud.down(this.player.dead && this.state !== 'over' ? Math.max(1, n.localRespawnLeft) : 0, this.pvp.on ? this.killedBy || 'You died' : null);
     this.hud.el.hud.classList.toggle('down-state', this.player.dead);
-    $('clicktoplay').classList.toggle('hidden', this.state !== 'playing' || this.input.locked || !!URLFLAGS.nolock);
+    $('clicktoplay').classList.toggle('hidden', this.state !== 'playing' || this.input.locked || !!URLFLAGS.nolock || !!this.touch || this.practice.open);
   }
 
   // The world for one step: the horde's flow fields (towards every player), the zombies, the
@@ -464,6 +583,9 @@ class Game {
     this.pickups.update(dt);
   }
 
+  // a wave survived: an English round, if you practise
+  onWaveEnd(w) { this.practice?.waveEnd(w); }
+
   onWave(w) {
     if (w <= 2) this.hud.flashKeys(6);
     // the evening goes on: 17:15 at wave 1, sunset around wave 8, night after wave 11
@@ -504,7 +626,9 @@ class Game {
     this.timer.update();
     const dt = Math.min(0.05, this.timer.getDelta());
     this.time += dt;
-    const playing = this.state === 'playing';
+    // (answering an English question: no moving or shooting; alone, the world waits too)
+    const playing = this.state === 'playing' && !this.practice?.open;
+    if (this.practice?.open && this.player.dead) this.practice.quiz.finish(true);
     const debugCam = this.applyDebugCamera();
 
     // the clock drifts towards the current wave's hour
@@ -549,8 +673,11 @@ class Game {
     for (const s of this.systems) s.update?.(dt, this.time, this.camera);
     this.effects.update(dt);
     this.hud.update(dt);
+    this.touch?.update(playing, this.hud.el.prompt.classList.contains('on'), !!(this.net && this.net.inMatch));
     this.hud.health(this.player.health, this.player.maxHealth, this.player.armour);
-    if ((this.frameCount || 0) % 2 === 0) this.hud.drawMap(this.player, this.zombies.list, [...this.stairs.markers(), ...this.pickups.markers(), ...this.director.markers()], this.net && this.net.inMatch ? this.net.teamStates() : []);
+    this.hud.boss(this.zombies.bossHealth());
+    // (PvP: your foes aren't on your map)
+    if ((this.frameCount || 0) % 2 === 0) this.hud.drawMap(this.player, this.zombies.list, [...this.stairs.markers(), ...this.pickups.markers(), ...this.director.markers()], this.net && this.net.inMatch ? this.net.teamStates().filter((q) => q.me || !this.pvp.foes(this.localSlot ?? 0, q.slot)) : []);
     this.atmo.follow(debugCam ? (this.camera.position.y > 30 ? new THREE.Vector3(0, 0, 0) : this.camera.position) : this.player.pos);
     if (this.audio.ctx) this.audio.setListener(this.camera.position, this.player.forward(new THREE.Vector3()));
 
@@ -585,7 +712,7 @@ game.voice = new Voice(game);
 // Crouch is Ctrl, and on Windows Ctrl+W closes the tab, which no page can stop: one careless W while
 // crouched. So while you're in a game, the browser asks before the page goes.
 addEventListener('beforeunload', (e) => {
-  if (game.leaving || !(game.state === 'playing' || (game.net && game.net.inMatch))) return;
+  if (game.leaving || !(game.state === 'playing' || game.state === 'quiz' || (game.net && game.net.inMatch))) return;
   e.preventDefault();
   e.returnValue = '';
 });

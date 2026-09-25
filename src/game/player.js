@@ -271,8 +271,10 @@ export class Player {
   }
   get armourTake() { return this.armour ? ARMOUR[this.armour - 1].take : 1; }
 
-  damage(amount, fromX, fromZ) {
+  damage(amount, fromX, fromZ, blockable = true) {
     if (this.dead) return false;
+    // a riot shield held up stops whatever comes from the front (false: nothing got through)
+    if (blockable && this.blocks(fromX, fromZ)) { this.blockT = 0.3; return false; }
     amount *= this.armourTake;
     this.health -= amount;
     this.regenDelay = 4.0;
@@ -281,6 +283,13 @@ export class Player {
     this.kick(-1.2, Math.sin(ang - this.yaw) * 1.2);
     if (this.health <= 0) { this.health = 0; this.dead = true; }
     return true;
+  }
+
+  // is the shield up, and does a blow from (x, z) land on it?
+  blocks(x, z) {
+    if (!this.shielding || this.vehicle) return false;
+    const dx = x - this.pos.x, dz = z - this.pos.z, d = Math.hypot(dx, dz);
+    return d > 0.3 && (dx * -Math.sin(this.yaw) + dz * -Math.cos(this.yaw)) / d > 0.25;
   }
 
   forward(out = new THREE.Vector3()) {

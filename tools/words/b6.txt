@@ -1,0 +1,151 @@
+# band 6 — format: w|p|t|ka|ex|e
+consequence|n|abstract|შედეგი|Every action has a consequence.|
+crisis|n|society|კრიზისი|The country is in an economic crisis.|
+majority|n|society|უმრავლესობა|The majority of students passed the exam.|
+variety|n|abstract|მრავალფეროვნება|The market has a great variety of fruit.|
+range|n|shopping|ასორტიმენტი|The shop has a wide range of shoes.|
+aspect|n|abstract|ასპექტი|Cost is an important aspect of the plan.|
+tip|n|money|ჩაის ფული|We left a tip for the waiter.|
+strategy|n|work|სტრატეგია|We need a new strategy.|
+priority|n|abstract|პრიორიტეტი|My family is my top priority.|
+reputation|n|society|რეპუტაცია|The restaurant has a good reputation.|
+feedback|n|work|გამოხმაურება|Thank you for your feedback.|
+evidence|n|law|მტკიცებულება|There is no evidence that he did it.|
+witness|n|law|მოწმე|The police spoke to a witness.|
+permission|n|law|ნებართვა|You need permission to park here.|
+signature|n|law|ხელმოწერა|We need your signature here.|
+deadline|n|work|ბოლო ვადა|The deadline for the project is Friday.|
+pension|n|money|პენსია|My grandmother lives on a small pension.|
+investment|n|money|ინვესტიცია|Buying a flat is a good investment.|
+expense|n|money|ხარჯი|Food is our biggest expense.|
+conference|n|work|კონფერენცია|She is speaking at a conference in Berlin.|
+candidate|n|society|კანდიდატი|She is the best candidate for the job.|
+destination|n|travel|დანიშნულების ადგილი|Batumi is a popular holiday destination.|
+departure|n|travel|გამგზავრება|Our departure is at seven in the morning.|
+souvenir|n|travel|სუვენირი|I bought a souvenir for my mother.|
+symbol|n|society|სიმბოლო|The dove is a symbol of peace.|
+rumour|n|communication|ჭორი|Don't believe every rumour you hear.|
+allergy|n|health|ალერგია|I have an allergy to cats.|
+prescription|n|health|ექიმის რეცეპტი|You need a prescription for this medicine.|
+symptom|n|health|სიმპტომი|A high temperature is a symptom of flu.|
+wealth|n|money|სიმდიდრე|Health is more important than wealth.|
+fee|n|money|საფასური|There is a small fee for the service.|
+anniversary|n|family|წლისთავი|Today is our wedding anniversary.|
+scholarship|n|school|სტიპენდია|She got a scholarship to study abroad.|
+poverty|n|society|სიღარიბე|Many families live in poverty.|
+charity|n|society|ქველმოქმედება|We give money to charity every year.|
+volunteer|n|society|მოხალისე|She works as a volunteer at the hospital.|
+generation|n|society|თაობა|The young generation uses the internet a lot.|
+population|n|society|მოსახლეობა|The population of Tbilisi is over a million.|
+election|n|society|არჩევნები|The next election is in October.|
+religion|n|society|რელიგია|Religion is important to many people.|
+court|n|law|სასამართლო|The case will go to court.|
+organisation|n|society|ორგანიზაცია|She works for an international organisation.|
+community|n|society|თემი|Our local community is very friendly.|
+balance|n|abstract|ბალანსი|It is hard to find a balance between work and family.|
+development|n|work|განვითარება|The development of the city is very fast.|
+attitude|n|abstract|დამოკიდებულება|She has a positive attitude to work.|
+personality|n|people|პიროვნება|He has a warm and friendly personality.|
+courage|n|feelings|გამბედაობა|It takes courage to change your job.|
+pride|n|feelings|სიამაყე|Georgians speak about their food with pride.|
+relief|n|feelings|შვება|It was a relief to hear the news.|
+confidence|n|feelings|თავდაჯერებულობა|She speaks English with confidence.|
+fault|n|abstract|ბრალი|It is not your fault.|
+failure|n|abstract|წარუმატებლობა|Failure is part of learning.|
+application|n|work|განაცხადი|I sent my job application yesterday.|
+receipt|n|shopping|ქვითარი|Keep the receipt, please.|🧾
+schedule|n|work|გრაფიკი|My schedule is very busy this week.|
+forecast|n|weather|პროგნოზი|The forecast says it will rain.|
+flood|n|nature|წყალდიდობა|The flood damaged many houses.|
+channel|n|technology|არხი|What channel is the match on?|
+data|n|technology|მონაცემები|The app collects data about your sleep.|
+lecture|n|school|ლექცია|The lecture starts at ten.|
+champion|n|sport|ჩემპიონი|He is the national chess champion.|
+author|n|communication|ავტორი|Who is the author of this book?|
+staff|n|work|პერსონალი|The hotel staff were very friendly.|
+resident|n|people|მაცხოვრებელი|As a local resident, you get a discount.|
+tenant|n|home|ქირით მცხოვრები|The tenant pays the rent every month.|
+landlord|n|home|ბინის მეპატრონე|Our landlord lives downstairs.|
+employer|n|work|დამსაქმებელი|My employer pays for my training.|
+survey|n|work|გამოკითხვა|Please fill in our short survey.|
+trend|n|society|ტენდენცია|This is a new trend among young people.|
+challenge|n|abstract|გამოწვევა|Learning English is a big challenge.|
+achievement|n|abstract|მიღწევა|Passing the exam was a great achievement.|
+negotiate|v|work|მოლაპარაკება|We need to negotiate a better price.|
+obtain|v|actions|მოპოვება|You must obtain a visa before you travel.|
+indicate|v|actions|მითითება|Please indicate your size on the form.|
+interpret|v|communication|თარჯიმნობა|She can interpret for us at the meeting.|
+reflect|v|nature|არეკვლა|Water can reflect the light like a mirror.|
+represent|v|work|წარმომადგენლობა|She will represent our company at the meeting.|
+review|v|work|გადახედვა|Please review the document before the meeting.|
+settle|v|home|დასახლება|They want to settle in a small town.|
+squeeze|v|food|გამოწურვა|Squeeze a lemon into the tea.|
+struggle|v|actions|წვალება|Many families struggle to pay the rent.|
+surround|v|nature|გარშემორტყმა|Mountains surround the village.|
+suspect|v|law|ეჭვის მიტანა|I suspect he is lying.|
+tend|v|actions|მიდრეკილების ქონა|I tend to eat too much at night.|
+tolerate|v|feelings|მოთმენა|I can't tolerate loud music.|
+transfer|v|money|გადარიცხვა|I will transfer the money today.|
+wander|v|travel|ხეტიალი|We like to wander around the old town.|
+yawn|v|health|მთქნარება|The film was so boring that I started to yawn.|🥱
+peel|v|food|გაფცქვნა|Peel the potatoes, please.|
+chop|v|food|დაკეპვა|Chop the onions finely.|
+roast|v|food|გამოწვა|We roast a chicken every Sunday.|
+elect|v|society|არჩევა|People elect a new president every five years.|
+export|v|work|ექსპორტირება|Georgian farmers export wine to many countries.|
+exaggerate|v|communication|გაზვიადება|Don't exaggerate, it wasn't that bad.|
+oppose|v|society|წინააღმდეგი ყოფნა|Many people oppose the new law.|
+offend|v|feelings|წყენინება|I didn't want to offend you.|
+locate|v|places|ადგილის განსაზღვრა|Can you locate the hotel on the map?|
+dare|v|feelings|გაბედვა|I didn't dare to ask him.|
+emphasise|v|communication|ხაზგასმა|I want to emphasise how important this is.|
+acknowledge|v|communication|აღიარება|He refused to acknowledge his mistake.|
+anticipate|v|actions|წინასწარ განჭვრეტა|We don't anticipate any problems.|
+assume|v|actions|ვარაუდი|I assume you are coming to the party.|
+consume|v|nature|მოხმარება|Old fridges consume a lot of electricity.|
+contribute|v|work|წვლილის შეტანა|Everyone can contribute to the project.|
+criticise|v|communication|გაკრიტიკება|Don't criticise him in front of others.|
+demonstrate|v|school|დემონსტრირება|Let me demonstrate how it works.|
+eliminate|v|actions|აღმოფხვრა|We want to eliminate plastic from our office.|
+evaluate|v|work|შეფასება|The teacher will evaluate our work.|
+justify|v|communication|გამართლება|How can you justify such a high price?|
+pursue|v|work|მისწრაფება|You should pursue your dreams.|
+qualify|v|sport|კვალიფიკაციის მოპოვება|Our team did not qualify for the final.|
+resolve|v|actions|მოგვარება|We need to resolve this problem quickly.|
+restore|v|actions|აღდგენა|They want to restore the old church.|
+withdraw|v|money|თანხის გამოტანა|I need to withdraw some money from the bank.|
+cope|v|feelings|გამკლავება|How do you cope with stress?|
+flow|v|nature|დინება|Rivers flow into the sea.|
+knit|v|clothes|ქსოვა|My grandmother likes to knit socks.|🧶
+reluctant|adj|feelings|უხალისო|He was reluctant to help us.|
+exhausted|adj|feelings|ქანცგაწყვეტილი|I am exhausted after the long trip.|
+furious|adj|feelings|გაცოფებული|My boss was furious about the mistake.|
+ashamed|adj|feelings|შერცხვენილი|I am ashamed of what I said.|
+terrified|adj|feelings|ძალიან შეშინებული|She is terrified of spiders.|
+homesick|adj|feelings|ნოსტალგიური|I felt homesick during my first year abroad.|
+humid|adj|weather|ტენიანი|Batumi is very humid in summer.|
+entire|adj|qualities|მთელი|I spent the entire day in bed.|
+temporary|adj|time|დროებითი|This is only a temporary job.|
+permanent|adj|time|მუდმივი|She is looking for a permanent job.|
+significant|adj|qualities|არსებითი|There is a significant difference in price.|
+accurate|adj|qualities|ზუსტი|The weather forecast was accurate.|
+genuine|adj|qualities|გულწრფელი|She has a genuine interest in art.|
+artificial|adj|qualities|ხელოვნური|These flowers are artificial.|
+physical|adj|health|ფიზიკური|Physical exercise is good for your health.|
+mental|adj|health|ფსიქიკური|Mental health is as important as physical health.|
+emotional|adj|feelings|ემოციური|It was a very emotional moment.|
+financial|adj|money|ფინანსური|The company has financial problems.|
+sensitive|adj|qualities|მგრძნობიარე|My teeth are sensitive to cold drinks.|
+stubborn|adj|qualities|ჯიუტი|My little brother is very stubborn.|
+ambitious|adj|qualities|ამბიციური|She is young and very ambitious.|
+relevant|adj|qualities|შესაბამისი|Your experience is very relevant to this job.|
+severe|adj|health|მწვავე|He has a severe headache.|
+sufficient|adj|qualities|საკმარისი|Is one hour sufficient for the test?|
+efficient|adj|work|ეფექტიანი|This new heater is very efficient.|
+eager|adj|feelings|მონდომებული|The students are eager to learn.|
+loyal|adj|qualities|ერთგული|Dogs are very loyal animals.|
+modest|adj|qualities|თავმდაბალი|He is very modest about his success.|
+rural|adj|places|სასოფლო|Life in rural areas is quiet.|
+meanwhile|adv|time|ამასობაში|Meanwhile, the children were playing outside.|
+nevertheless|adv|grammar|მიუხედავად ამისა|The hotel was expensive. Nevertheless, we stayed there.|
+somehow|adv|grammar|როგორღაც|We will finish somehow.|

@@ -1,0 +1,254 @@
+# band 5 — format: w|p|t|ka|ex|e
+forever|adv|time|სამუდამოდ|I will remember this day forever.|
+rarely|adv|time|იშვიათად|I rarely eat meat.|
+ahead|adv|time|წინასწარ|It is better to plan ahead.|
+nowhere|adv|places|არსად|There is nowhere to park.|
+gradually|adv|time|თანდათან|The weather is gradually getting warmer.|
+eventually|adv|time|საბოლოოდ|He eventually found a job.|
+apparently|adv|grammar|როგორც ჩანს|Apparently, it will snow tomorrow.|
+currently|adv|time|ამჟამად|She is currently working in London.|
+slightly|adv|grammar|ოდნავ|I feel slightly better today.|
+nearby|adv|places|ახლომახლო|Is there a pharmacy nearby?|
+citizen|n|society|მოქალაქე|She is a Georgian citizen.|
+relative|n|family|ნათესავი|A relative of mine lives in Canada.|
+grandchild|n|family|შვილიშვილი|My mother has her first grandchild.|
+twin|n|family|ტყუპი|Nino has a twin brother.|
+client|n|work|კლიენტი|I have a meeting with a client.|
+journalist|n|work|ჟურნალისტი|The journalist asked many questions.|
+programmer|n|technology|პროგრამისტი|My son works as a programmer.|
+hairdresser|n|work|პარიკმახერი|My hairdresser is very good.|💇
+photographer|n|work|ფოტოგრაფი|The photographer took pictures at the wedding.|
+mechanic|n|work|ავტოხელოსანი|The mechanic fixed my car.|
+firefighter|n|work|მეხანძრე|The firefighter saved the cat.|
+coach|n|sport|მწვრთნელი|The coach wants us to train harder.|
+expert|n|work|ექსპერტი|She is an expert in history.|
+audience|n|society|მაყურებელი|The audience loved the show.|
+toe|n|body|ფეხის თითი|I hurt my toe on the table.|
+muscle|n|body|კუნთი|I pulled a muscle at the gym.|
+thumb|n|body|ცერა თითი|I cut my thumb while cooking.|👍
+nail|n|body|ფრჩხილი|I broke a nail.|💅
+tear|n|feelings|ცრემლი|A tear ran down her face.|
+treatment|n|health|მკურნალობა|The treatment will take two weeks.|
+operation|n|health|ოპერაცია|My father had an operation on his knee.|
+injury|n|health|ტრავმა|He can't play because of an injury.|
+virus|n|health|ვირუსი|The flu is caused by a virus.|🦠
+ceiling|n|home|ჭერი|There is a spider on the ceiling.|
+sink|n|home|ნიჟარა|Put the dirty dishes in the sink.|
+drawer|n|home|უჯრა|The spoons are in the top drawer.|
+curtain|n|home|ფარდა|Please close the curtain.|
+candle|n|home|სანთელი|Light a candle, it is dark.|🕯️
+toothbrush|n|home|კბილის ჯაგრისი|I forgot my toothbrush at the hotel.|
+fence|n|home|ღობე|The dog jumped over the fence.|
+wardrobe|n|home|გარდერობი|My wardrobe is full of old clothes.|
+cherry|n|food|ბალი|This cherry is very sweet.|🍒
+watermelon|n|food|საზამთრო|We ate watermelon on the beach.|🍉
+mushroom|n|food|სოკო|I don't like mushroom soup.|🍄
+bean|n|food|ლობიო|Green bean salad is healthy.|
+cabbage|n|food|კომბოსტო|My grandmother makes cabbage soup.|🥬
+sausage|n|food|ძეხვი|I had a sausage for breakfast.|
+jam|n|food|მურაბა|My grandmother makes cherry jam.|
+flour|n|food|ფქვილი|We need flour to make bread.|
+slice|n|food|ნაჭერი|Would you like a slice of pizza?|
+cap|n|clothes|კეპი|He always wears a baseball cap.|🧢
+necklace|n|clothes|ყელსაბამი|She wore a beautiful necklace.|
+jewellery|n|clothes|სამკაული|She doesn't wear much jewellery.|
+cotton|n|clothes|ბამბა|This shirt is made of cotton.|
+leather|n|clothes|ტყავი|I bought a leather jacket.|
+gallery|n|city|გალერეა|We visited an art gallery.|
+palace|n|city|სასახლე|The old palace is now a museum.|
+neighbourhood|n|city|სამეზობლო|There are many cafes in our neighbourhood.|
+bakery|n|shopping|საცხობი|I buy bread at the bakery.|🥖
+playground|n|city|სათამაშო მოედანი|The children are at the playground.|
+route|n|travel|მარშრუტი|Which route is the fastest?|
+visa|n|travel|ვიზა|Do I need a visa?|
+arrival|n|travel|ჩამოსვლა|Please call me on arrival.|
+delay|n|travel|დაგვიანება|Sorry for the delay.|
+reservation|n|travel|ჯავშანი|I have a reservation for two nights.|
+timetable|n|transport|განრიგი|Check the bus timetable.|
+licence|n|transport|მართვის მოწმობა|Can I see your driving licence?|
+valley|n|nature|ხეობა|The village is in a green valley.|
+branch|n|nature|ტოტი|A bird is sitting on a branch.|
+seed|n|nature|თესლი|Plant the seed in spring.|🌱
+dust|n|home|მტვერი|There is dust on the shelves.|
+pollution|n|nature|დაბინძურება|Air pollution is a big problem.|
+climate|n|weather|კლიმატი|Georgia has a mild climate.|
+fog|n|weather|ნისლი|There is thick fog on the road.|🌫️
+thunder|n|weather|ქუხილი|The dog is afraid of thunder.|
+lightning|n|weather|ელვა|We saw lightning over the sea.|⚡
+rainbow|n|weather|ცისარტყელა|Look, there is a rainbow!|🌈
+earthquake|n|nature|მიწისძვრა|There was a small earthquake last night.|
+fox|n|animals|მელა|A fox ran across the road.|🦊
+deer|n|animals|ირემი|We saw a deer in the forest.|🦌
+frog|n|animals|ბაყაყი|There is a frog in the pond.|🐸
+butterfly|n|animals|პეპელა|A butterfly landed on my hand.|🦋
+ant|n|animals|ჭიანჭველა|An ant is carrying a crumb.|🐜
+puppy|n|animals|ლეკვი|We got a puppy for our son.|🐶
+noon|n|time|შუადღე|The shop closes at noon.|
+industry|n|work|ინდუსტრია|Tourism is an important industry in Georgia.|
+contract|n|work|ხელშეკრულება|Please read the contract before you sign.|
+envelope|n|communication|კონვერტი|Put the letter in an envelope.|
+parcel|n|communication|ამანათი|I am waiting for a parcel from Germany.|
+profit|n|money|მოგება|The company made a big profit.|
+income|n|money|შემოსავალი|What is your monthly income?|
+budget|n|money|ბიუჯეტი|We have a small budget for the holiday.|
+loan|n|money|სესხი|We took a loan to buy a flat.|
+debt|n|money|ვალი|He paid off all his debt.|
+insurance|n|money|დაზღვევა|Do you have travel insurance?|
+grade|n|school|ნიშანი|She got a good grade in maths.|
+essay|n|school|ესე|Write an essay about your city.|
+experiment|n|school|ექსპერიმენტი|We did an experiment in class.|
+advertisement|n|communication|რეკლამა|I saw an advertisement for this phone.|
+request|n|communication|თხოვნა|I have a small request.|
+complaint|n|communication|საჩივარი|I want to make a complaint.|
+explanation|n|communication|განმარტება|Thank you for the clear explanation.|
+translation|n|communication|თარგმანი|The translation is not correct.|
+accent|n|communication|აქცენტი|She speaks English with a French accent.|
+keyboard|n|technology|კლავიატურა|The keyboard on my laptop is broken.|⌨️
+printer|n|technology|პრინტერი|The printer is out of paper.|🖨️
+device|n|technology|მოწყობილობა|This device measures your heart rate.|
+charger|n|technology|დამტენი|Have you seen my phone charger?|
+advantage|n|abstract|უპირატესობა|Living near work is a big advantage.|
+benefit|n|abstract|სარგებელი|What is the main benefit of this plan?|
+purpose|n|abstract|მიზანი|What is the purpose of your visit?|
+ability|n|abstract|უნარი|She has the ability to learn fast.|
+behaviour|n|abstract|ქცევა|His behaviour at school is excellent.|
+effort|n|abstract|ძალისხმევა|Learning a language takes a lot of effort.|
+progress|n|abstract|პროგრესი|You are making good progress in English.|
+patience|n|feelings|მოთმინება|Teaching children needs a lot of patience.|
+anger|n|feelings|ბრაზი|He couldn't control his anger.|
+joy|n|feelings|სიხარული|Her face was full of joy.|
+emotion|n|feelings|ემოცია|Fear is a strong emotion.|
+friendship|n|people|მეგობრობა|Our friendship is very important to me.|
+marriage|n|family|ქორწინება|They have a happy marriage.|
+responsibility|n|abstract|პასუხისმგებლობა|Children are a big responsibility.|
+reality|n|abstract|რეალობა|Sometimes dreams become reality.|
+possibility|n|abstract|შესაძლებლობა|Is there any possibility of rain?|
+option|n|abstract|ვარიანტი|Taking the bus is the cheapest option.|
+influence|n|abstract|გავლენა|Parents have a big influence on children.|
+strength|n|abstract|ძალა|You need strength to lift this.|
+security|n|abstract|დაცვა|Airport security is very strict.|
+method|n|abstract|მეთოდი|This is a good method for learning words.|
+process|n|abstract|პროცესი|Learning is a slow process.|
+feature|n|abstract|მახასიათებელი|The best feature of this car is its size.|
+duty|n|abstract|მოვალეობა|It is my duty to help my parents.|
+value|n|abstract|ღირებულება|The value of the house has gone up.|
+issue|n|abstract|საკითხი|This is an important issue.|
+error|n|abstract|შეცდომა|There is an error in the bill.|
+approve|v|actions|დამტკიცება|The bank will approve the loan next week.|
+attract|v|actions|მოზიდვა|The festival will attract many tourists.|
+bend|v|actions|მოხრა|Bend your knees when you lift something heavy.|
+compete|v|sport|შეჯიბრება|Twenty teams will compete in the tournament.|
+advertise|v|work|რეკლამირება|We advertise our products online.|
+attach|v|technology|მიმაგრება|Please attach a photo to your email.|
+dig|v|actions|თხრა|The dog likes to dig in the garden.|
+gain|v|actions|მოპოვება|I want to gain more experience.|
+focus|v|school|ფოკუსირება|I can't focus on my work today.|
+intend|v|actions|განზრახვა|I intend to finish this today.|
+obey|v|law|დამორჩილება|Dogs should obey their owners.|
+spoil|v|actions|გაფუჭება|Don't spoil the surprise!|
+stick|v|actions|დაწებება|Stick the photo in your notebook.|
+slip|v|actions|ფეხის დაცდენა|Be careful, you might slip on the ice.|
+split|v|actions|გაყოფა|Let's split the bill.|
+chase|v|animals|დადევნება|The dog likes to chase cats.|
+clap|v|actions|ტაშის დაკვრა|Everyone started to clap.|👏
+consult|v|health|მიმართვა|You should consult a doctor.|
+cure|v|health|განკურნება|This medicine can cure the infection.|
+define|v|school|განსაზღვრა|Can you define this word?|
+donate|v|society|შეწირვა|We donate old clothes to charity.|
+ensure|v|actions|უზრუნველყოფა|Please ensure that the door is locked.|
+entertain|v|society|გართობა|The clown will entertain the children.|
+estimate|v|numbers|შეფასება|Can you estimate the cost?|
+expand|v|work|გაფართოება|The company wants to expand next year.|
+extend|v|travel|გახანგრძლივება|Can I extend my visa?|
+float|v|nature|ტივტივი|Wood can float on water.|
+forbid|v|law|აკრძალვა|My parents forbid me to smoke.|
+guarantee|v|work|გარანტირება|We guarantee fast delivery.|
+hesitate|v|actions|ყოყმანი|Don't hesitate to call me.|
+identify|v|actions|იდენტიფიცირება|Can you identify the man in the photo?|
+inherit|v|family|მემკვიდრეობით მიღება|She will inherit the house from her grandmother.|
+inspire|v|feelings|შთაგონება|Good teachers inspire their students.|
+invest|v|money|ინვესტირება|We want to invest in a small business.|
+investigate|v|law|გამოძიება|The police will investigate the accident.|
+lean|v|actions|მიყრდნობა|Don't lean on the door.|
+load|v|transport|დატვირთვა|Help me load the car.|
+motivate|v|feelings|მოტივირება|Good pay can motivate workers.|
+nod|v|communication|თავის დაქნევა|Just nod if you understand.|
+observe|v|actions|დაკვირვება|Scientists observe the stars at night.|
+occur|v|actions|მოხდენა|Accidents often occur at night.|
+operate|v|technology|ამუშავება|Can you operate this machine?|
+overcome|v|feelings|დაძლევა|She had to overcome many problems.|
+participate|v|society|მონაწილეობა|Everyone can participate in the game.|
+postpone|v|actions|გადადება|We had to postpone the meeting.|
+praise|v|communication|შექება|The teacher likes to praise good work.|
+predict|v|actions|წინასწარმეტყველება|Nobody can predict the future.|
+promote|v|work|დაწინაურება|The company will promote her next month.|
+publish|v|communication|გამოქვეყნება|They will publish her book next year.|
+punish|v|law|დასჯა|Don't punish the child for a small mistake.|
+purchase|v|shopping|შეძენა|You can purchase tickets online.|
+reject|v|actions|უარყოფა|They may reject my application.|
+rely|v|feelings|დაყრდნობა|You can always rely on me.|
+reveal|v|communication|გამჟღავნება|She didn't reveal the secret.|
+ruin|v|actions|ჩაშლა|The rain will ruin our picnic.|
+sail|v|travel|ნაოსნობა|We will sail to the island tomorrow.|⛵
+sneeze|v|health|ცემინება|Pepper makes me sneeze.|
+stare|v|actions|მიშტერება|Don't stare at people, it is rude.|
+stir|v|food|მორევა|Stir the soup slowly.|
+submit|v|work|წარდგენა|Please submit your application by Friday.|
+supply|v|work|მიწოდება|This farm will supply the restaurant with vegetables.|
+sweep|v|home|დაგვა|Can you sweep the floor?|🧹
+scream|v|communication|კივილი|The children scream on the roller coaster.|
+hike|v|sport|ლაშქრობა|We hike in the mountains every summer.|
+ski|v|sport|თხილამურებით სრიალი|We go to Gudauri to ski in winter.|⛷️
+dive|v|sport|ყვინთვა|Can you dive into the water from here?|
+announce|v|communication|გამოცხადება|They will announce the winner tonight.|
+congratulate|v|communication|მილოცვა|I want to congratulate you on your new job.|
+respond|v|communication|პასუხის გაცემა|Please respond to my message.|
+whistle|v|communication|სტვენა|He can whistle a song.|
+spill|v|home|დაღვრა|Be careful not to spill your coffee.|
+scratch|v|animals|ფხაჭნა|My cat likes to scratch the sofa.|
+economic|adj|money|ეკონომიკური|The country has economic problems.|
+giant|adj|qualities|გიგანტური|There is a giant tree in the park.|
+weekly|adj|time|ყოველკვირეული|We have a weekly meeting on Monday.|
+immediate|adj|time|დაუყოვნებელი|We need an immediate answer.|
+brief|adj|time|ხანმოკლე|We had a brief meeting.|
+naughty|adj|qualities|ცელქი|Don't be naughty, sit down!|
+satisfied|adj|feelings|კმაყოფილი|Are you satisfied with the service?|
+delighted|adj|feelings|აღფრთოვანებული|I was delighted to hear the news.|
+impressed|adj|feelings|მოხიბლული|I was impressed by her English.|
+annoyed|adj|feelings|გაღიზიანებული|I was annoyed by the noise.|
+foggy|adj|weather|ნისლიანი|It is foggy this morning.|
+snowy|adj|weather|თოვლიანი|It was a snowy winter.|
+smooth|adj|qualities|გლუვი|Her skin is soft and smooth.|
+rough|adj|qualities|ხორკლიანი|This old towel is rough.|
+shiny|adj|qualities|პრიალა|She has a shiny new car.|
+blind|adj|health|უსინათლო|My grandfather is almost blind.|
+deaf|adj|health|ყრუ|My grandmother is a little deaf.|
+incredible|adj|qualities|დაუჯერებელი|The view from the mountain is incredible.|
+ideal|adj|qualities|იდეალური|This is the ideal place for a picnic.|
+stressed|adj|feelings|სტრესში მყოფი|She is stressed about work.|
+wooden|adj|home|ხის|They live in a small wooden house.|
+aware|adj|feelings|გაცნობიერებული|Are you aware of the problem?|
+capable|adj|qualities|უნარიანი|She is capable of doing this job.|
+suitable|adj|qualities|შესაფერისი|This film is not suitable for children.|
+tough|adj|qualities|მძიმე|It was a tough day at work.|
+tight|adj|clothes|მჭიდრო|These shoes are too tight.|
+loose|adj|clothes|განიერი|These trousers are too loose.|
+crowded|adj|city|ხალხმრავალი|The bus is always crowded in the morning.|
+peaceful|adj|qualities|მშვიდობიანი|They had a peaceful life in the village.|
+silent|adj|qualities|ჩუმი|The room was completely silent.|
+unlucky|adj|feelings|უიღბლო|I was unlucky and missed the bus.|
+successful|adj|work|წარმატებული|She is a successful businesswoman.|
+equal|adj|society|თანაბარი|Men and women should get equal pay.|
+opposite|adj|places|საპირისპირო|We went in opposite directions.|
+unknown|adj|qualities|უცნობი|The singer was unknown ten years ago.|
+familiar|adj|qualities|ნაცნობი|Your face looks familiar.|
+weird|adj|qualities|უცნაური|That's a weird idea.|
+surprising|adj|feelings|გასაკვირი|The results were surprising.|
+shocking|adj|feelings|შოკისმომგვრელი|The news was shocking.|
+disgusting|adj|qualities|ამაზრზენი|This coffee tastes disgusting.|
+annoying|adj|feelings|გამაღიზიანებელი|That noise is really annoying.|
+relaxing|adj|feelings|დამამშვიდებელი|A hot bath is very relaxing.|
+tiring|adj|feelings|დამღლელი|It was a long and tiring day.|
+risky|adj|qualities|სარისკო|It is risky to drive in this weather.|
+flexible|adj|work|მოქნილი|I have flexible working hours.|
+sensible|adj|qualities|გონივრული|That is a sensible decision.|

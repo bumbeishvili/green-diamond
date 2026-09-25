@@ -54,6 +54,7 @@ export class Input {
   }
 
   lock() {
+    if (this.touch) return;   // (a phone: no pointer to lock; the touch controls do the looking)
     // default (accelerated) movement: feels right on laptop trackpads
     const p = this.canvas.requestPointerLock?.();
     if (p && p.catch) p.catch(() => {});

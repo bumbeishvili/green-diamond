@@ -1,6 +1,9 @@
 import { Session, MAX_PLAYERS } from './session.js';
 import { URLFLAGS } from '../config.js';
 import { TICK_HZ } from './protocol.js';
+import { TEAM_NAMES, TEAM_CSS } from '../game/pvp.js';
+
+const MODE_NAMES = { coop: 'Co-op vs zombies', ffa: 'PvP, everyone for themselves', teams: 'PvP, two teams' };
 
 // "Play with friends" in the menu, and the network overlay: role, tick rate, and every player's
 // ping and packet loss, with the debug sliders for simulated lag, jitter and loss. F8 shows/hides it.
@@ -25,7 +28,7 @@ export class NetUI {
   constructor(game) {
     this.game = game;
     this.session = new Session({ onchange: () => this.render() });
-    this.hidden = false;
+    this.hidden = !!URLFLAGS.touch;   // (on a phone the network panel starts hidden: it would cover the game)
     this.pass = $('mp-pass');
     this.nameEl = $('mp-name');
     this.status = $('mp-status');
@@ -56,6 +59,12 @@ export class NetUI {
     $('mp-copy').addEventListener('click', () => this.copyInvite());
     $('mp-leave').addEventListener('click', () => this.session.leave());
     $('mp-start').addEventListener('click', () => { if (game.ready && game.net && game.net.role === 'host') game.net.start(); });
+    // the host's choice of game
+    for (const id of ['mp-mode', 'mp-zombies', 'mp-minutes', 'mp-kills']) $(id).addEventListener('change', () => this.rulesChanged());
+    $('mp-teams').addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-slot]');
+      if (b && !b.disabled && game.net && game.net.role === 'host') game.net.toggleTeam(+b.dataset.slot);
+    });
     if (this.invite && this.nameEl.value.trim()) setTimeout(() => $('mp-join').focus(), 0);
     else setTimeout(() => (this.invite ? this.nameEl : this.pass).focus?.(), 0);
     if (URLFLAGS.mp) { this.pass.value = URLFLAGS.mp; setTimeout(() => this.session.join(URLFLAGS.mp), 50); }
@@ -93,6 +102,41 @@ export class NetUI {
     this.render();
   }
 
+  rulesChanged() {
+    const net = this.game.net;
+    if (!net || net.role !== 'host' || net.inMatch) return;
+    const mode = $('mp-mode').value, was = net.rules.mode;
+    const patch = { mode, zombies: $('mp-zombies').value === '1', minutes: +$('mp-minutes').value, kills: +$('mp-kills').value };
+    // (from co-op to PvP: ten minutes suits it better; and back)
+    if (was === 'coop' && mode !== 'coop' && patch.minutes === 15) patch.minutes = 10;
+    if (was !== 'coop' && mode === 'coop' && patch.minutes === 10) patch.minutes = 15;
+    net.setRules(patch);
+  }
+
+  // the rules: the host can change them (until the match starts), the others see them
+  renderRules(net, host, mySlot) {
+    const rules = net.rules, busy = net.inMatch;
+    const set = (id, v) => { const el = $(id); if (document.activeElement !== el) el.value = String(v); el.disabled = !host || busy; };
+    set('mp-mode', rules.mode); set('mp-zombies', rules.zombies ? 1 : 0); set('mp-minutes', rules.minutes); set('mp-kills', rules.kills);
+    const pvp = rules.mode !== 'coop', teams = rules.mode === 'teams';
+    for (const el of document.querySelectorAll('#mp-rules [data-pvp]')) el.classList.toggle('hidden', !pvp);
+    const names = (host ? net.slotNames() : net.slotNamesIn) || {};
+    const slots = Object.keys(names).map(Number).sort((a, b) => a - b);
+    const team = (s) => rules.teams[s] ?? s % 2;
+    const tm = $('mp-teams');
+    tm.classList.toggle('hidden', !teams);
+    const key = JSON.stringify([teams, names, slots.map(team), host && !busy, mySlot]);
+    if (teams && key !== this.teamsKey) {
+      this.teamsKey = key;
+      tm.innerHTML = [0, 1].map((t) => `<div class="side" style="--c:${TEAM_CSS[t]}"><b>${TEAM_NAMES[t]}</b>`
+        + (slots.filter((s) => team(s) === t).map((s) => `<button type="button" data-slot="${s}"${host && !busy ? '' : ' disabled'}>${esc(names[s])}${s === mySlot ? ' (you)' : ''}</button>`).join('') || '<i>nobody yet</i>')
+        + '</div>').join('');
+    }
+    $('mp-summary').textContent = host
+      ? (busy ? '' : teams ? 'Click a name to move them to the other team.' : '')
+      : `${MODE_NAMES[rules.mode] || ''}${pvp ? ` · zombies ${rules.zombies ? 'around' : 'off'}` : ''} · ${rules.minutes} min${pvp && rules.kills ? ` · first to ${rules.kills} kills` : ''}${teams ? ` · you're ${TEAM_NAMES[team(mySlot)]}` : ''}`;
+  }
+
   async copyInvite() {
     const el = $('mp-link'), btn = $('mp-copy');
     try { await navigator.clipboard.writeText(el.value); } catch { el.select(); document.execCommand?.('copy'); }
@@ -113,6 +157,8 @@ export class NetUI {
     const host = inRoom && s.role === 'host';
     $('play').classList.toggle('hidden', inRoom || !!this.invite);
     $('mp-start').classList.toggle('hidden', !host || !!(g.net && g.net.inMatch));
+    $('mp-rules').classList.toggle('hidden', !inRoom || !(g.net && g.net.rules));
+    if (inRoom && g.net && g.net.rules) this.renderRules(g.net, host, s.slot ?? 0);
     const ready = g.net && g.net.ready ? g.net.ready.size + 1 : s.roster.length, loading = Math.max(0, s.roster.length - ready);
     $('mp-start').textContent = `Start match (${ready} player${ready === 1 ? '' : 's'}${loading ? `, ${loading} still loading` : ''})`;
     this.status.textContent = inRoom && s.role === 'client' && !(g.net && g.net.inMatch) ? 'Connected. Waiting for the host to start the match…' : s.message;

@@ -11,6 +11,8 @@ const POWERUPS = {
   double: { label: 'DOUBLE POINTS', color: 0xffd23f },
   nuke: { label: 'NUKE', color: 0xff8a2a },
 };
+// what each kind pays on top of the kill (the harder ones, the more)
+const KILL_BONUS = { brute: 120, screamer: 60, wolf: 60, spitter: 60, leaper: 50, riot: 90, giant: 600 };
 const centroid = (pts) => [pts.reduce((a, q) => a + q[0], 0) / pts.length, pts.reduce((a, q) => a + q[1], 0) / pts.length];
 
 export class Director {
@@ -26,6 +28,7 @@ export class Director {
     this.kills = 0;
     this.headshots = 0;
     this.deaths = 0;
+    this.frags = 0;         // PvP: players killed
     this.team = new Map();  // co-op: the other players' points and tally, by slot (host)
     this.double = 0;
     this.drops = [];
@@ -50,19 +53,23 @@ export class Director {
     const add = (poi, item, label, cost) => { if (poi) S.push({ x: poi.x, z: -poi.y, item, label, cost }); };
     add(byName('Spar'), 'rifle', 'AK-74 at Spar', DEFS.rifle.price);
     add(byName('Assorti'), 'm4', 'M4A1 at Assorti', DEFS.m4.price);
-    add(byName('Diamond'), 'deagle', 'Desert Eagle at the Diamond salon', DEFS.deagle.price);
+    // (OSM calls it Diamond; the shop there is the fruit and vegetable shop by Gate 1)
+    add(byName('Diamond'), 'deagle', 'Desert Eagle at ხილ ბოსტანი, the fruit shop', DEFS.deagle.price);
     add(byName('Nikora'), 'shotgun', 'TOZ-194 shotgun at Nikora', DEFS.shotgun.price);
     // (ammo is only at the crate by the pool house; the gunsmith's bench and the armour are shops of their own)
     add(byName('Ori Nabiji'), 'upgrade', 'Gunsmith\'s bench behind 2 Nabiji', 0);
     add(byName('36.6'), 'armour', 'Pharmacy 36.6: body armour', 0);
     add(byName('Format Fit'), 'stamina', 'Format Fit: faster legs', 2000);
     add(byName('TBC Bank'), 'double', 'TBC terminal: double points (30 s)', 1200);
-    // the security booths: Gate 2 sells the Dragunov, Gate 1 the M60 (buy on the courtyard side)
+    // the security booths: Gate 2 sells the Dragunov, Gate 1 the M60 and the riot shield (buy on the courtyard side)
     for (const b of L.buildings.filter((q) => q.group === 'guard')) {
       const [cx, cy] = centroid(b.poly.outer);
       const north = cy > 0;
       S.push({ x: cx - 3.2, z: -cy, item: north ? 'sniper' : 'mg', label: north ? 'SVD Dragunov at the Gate 2 security booth' : 'M60 machine gun at the Gate 1 security booth', cost: DEFS[north ? 'sniper' : 'mg'].price });
+      if (!north) S.push({ x: cx - 3.2, z: -cy + 2.8, item: 'shield', label: 'Riot shield at the Gate 1 security booth', cost: DEFS.shield.price });
     }
+    // the Steyr AUG at the corner shop (the one OSM doesn't name)
+    add(L.pois.find((p) => !p.name), 'aug', 'Steyr AUG at the corner shop', DEFS.aug.price);
     // an ammo crate in the middle courtyard, by the pool house, so you can restock mid-fight
     const poolHouse = L.buildings.find((b) => b.group === 'small' && L.court_mid && pointInPoly(...centroid(b.poly.outer), L.court_mid.outer));
     if (poolHouse) {
@@ -72,8 +79,29 @@ export class Director {
     // the compound bow: a crate at the south gate of the stadium
     const stadium = (L.sport || []).find((c) => c.kind === 'court_round');
     if (stadium) S.push({ x: stadium.x + 1.8, z: -(stadium.y - stadium.w / 2 - 2.2), item: 'bow', label: 'Compound bow in the crate by the stadium', cost: DEFS.bow.price, crate: true, fixed: true });
-    // the SCAR 20S: a cache on the highest roof you can climb to
-    const top = [...g.stairs.list].sort((a, b) => b.top - a.top)[0];
+    // the chainsaw: the groundskeeper's crate at the other end of the stadium
+    if (stadium) S.push({ x: stadium.x - 1.8, z: -(stadium.y + stadium.w / 2 + 2.2), item: 'chainsaw', label: 'Chainsaw in the groundskeeper\'s crate by the stadium', cost: DEFS.chainsaw.price, crate: true, fixed: true });
+    // the mini-missile launcher: a crate down in the car park (the same light on every screen)
+    const park = g.underground && g.underground.list[0];
+    if (park && park.lights.length) {
+      const [lx, ly] = park.lights[Math.floor(park.lights.length / 2)];
+      S.push({ x: lx, z: -ly, y: park.floor, item: 'launcher', label: 'RPG-7 mini-missile launcher in the crate down in the car park', cost: DEFS.launcher.price, crate: true, fixed: true });
+    }
+    // the SCAR 20S: a cache on the highest roof you can climb to; the MSR on the next highest
+    const roofs = [...g.stairs.list].sort((a, b) => b.top - a.top);
+    const top = roofs[0];
+    const cache = (st, item, label) => {
+      const dir = new THREE.Vector2(-Math.sin(st.face), -Math.cos(st.face));
+      for (const d of [4, 3, 5, 2.5]) {
+        for (const turn of [0, 0.6, -0.6, 1.2, -1.2]) {
+          const v = dir.clone().rotateAround(new THREE.Vector2(), turn), x = st.roof.x + v.x * d, z = st.roof.z + v.y * d;
+          const r = g.player.roofObj(x, z);
+          if (r && r.stair === st && !g.colliders.resolve({ x, z }, 1.4, st.top + 0.1, st.top + 1.5, 1)) return S.push({ x, z, y: st.top, item, label, cost: DEFS[item].price, crate: true, roof: true });
+        }
+      }
+      return 0;
+    };
+    if (roofs[1]) cache(roofs[1], 'msr', 'Remington MSR (rooftop cache)');
     if (top) {
       const [hx, hz] = [top.roof.x, top.roof.z];
       const dir = new THREE.Vector2(-Math.sin(top.face), -Math.cos(top.face));
@@ -151,7 +179,8 @@ export class Director {
     return best;
   }
 
-  isGun(item) { return !!DEFS[item] && !DEFS[item].melee; }
+  // (the riot shield is bought like a gun: once)
+  isGun(item) { return !!DEFS[item] && (!DEFS[item].melee || !!DEFS[item].shield); }
 
   // what it costs you now (null: nothing to buy here right now)
   cost(s) {
@@ -178,7 +207,7 @@ export class Director {
       const a = ARMOUR[p.armour];
       return `Pharmacy 36.6: body armour ${a.name}: ${a.max} health, ${Math.round((1 - a.take) * 100)}% less damage`;
     }
-    if (this.isGun(s.item) && w.owned[s.item]) return `You have the ${DEFS[s.item].short}: ammo is at the crate by the pool house`;
+    if (this.isGun(s.item) && w.owned[s.item]) return DEFS[s.item].shield ? 'You have the riot shield' : DEFS[s.item].saw ? 'You have the chainsaw: fuel is at the crate by the pool house' : `You have the ${DEFS[s.item].short}: ammo is at the crate by the pool house`;
     if (s.item === 'stamina' && p.speedMul > 1) return 'Format Fit: already done';
     return s.label;
   }
@@ -218,7 +247,7 @@ export class Director {
   tally(slot) {
     if (slot === (this.g.localSlot ?? 0)) return this;
     let t = this.team.get(slot);
-    if (!t) this.team.set(slot, t = { points: 500, kills: 0, headshots: 0, deaths: 0 });
+    if (!t) this.team.set(slot, t = { points: 500, kills: 0, headshots: 0, deaths: 0, frags: 0 });
     return t;
   }
 
@@ -238,8 +267,21 @@ export class Director {
 
   // ---- waves ----
   // bigger teams face more of them, a little tougher (co-op)
-  waveCount(w) { return Math.round((6 + w * 3.2 + w * w * 0.32) * (1 + 0.6 * (this.teamSize - 1))); }
-  maxAlive(w) { return Math.round(Math.min(8 + w * 2, 26) * (1 + 0.4 * (this.teamSize - 1))); }
+  // A match on the clock (co-op, PvP) paces them to get about ten waves into fifteen minutes:
+  // smaller waves, sent in faster, a shorter break between them. In PvP the zombies are just
+  // about, not the point: fewer of them.
+  get quick() { return this.g.mode === 'host'; }
+  get crowd() { return this.g.pvp && this.g.pvp.on ? 0.5 : 1; }
+  waveCount(w) {
+    if (this.quick) return Math.max(4, Math.round((5 + w * 2.2 + w * w * 0.12) * (1 + 0.45 * (this.teamSize - 1)) * this.crowd));
+    return Math.round((6 + w * 3.2 + w * w * 0.32) * (1 + 0.6 * (this.teamSize - 1)));
+  }
+  maxAlive(w) {
+    const phone = this.g.quality && this.g.quality.phone ? 0.75 : 1;   // (a phone running the horde: fewer at once)
+    if (this.quick) return Math.round(Math.min(10 + w * 2.5, 30) * (1 + 0.4 * (this.teamSize - 1)) * (this.crowd < 1 ? 0.6 : 1) * phone);
+    return Math.round(Math.min(8 + w * 2, 26) * (1 + 0.4 * (this.teamSize - 1)) * phone);
+  }
+  spawnGap(w) { return this.quick ? Math.max(0.3, 1.4 - w * 0.1) : Math.max(0.35, 2.2 - w * 0.14); }
   health(w) { return (w <= 9 ? 90 + 55 * w : (90 + 55 * 9) * Math.pow(1.09, w - 9)) * (1 + 0.1 * (this.teamSize - 1)); }
   damage(w) { return 34 + Math.min(26, w * 2); }
 
@@ -254,9 +296,13 @@ export class Director {
     if (w >= 3 && (w % 2 === 1 || Math.random() < 0.5)) this.packs.push({ at: 0.25 + Math.random() * 0.3, kind: 'dogs', n: Math.min(6, 2 + Math.floor(w / 3)) });
     if (w >= 7 && Math.random() < 0.6) this.packs.push({ at: 0.6 + Math.random() * 0.25, kind: 'dogs', n: Math.min(6, 2 + Math.floor(w / 4)) });
     if (w >= 4 && Math.random() < 0.7) this.packs.push({ at: 0.35 + Math.random() * 0.4, kind: 'crows', n: Math.min(8, 3 + Math.floor(w / 4)) });
+    // every fifth wave, a giant (two from wave 15, three from 25)
+    if (w % 5 === 0) this.packs.push({ at: 0.15 + Math.random() * 0.15, kind: 'giant', n: 1 + Math.floor((w - 5) / 10) });
     const g = this.g;
     g.hud.wave(w);
-    const note = w === 1 ? 'They’re coming through the gates' : w === 3 ? 'Listen for the dogs' : w === 4 ? 'Watch the sky' : '';
+    const note = w === 1 ? 'They’re coming through the gates' : w === 3 ? 'Listen for the dogs'
+      : w === 4 ? 'Watch the sky, and the leapers: they pounce' : w === 5 ? 'Spitters: keep moving, stay out of the acid'
+        : w === 6 ? 'Riot police: the shield stops bullets. Shoot their legs, or get round them' : '';
     g.hud.banner(`Wave ${w}`, note);
     // wave 1: a distant air-raid siren somewhere over Dighomi, quiet and fading; later waves: a soft low boom
     if (w === 1) g.audio.play('waveStart', { vol: 0.3, lowpass: 1300, fade: 5, jitter: 0 });
@@ -282,8 +328,9 @@ export class Director {
       if (!isFinite(path) || path > 160) continue;
       const sy = s.f ?? g.hm.atWorld(x, z);
       const seen = ps.some((q) => Math.hypot(x - q.pos.x, z - q.pos.z) < 60 && g.colliders.clear(q.pos.x, q.pos.y + 1.6, q.pos.z, x, sy + 1.4, z));
-      // prefer spawns about 30 m away on foot, out of sight
-      const w = (seen ? 0.08 : 1) * (Math.exp(-(((path - 30) / 20) ** 2)) + 0.03);
+      // prefer spawns about 30 m away on foot (a match on the clock: nearer), out of sight
+      const want = this.quick ? 22 : 30;
+      const w = (seen ? 0.08 : 1) * (Math.exp(-(((path - want) / 20) ** 2)) + 0.03);
       cands.push([w, x, z, s.kind, s.f]);
     }
     if (!cands.length) return null;
@@ -293,15 +340,19 @@ export class Director {
     return cands[cands.length - 1];
   }
 
-  // What kind of zombie comes next: walkers early, then runners, crawlers, bloaters, screamers, brutes.
+  // What kind of zombie comes next: walkers early, then runners, crawlers, bloaters, screamers,
+  // leapers, brutes, spitters and riot police.
   pickType(w) {
     const z = this.g.zombies;
     const table = [
-      ['runner', THREE.MathUtils.clamp((w - 2) * 0.1, 0, 0.42)],
+      ['runner', THREE.MathUtils.clamp((w - 2) * 0.1, 0, 0.36)],
       ['crawler', w >= 2 ? 0.08 : 0],
       ['bloater', w >= 3 && z.count('bloater') < 3 ? 0.07 : 0],
       ['screamer', w >= 4 && z.count('screamer') < 1 ? 0.05 : 0],
       ['brute', w >= 5 && z.count('brute') < 2 + Math.floor(w / 8) ? Math.min(0.1, 0.03 + (w - 5) * 0.01) : 0],
+      ['leaper', w >= 4 && z.count('leaper') < 2 + Math.floor(w / 6) ? Math.min(0.09, 0.05 + (w - 4) * 0.008) : 0],
+      ['spitter', w >= 5 && z.count('spitter') < 2 + Math.floor(w / 8) ? Math.min(0.08, 0.045 + (w - 5) * 0.006) : 0],
+      ['riot', w >= 6 && z.count('riot') < 2 + Math.floor(w / 6) ? Math.min(0.08, 0.04 + (w - 6) * 0.008) : 0],
     ];
     let r = Math.random();
     for (const [t, p] of table) { if (r < p) return t; r -= p; }
@@ -330,6 +381,19 @@ export class Director {
 
   spawnPack(pack) {
     const g = this.g, w = this.wave;
+    if (pack.kind === 'giant') {
+      // (at ground level: it wouldn't fit in the car parks)
+      for (let i = 0; i < pack.n; i++) {
+        let s = null;
+        for (let k = 0; k < 12 && (!s || s[4] != null); k++) s = this.pickSpawn();
+        if (!s || s[4] != null) continue;
+        g.zombies.spawn(s[1], s[2], { type: 'giant', hp: this.health(w), damage: this.damage(w) });
+      }
+      g.hud.banner(pack.n > 1 ? 'Giants' : 'A giant', 'It throws cars about: keep your distance');
+      g.net?.banner?.(pack.n > 1 ? 'Giants' : 'A giant', 'It throws cars about: keep your distance');
+      g.audio.play('roar', { vol: 1.2 });
+      return;
+    }
     if (pack.kind === 'dogs') {
       const s = this.pickSpawn();
       if (!s) return;
@@ -361,17 +425,28 @@ export class Director {
     for (let i = 0; i < 2; i++) if (g.zombies.alive < this.maxAlive(this.wave) + 4) this.spawnOne();
   }
 
+  // How much harder they are now than on wave 1 (their health), eased: kills pay that much more.
+  toughness() { return Math.pow(this.health(Math.max(1, this.wave)) / this.health(1), 0.6); }
+
   onKill(zb, head, weapon, slot = this.g.localSlot ?? 0) {
     const t = this.tally(slot);
     t.kills++;
     if (head) t.headshots++;
-    const bonus = zb.type === 'brute' ? 120 : zb.type === 'screamer' || zb.type === 'wolf' ? 60 : zb.species === 'crow' ? 10 : 0;
-    this.addPoints((weapon === 'knife' ? 130 : head ? 100 : 60) + bonus, false, slot);
-    // power-up drop
-    if (zb.species !== 'crow' && Math.random() < 0.035 && this.drops.length < 3) this.drop(zb.pos);
+    const bonus = KILL_BONUS[zb.type] ?? (zb.species === 'crow' ? 10 : 0);
+    // (wave 1: 60 a kill, 100 a headshot; wave 10: about 2.4 times that; wave 20: about 4 times)
+    const pay = ((weapon === 'knife' ? 130 : head ? 100 : 60) + bonus) * this.toughness();
+    this.addPoints(Math.round(pay / 5) * 5, false, slot);
+    // power-up drop (a giant always leaves one, and a gun)
+    if (zb.def.boss) {
+      const g = this.g;
+      g.hud.banner('Giant down', '');
+      g.net?.banner?.('Giant down', '');
+      this.drop(zb.pos);
+      g.pickups?.spawn('gun', { x: zb.pos.x + 1.2, y: zb.pos.y, z: zb.pos.z });
+    } else if (zb.species !== 'crow' && Math.random() < 0.035 && this.drops.length < 3) this.drop(zb.pos);
   }
 
-  onHit(zb, killed, head, slot = this.g.localSlot ?? 0) { if (!killed) this.addPoints(10, false, slot); }
+  onHit(zb, killed, head, slot = this.g.localSlot ?? 0) { if (!killed) this.addPoints(Math.round(10 * Math.sqrt(this.toughness())), false, slot); }
 
   drop(pos) {
     const keys = Object.keys(POWERUPS);
@@ -437,7 +512,7 @@ export class Director {
     this.spawnT -= dt;
     if (this.toSpawn > 0 && this.spawnT <= 0 && g.zombies.alive < this.maxAlive(this.wave)) {
       if (this.spawnOne()) this.toSpawn--;
-      this.spawnT = Math.max(0.35, 2.2 - this.wave * 0.14) * (0.6 + Math.random() * 0.8);
+      this.spawnT = this.spawnGap(this.wave) * (0.6 + Math.random() * 0.8);
     }
     const progress = 1 - this.toSpawn / (this.total || 1);
     for (let i = this.packs.length - 1; i >= 0; i--) if (progress >= this.packs[i].at) { this.spawnPack(this.packs[i]); this.packs.splice(i, 1); }
@@ -445,9 +520,11 @@ export class Director {
       this.crowT -= dt;
       if (this.crowT <= 0 && g.zombies.count('crow') < 8) { this.crowT = 18; this.spawnCrows(2 + Math.floor(Math.random() * 2)); }
     } else this.crowT = Math.min(this.crowT, 4);
+    // the last few: they hurry (and the ones lost far away are brought nearer sooner)
+    g.zombies.hurry = this.toSpawn <= 0 && !this.packs.length && g.zombies.alive <= 4;
     if (this.toSpawn <= 0 && !this.packs.length && g.zombies.alive === 0) {
       this.state = 'intermission';
-      this.timer = 11;
+      this.timer = this.quick ? 7 : 11;
       g.hud.banner(`Wave ${this.wave} survived`, 'The shops are open: press F to buy');
       g.audio.play('waveEnd', { vol: 0.45 });
       g.onWaveEnd?.(this.wave);
@@ -495,7 +572,7 @@ export class Director {
       if (cost == null) g.hud.prompt(what, 3);
       else {
         g.hud.prompt(`Press <b>F</b> — ${what} <b>[${cost}]</b>${this.points < cost ? ' <span style="color:#ff6b6b">not enough points</span>' : ''}`, 3);
-        if (g.input.hit('KeyF')) { g.input.pressed.delete('KeyF'); this.tryBuy(s); }
+        if (g.input.hit('KeyF') && g.state === 'playing' && !g.practice?.open) { g.input.pressed.delete('KeyF'); this.tryBuy(s); }
       }
     }
     for (const m of this.stationMeshes) m.rotation.z += dt;

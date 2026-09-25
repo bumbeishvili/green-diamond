@@ -1,0 +1,191 @@
+# band 4 (part b: nouns) — format: w|p|t|ka|ex|e
+pupil|n|school|მოსწავლე|Every pupil must wear a uniform.|
+chef|n|work|შეფ-მზარეული|The chef made us a special dessert.|
+pilot|n|work|პილოტი|The pilot said we will land soon.|
+dentist|n|health|სტომატოლოგი|I have an appointment with the dentist.|
+engineer|n|work|ინჟინერი|My brother is an engineer.|
+scientist|n|work|მეცნიერი|She wants to become a scientist.|
+secretary|n|work|მდივანი|Please leave a message with my secretary.|
+employee|n|work|თანამშრომელი|Every employee has a parking space.|
+crowd|n|people|ბრბო|There was a big crowd at the concert.|
+fan|n|sport|გულშემატკივარი|He is a big fan of our football team.|
+hero|n|people|გმირი|My father is my hero.|
+owner|n|people|მფლობელი|The owner of the cafe is very friendly.|
+partner|n|people|პარტნიორი|She lives with her partner.|
+kid|n|people|ბავშვი|My kid starts school next year.|
+lawyer|n|law|ადვოკატი|You should talk to a lawyer.|
+judge|n|law|მოსამართლე|The judge will decide tomorrow.|
+thief|n|law|ქურდი|The police caught the thief.|
+musician|n|work|მუსიკოსი|My uncle is a musician.|
+director|n|work|დირექტორი|The director of the school is very strict.|
+professor|n|school|პროფესორი|The professor gave an interesting lecture.|
+visitor|n|travel|ვიზიტორი|Every visitor gets a free map.|
+classmate|n|school|თანაკლასელი|She was my classmate at school.|
+knee|n|body|მუხლი|I hurt my knee playing football.|
+lip|n|body|ტუჩი|I bit my lip by mistake.|👄
+tongue|n|body|ენა|The doctor asked me to show my tongue.|👅
+bone|n|body|ძვალი|The dog is eating a bone.|🦴
+throat|n|body|ყელი|I have a sore throat.|
+chest|n|body|მკერდი|The doctor listened to my chest.|
+beard|n|body|წვერი|My grandfather has a long white beard.|🧔
+breath|n|health|სუნთქვა|Take a deep breath.|
+height|n|body|სიმაღლე|What is your height?|
+disease|n|health|დაავადება|Heart disease is very common.|
+fever|n|health|ცხელება|The child has a high fever.|
+pill|n|health|აბი|Take one pill after each meal.|💊
+ambulance|n|health|სასწრაფო დახმარება|Call an ambulance, quickly!|🚑
+emergency|n|health|გადაუდებელი შემთხვევა|In an emergency, call 112.|
+appointment|n|health|ვიზიტი|I have a doctor's appointment at three.|
+diet|n|health|დიეტა|I am on a diet.|
+stress|n|health|სტრესი|Too much work causes stress.|
+oven|n|home|ღუმელი|Put the cake in the oven.|
+garage|n|home|ავტოფარეხი|The car is in the garage.|
+balcony|n|home|აივანი|We have breakfast on the balcony.|
+carpet|n|home|ხალიჩა|We have a red carpet in the living room.|
+cupboard|n|home|კარადა|The cups are in the cupboard.|
+pillow|n|home|ბალიში|This pillow is too hard.|
+step|n|home|საფეხური|Be careful, there is a step here.|
+electricity|n|home|ელექტროენერგია|The electricity bill is very high this month.|🔌
+gas|n|home|გაზი|We cook with gas.|
+tool|n|home|ხელსაწყო|I need a tool to fix this.|🔧
+housework|n|home|საოჯახო საქმე|I do the housework on Saturday.|
+desk|n|work|საწერი მაგიდა|My desk is next to the window.|
+armchair|n|home|სავარძელი|My grandfather sleeps in his armchair.|
+pan|n|home|ტაფა|Heat some oil in a pan.|
+pot|n|home|ქვაბი|Put the potatoes in a big pot.|
+kettle|n|home|ჩაიდანი|Can you put the kettle on?|
+sauce|n|food|სოუსი|This sauce is delicious.|
+snack|n|food|წასახემსებელი|I usually have a snack at four.|
+pasta|n|food|მაკარონი|We had pasta with tomato sauce.|🍝
+garlic|n|food|ნიორი|Add some garlic to the soup.|🧄
+nut|n|food|თხილი|The squirrel is eating a nut.|🥜
+biscuit|n|food|ორცხობილა|Would you like a biscuit with your tea?|🍪
+peach|n|food|ატამი|This peach is very juicy.|
+pear|n|food|მსხალი|Would you like a pear?|🍐
+toast|n|food|ტოსტი|I had toast and jam for breakfast.|
+pie|n|food|ღვეზელი|My grandmother makes the best apple pie.|🥧
+cucumber|n|food|კიტრი|I like cucumber and tomato salad.|🥒
+belt|n|clothes|ქამარი|This belt is too long.|
+sweater|n|clothes|სვიტერი|This sweater is very warm.|
+boot|n|clothes|ჩექმა|Where is my other boot?|👢
+uniform|n|clothes|უნიფორმა|Nurses wear a uniform at work.|
+button|n|clothes|ღილი|A button fell off my shirt.|
+fashion|n|clothes|მოდა|She is very interested in fashion.|
+style|n|clothes|სტილი|I like your style.|
+stadium|n|sport|სტადიონი|The stadium was full for the final.|🏟️
+tower|n|city|კოშკი|You can see the whole city from the tower.|🗼
+castle|n|city|ციხესიმაგრე|We visited an old castle in the mountains.|🏰
+parking|n|transport|ავტოსადგომი|Is there free parking near the hotel?|🅿️
+mall|n|shopping|სავაჭრო ცენტრი|Let's go shopping at the mall.|
+cafe|n|city|კაფე|Let's meet at the cafe.|
+port|n|travel|პორტი|Batumi has a big port.|⚓
+truck|n|transport|სატვირთო მანქანა|A big truck is blocking the road.|🚚
+petrol|n|transport|ბენზინი|We need to stop for petrol.|⛽
+tour|n|travel|ექსკურსია|We took a tour of the old town.|
+platform|n|transport|ბაქანი|The train leaves from platform three.|
+passenger|n|transport|მგზავრი|Every passenger must have a ticket.|
+metro|n|transport|მეტრო|I take the metro to work.|🚇
+motorbike|n|transport|მოტოციკლი|He rides a motorbike to work.|🏍️
+engine|n|transport|ძრავა|The engine is making a strange noise.|
+border|n|travel|საზღვარი|We crossed the border at night.|
+adventure|n|travel|თავგადასავალი|Our trip was a real adventure.|
+tent|n|travel|კარავი|We slept in a tent by the lake.|⛺
+queue|n|shopping|რიგი|There was a long queue at the bank.|
+sand|n|nature|ქვიშა|The sand on this beach is white.|
+rock|n|nature|კლდე|The castle stands on a high rock.|
+wave|n|nature|ტალღა|That was a very big wave.|
+silver|n|nature|ვერცხლი|This spoon is made of silver.|
+desert|n|nature|უდაბნო|It rarely rains in the desert.|🏜️
+coast|n|nature|სანაპირო|We drove along the coast.|
+planet|n|nature|პლანეტა|We must protect our planet.|🪐
+environment|n|nature|გარემო|Plastic is bad for the environment.|
+energy|n|nature|ენერგია|I have no energy today.|
+heat|n|weather|სიცხე|I can't sleep in this heat.|
+metal|n|nature|ლითონი|The chair is made of metal.|
+plastic|n|nature|პლასტმასი|Try to use less plastic.|
+sunset|n|nature|მზის ჩასვლა|The sunset over the sea was beautiful.|🌇
+goat|n|animals|თხა|My grandfather keeps a goat.|🐐
+wolf|n|animals|მგელი|We heard a wolf in the forest.|🐺
+bee|n|animals|ფუტკარი|A bee is sitting on the flower.|🐝
+insect|n|animals|მწერი|There is an insect in my room.|🐞
+wing|n|animals|ფრთა|The bird hurt its wing.|
+tail|n|animals|კუდი|The dog is wagging its tail.|
+decade|n|time|ათწლეული|The city changed a lot in the last decade.|
+period|n|time|პერიოდი|It was a difficult period in my life.|
+calendar|n|time|კალენდარი|Write the date in your calendar.|📆
+service|n|work|მომსახურება|The service in this restaurant is excellent.|
+document|n|work|დოკუმენტი|Please sign this document.|
+file|n|technology|ფაილი|I sent you the file by email.|📁
+form|n|work|ბლანკი|Please fill in this form.|
+post|n|communication|ფოსტა|Did the post come today?|📮
+training|n|work|ტრენინგი|The company offers free training.|
+tax|n|money|გადასახადი|We pay a lot of tax.|
+economy|n|money|ეკონომიკა|The economy is growing.|
+payment|n|money|გადახდა|We accept payment by card.|
+degree|n|school|აკადემიური ხარისხი|She has a degree in law.|
+board|n|school|დაფა|The teacher wrote the words on the board.|
+research|n|school|კვლევა|She is doing research on climate change.|
+comment|n|communication|კომენტარი|Thank you for your comment.|
+article|n|communication|სტატია|I read an interesting article about Georgia.|
+speech|n|communication|სიტყვით გამოსვლა|He gave a short speech at the wedding.|
+discussion|n|communication|დისკუსია|We had a long discussion about the plan.|
+argument|n|communication|კამათი|They had an argument about money.|
+invitation|n|communication|მიწვევა|Thank you for the invitation.|
+title|n|communication|სათაური|What is the title of the book?|
+novel|n|communication|რომანი|I am reading a novel by a Georgian writer.|
+concert|n|communication|კონცერტი|We are going to a concert tonight.|
+festival|n|society|ფესტივალი|There is a wine festival in October.|
+app|n|technology|აპლიკაცია|This app helps me learn English.|
+password|n|technology|პაროლი|I forgot my password.|
+battery|n|technology|ბატარეა|My phone battery is almost empty.|🔋
+laptop|n|technology|ლეპტოპი|I work on my laptop at home.|
+technology|n|technology|ტექნოლოგია|Technology changes very fast.|
+amount|n|abstract|რაოდენობა|That's a large amount of money.|
+bottom|n|abstract|ძირი|The keys are at the bottom of my bag.|
+direction|n|abstract|მიმართულება|We are going in the wrong direction.|
+distance|n|abstract|მანძილი|What is the distance from here to Batumi?|
+detail|n|abstract|დეტალი|Please tell me every detail.|
+habit|n|abstract|ჩვევა|Smoking is a bad habit.|
+character|n|abstract|ხასიათი|She has a strong character.|
+relationship|n|people|ურთიერთობა|They have a good relationship.|
+quality|n|abstract|ხარისხი|The quality of the food is excellent.|
+safety|n|abstract|უსაფრთხოება|Safety is our first priority.|
+danger|n|abstract|საფრთხე|The sign warns of danger.|⚠️
+risk|n|abstract|რისკი|Is there any risk in this plan?|
+freedom|n|society|თავისუფლება|Freedom is very important to me.|
+solution|n|abstract|გამოსავალი|We need to find a solution.|
+opportunity|n|abstract|შესაძლებლობა|This job is a great opportunity.|
+condition|n|abstract|მდგომარეობა|The car is in good condition.|
+sense|n|abstract|გრძნობა|She has a great sense of humour.|
+mood|n|feelings|განწყობა|I am in a good mood today.|
+pleasure|n|feelings|სიამოვნება|It was a pleasure to meet you.|
+happiness|n|feelings|ბედნიერება|Money can't buy happiness.|
+sort|n|abstract|სახეობა|This sort of weather is normal in spring.|
+circle|n|abstract|წრე|Draw a circle on the paper.|⭕
+model|n|abstract|მოდელი|This is the latest model of the phone.|
+secret|n|abstract|საიდუმლო|Can you keep a secret?|🤫
+silence|n|abstract|სიჩუმე|There was a long silence.|
+effect|n|abstract|ეფექტი|The medicine had a good effect.|
+topic|n|communication|თემა|What is the topic of the lesson today?|
+material|n|abstract|მასალა|What material is this jacket made of?|
+object|n|abstract|ობიექტი|There is a strange object on the table.|
+item|n|shopping|ნივთი|Each item costs five lari.|
+stuff|n|abstract|ნივთები|Put your stuff in the car.|
+race|n|sport|რბოლა|He won the race.|🏁
+prize|n|sport|პრიზი|She won first prize.|🏆
+competition|n|sport|შეჯიბრება|She won a singing competition.|
+basketball|n|sport|კალათბურთი|My son plays basketball at school.|🏀
+politics|n|society|პოლიტიკა|I am not interested in politics.|
+crime|n|law|დანაშაული|Crime in the city has fallen.|
+society|n|society|საზოგადოება|Education is important for society.|
+basket|n|shopping|კალათა|Put the apples in the basket.|🧺
+childhood|n|family|ბავშვობა|I had a happy childhood.|
+birth|n|family|დაბადება|What is your date of birth?|
+hole|n|abstract|ხვრელი|There is a hole in my sock.|🕳️
+excuse|n|abstract|საბაბი|That's not a good excuse.|
+dozen|n|numbers|დუჟინი|I bought a dozen eggs.|
+pair|n|numbers|წყვილი|I need a new pair of shoes.|
+north|n|places|ჩრდილოეთი|The mountains are in the north.|🧭
+south|n|places|სამხრეთი|It is warmer in the south.|
+east|n|places|აღმოსავლეთი|The sun rises in the east.|
+west|n|places|დასავლეთი|The sun sets in the west.|

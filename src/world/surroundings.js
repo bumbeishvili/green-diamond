@@ -4,7 +4,8 @@ import { flatGeometry, ribbonGeometry, mulberry } from './geom.js';
 
 // Far backdrop: real terrain (AWS terrain tiles) draped with Sentinel-2 imagery, the
 // Tbilisi skyline (OSM high-rises within 5 km), tower cranes over the construction sites,
-// and the Olympic sports fields across Bob Walsh Street.
+// and across Bob Walsh Street the Olympic sports fields, the sandy lot where the lorries park
+// opposite Gate 1, the lawns and road signs opposite Gate 2 (the gate photospheres, the satellite).
 const HALF = 18000, SITE_ELEV = 419;
 
 async function loadTerrain() {
@@ -171,9 +172,12 @@ export async function buildSurroundings(level, scene, atmo, backdropSites) {
   // (these lie centimetres over the ground and the streets: each drawn a fixed step behind what's
   // on top of it, or far off they flicker through each other)
   const lineMat = new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: 0.8, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -3 });
-  const lotMat = new THREE.MeshStandardMaterial({ color: 0x5c5d60, roughness: 0.95, polygonOffset: true, polygonOffsetFactor: 0.5, polygonOffsetUnits: 1 });
-  const sportsMat = new THREE.MeshStandardMaterial({ color: 0xa9a8a2, roughness: 0.95, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 2 });
-  const fieldG = { turf: [], line: [], lot: [], sports: [] };
+  // (the lots are pale concrete with white bays; the ground between the venues mostly grass - satellite)
+  const lotMat = new THREE.MeshStandardMaterial({ map: lotTexture(), roughness: 0.95, polygonOffset: true, polygonOffsetFactor: 0.5, polygonOffsetUnits: 1 });
+  const sportsMat = new THREE.MeshStandardMaterial({ map: lawnTexture(), color: 0xc9d1b4, roughness: 1, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 2 });
+  const sandMat = new THREE.MeshStandardMaterial({ map: sandTexture(), roughness: 1, polygonOffset: true, polygonOffsetFactor: 0.5, polygonOffsetUnits: 1 });
+  const lawnMat = new THREE.MeshStandardMaterial({ map: lawnTexture(), roughness: 1, polygonOffset: true, polygonOffsetFactor: 0.25, polygonOffsetUnits: 0.5 });
+  const fieldG = { turf: [], line: [], lot: [], sports: [], dirt: [], lawn: [] };
   const poles = [];
   for (const f of level.surroundings.features) {
     if (f.kind.startsWith('pitch')) {
@@ -183,12 +187,16 @@ export async function buildSurroundings(level, scene, atmo, backdropSites) {
         fieldG.line.push(ribbonGeometry([...o, o[0]], 0.14, 0.05, 1));
         for (const k of [0, Math.floor(o.length / 2)]) poles.push(o[k]);
       }
-    } else if (f.kind === 'parking') fieldG.lot.push(flatGeometry(f.polys, 0.012, 5));
+    } else if (f.kind === 'parking') fieldG.lot.push(flatGeometry(f.polys, 0.012, 10));
     else if (f.kind === 'sports') fieldG.sports.push(flatGeometry(f.polys, 0.004, 5));
+    else if (f.kind === 'dirt') fieldG.dirt.push(flatGeometry(f.polys, 0.01, 9));
+    else if (f.kind === 'lawn') fieldG.lawn.push(flatGeometry(f.polys, 0.016, 4));
   }
   const addMerged = (list, mat) => { if (list.length) { const m = new THREE.Mesh(mergeGeometries(list), mat); m.receiveShadow = true; group.add(m); } };
   addMerged(fieldG.sports, sportsMat);
   addMerged(fieldG.lot, lotMat);
+  addMerged(fieldG.dirt, sandMat);
+  addMerged(fieldG.lawn, lawnMat);
   addMerged(fieldG.turf, turfMat);
   addMerged(fieldG.line, lineMat);
   // floodlight masts
@@ -203,6 +211,9 @@ export async function buildSurroundings(level, scene, atmo, backdropSites) {
     group.add(pole, head);
   }
 
+  buildTrucks(level.surroundings.trucks || [], group);
+  buildSigns(level.surroundings.signs || [], group);
+
   scene.add(group);
   return {
     group, terrainH,
@@ -211,6 +222,170 @@ export async function buildSurroundings(level, scene, atmo, backdropSites) {
       lampMat.emissiveIntensity = atmo.lampLevel * 2.5;
     },
   };
+}
+
+// Sand and dust with a few old tyre ruts (the lot opposite Gate 1).
+function sandTexture() {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 256;
+  const ctx = cv.getContext('2d'), r = mulberry(19);
+  ctx.fillStyle = '#b8935f'; ctx.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 70; i++) {
+    const x = r() * 256, y = r() * 256, rad = 10 + r() * 40, g = ctx.createRadialGradient(x, y, 0, x, y, rad);
+    const c = r() < 0.5 ? '160,140,110' : '222,208,180';
+    g.addColorStop(0, `rgba(${c},0.35)`); g.addColorStop(1, `rgba(${c},0)`);
+    ctx.fillStyle = g; ctx.fillRect(x - rad, y - rad, rad * 2, rad * 2);
+  }
+  for (let i = 0; i < 2500; i++) {
+    ctx.fillStyle = r() < 0.5 ? `rgba(110,95,70,${0.15 + r() * 0.2})` : `rgba(240,230,210,${0.15 + r() * 0.2})`;
+    ctx.fillRect(r() * 256, r() * 256, 1 + r() * 2, 1 + r() * 2);
+  }
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8;
+  return t;
+}
+
+// A car park: pale concrete, bays marked in white every 2.5 m (10 m to a tile: two rows of bays and
+// an aisle).
+function lotTexture() {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 256;
+  const ctx = cv.getContext('2d'), r = mulberry(29);
+  ctx.fillStyle = '#b7b6b1'; ctx.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 1800; i++) {
+    ctx.fillStyle = r() < 0.5 ? `rgba(90,90,85,${0.08 + r() * 0.1})` : `rgba(235,235,230,${0.08 + r() * 0.1})`;
+    ctx.fillRect(r() * 256, r() * 256, 2, 2);
+  }
+  ctx.fillStyle = 'rgba(245,245,240,0.85)';
+  for (let k = 0; k < 4; k++) { ctx.fillRect(k * 64, 0, 3, 128); ctx.fillRect(k * 64, 160, 3, 96); }
+  ctx.fillRect(0, 126, 256, 3);
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8;
+  return t;
+}
+
+// A fresh roadside lawn.
+function lawnTexture() {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 128;
+  const ctx = cv.getContext('2d'), r = mulberry(23);
+  ctx.fillStyle = '#6f9a45'; ctx.fillRect(0, 0, 128, 128);
+  for (let i = 0; i < 2600; i++) {
+    ctx.fillStyle = r() < 0.5 ? `rgba(60,90,35,${0.2 + r() * 0.3})` : `rgba(150,180,90,${0.15 + r() * 0.25})`;
+    ctx.fillRect(r() * 128, r() * 128, 1, 2 + r() * 2);
+  }
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8;
+  return t;
+}
+
+// Lorries parked on the lot: a tractor unit (cab, bumper, fuel tank) and a curtain-side trailer on
+// six wheels, one instanced box and one instanced wheel mesh for all of them. Headings in map
+// radians; the cab is at the front.
+function buildTrucks(list, group) {
+  if (!list.length) return;
+  const boxes = [], wheels = [];
+  for (const t of list) {
+    const c = Math.cos(t.h), s = Math.sin(t.h);
+    const at = (along, across, y, sx, sy, sz, color) => {   // along: forward from the truck's centre
+      boxes.push({ x: t.x + c * along - s * across, y, z: -(t.y + s * along + c * across), ry: t.h, sx, sy, sz, color });
+    };
+    at(-1.6, 0, 2.45, 13.4, 2.8, 2.5, t.trailer);          // the trailer body
+    at(-1.6, 0, 0.95, 13.2, 0.25, 2.2, 0x2a2b2d);          // its chassis
+    at(-8.2, 0, 2.45, 0.08, 2.8, 2.48, 0x9a9da0);          // the rear doors
+    at(6.5, 0, 2.05, 2.3, 2.3, 2.45, t.cab);               // the cab
+    at(7.62, 0, 2.35, 0.06, 0.95, 2.1, 0x1c2328);          // the windscreen
+    at(6.5, 0, 3.5, 2.0, 0.55, 2.2, t.cab);                // the roof fairing
+    at(7.7, 0, 0.75, 0.12, 0.5, 2.4, 0x3a3c3f);            // the bumper
+    at(5.2, 0, 0.8, 4.0, 0.3, 2.2, 0x2a2b2d);              // the tractor's frame
+    at(5.6, 1.2, 0.8, 1.2, 0.55, 0.5, 0xb8bcc0);           // the fuel tank
+    for (const along of [7.0, 4.6, 3.3, -5.4, -6.5, -7.6]) for (const across of [-1.05, 1.05]) {
+      wheels.push({ x: t.x + c * along - s * across, z: -(t.y + s * along + c * across), ry: t.h });
+    }
+  }
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), sc = new THREE.Vector3(), p = new THREE.Vector3(), col = new THREE.Color();
+  const bm = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ roughness: 0.6, metalness: 0.2 }), boxes.length);
+  boxes.forEach((b, i) => {
+    e.set(0, b.ry, 0); q.setFromEuler(e);
+    m4.compose(p.set(b.x, b.y, b.z), q, sc.set(b.sx, b.sy, b.sz));
+    bm.setMatrixAt(i, m4);
+    bm.setColorAt(i, col.setHex(b.color));   // (the colours are the photos': set as they are)
+  });
+  bm.castShadow = bm.receiveShadow = true;
+  group.add(bm);
+  // a trailer with lettering down its sides (the TEXTAR one across from Gate 1)
+  for (const t of list) {
+    if (!t.label) continue;
+    const cv = document.createElement('canvas'); cv.width = 1024; cv.height = 192;
+    const x = cv.getContext('2d');
+    x.fillStyle = '#' + t.trailer.toString(16).padStart(6, '0'); x.fillRect(0, 0, 1024, 192);
+    x.fillStyle = '#141414'; x.textBaseline = 'middle';
+    x.font = 'italic 900 118px "Arial Black", Arial, sans-serif'; x.fillText(t.label, 150, 82);
+    x.font = 'italic 600 30px Arial, sans-serif'; x.fillText('So sicher bremst nur das Original', 330, 160);
+    const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+    const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6, metalness: 0.1, polygonOffset: true, polygonOffsetFactor: -1 });
+    const holder = new THREE.Group();
+    holder.position.set(t.x, 0, -t.y); holder.rotation.y = t.h;
+    for (const side of [1, -1]) {
+      const pl = new THREE.Mesh(new THREE.PlaneGeometry(13.2, 2.48), mat);
+      pl.position.set(-1.6, 2.45, side * 1.252);
+      if (side < 0) pl.rotation.y = Math.PI;
+      holder.add(pl);
+    }
+    group.add(holder);
+  }
+  const wg = new THREE.CylinderGeometry(0.52, 0.52, 0.4, 14).rotateX(Math.PI / 2);
+  const wm = new THREE.InstancedMesh(wg, new THREE.MeshStandardMaterial({ color: 0x1b1b1c, roughness: 0.85 }), wheels.length);
+  wheels.forEach((w, i) => {
+    e.set(0, w.ry, 0); q.setFromEuler(e);
+    m4.compose(p.set(w.x, 0.52, w.z), q, sc.set(1, 1, 1));
+    wm.setMatrixAt(i, m4);
+  });
+  wm.castShadow = true;
+  group.add(wm);
+}
+
+// Road signs on grey posts: blue pedestrian-crossing squares, a P, a blue go-straight disc.
+function buildSigns(list, group) {
+  if (!list.length) return;
+  const kinds = ['crossing', 'parking', 'ahead'];
+  const cv = document.createElement('canvas'); cv.width = 384; cv.height = 128;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 384, 128);
+  // crossing: blue square, white triangle, a walking figure
+  ctx.fillStyle = '#1f5fbf'; ctx.fillRect(4, 4, 120, 120);
+  ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.moveTo(64, 18); ctx.lineTo(114, 108); ctx.lineTo(14, 108); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#111111'; ctx.beginPath(); ctx.arc(66, 46, 7, 0, Math.PI * 2); ctx.fill();
+  ctx.fillRect(60, 55, 10, 26); ctx.fillRect(52, 80, 7, 20); ctx.fillRect(70, 80, 7, 20);
+  ctx.fillStyle = '#111111'; for (let k = 0; k < 4; k++) ctx.fillRect(28 + k * 18, 100, 10, 5);
+  // parking: blue square, white P
+  ctx.fillStyle = '#1f5fbf'; ctx.fillRect(132, 4, 120, 120);
+  ctx.fillStyle = '#ffffff'; ctx.font = 'bold 96px Arial, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('P', 192, 70);
+  // ahead only: blue disc, white arrow
+  ctx.clearRect(260, 0, 124, 128);
+  ctx.fillStyle = '#1f5fbf'; ctx.beginPath(); ctx.arc(322, 64, 58, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(315, 48, 14, 50);
+  ctx.beginPath(); ctx.moveTo(322, 20); ctx.lineTo(346, 52); ctx.lineTo(298, 52); ctx.closePath(); ctx.fill();
+  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+  const pos = [], uv = [], nor = [];
+  const posts = [];
+  for (const sg of list) {
+    const k = Math.max(0, kinds.indexOf(sg.kind));
+    // (facing the street: west, towards Bob Walsh Street and the gates)
+    const x = sg.x - 0.06, y = sg.y, h0 = 2.0, h1 = 2.7, w = 0.35;
+    const P = (dy, h) => [x, h, -(y + dy)];
+    const c = [P(w, h0), P(-w, h0), P(-w, h1), P(w, h1)];
+    pos.push(...c[0], ...c[1], ...c[2], ...c[0], ...c[2], ...c[3]);
+    const u0 = k / 3 + 0.01, u1 = (k + 1) / 3 - 0.01;
+    uv.push(u0, 0, u1, 0, u1, 1, u0, 0, u1, 1, u0, 1);
+    for (let j = 0; j < 6; j++) nor.push(-1, 0, 0);
+    posts.push([sg.x, sg.y]);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  group.add(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ map: tex, alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.5 })));
+  const pm = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.04, 0.04, 2.8, 8).translate(0, 1.4, 0), new THREE.MeshStandardMaterial({ color: 0x9aa0a6, roughness: 0.5, metalness: 0.6 }), posts.length);
+  const m4 = new THREE.Matrix4();
+  posts.forEach(([x, y], i) => pm.setMatrixAt(i, m4.makeTranslation(x, 0, -y)));
+  pm.castShadow = true;
+  group.add(pm);
 }
 
 function setBoxUV(g, sx, sy, sz, tile) {

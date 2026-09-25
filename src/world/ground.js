@@ -19,6 +19,8 @@ export async function buildGround(level, scene, colliders) {
     lawn: addMacroVariation(pbrMaterial(grass, { color: 0xd8ffb0, normalScale: 0.8, roughMap: false, roughness: 1.0 }),
       { freq: 0.12, amount: 0.2, tint: 0xe8d890, tintAmount: 0.3, tintFreq: 0.03 }),
     deck: pbrMaterial(deck, { color: 0xf4efe4, normalScale: 0.5 }),
+    // the pool court's terrace: the same big tiles in dark grey (photos from the towers)
+    terrace: pbrMaterial(deck, { color: 0x75767a, normalScale: 0.5 }),
     curb: pbrMaterial(concrete, { color: 0xd8d4cc, normalScale: 0.6, roughMap: false, roughness: 0.9 }),
     soil: addMacroVariation(pbrMaterial(soil, { color: 0xd2c3ad, roughMap: false, roughness: 1.0 }), { freq: 0.04, amount: 0.2 }),
     wild: addMacroVariation(pbrMaterial(grass, { color: 0xd8dcb0, normalScale: 0.8, roughMap: false, roughness: 1.0 }),
@@ -27,10 +29,13 @@ export async function buildGround(level, scene, colliders) {
     pool: pbrMaterial(poolTiles, { color: 0xffffff, normalScale: 0.4 }),
     paint: new THREE.MeshStandardMaterial({ color: 0xe9e7df, roughness: 0.75, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
     wall: pbrMaterial(concrete, { color: 0xcfcac1, normalScale: 0.8, side: THREE.DoubleSide, roughMap: false, roughness: 0.92 }),
+    // Bob Walsh Street: pale concrete under a film of dust (the gate photospheres, the satellite)
+    street: addMacroVariation(pbrMaterial(concrete, { color: 0xcdb48a, normalScale: 0.4, roughMap: false, roughness: 0.96 }),
+      { freq: 0.06, amount: 0.12, tint: 0xe8d6b0, tintAmount: 0.5, tintFreq: 0.02 }),
   };
-  const uv = { asphalt: 5, parking: 5, pavers: 2.2, lawn: 3, deck: 2.4, curb: 1.2, soil: 6, wild: 6, pool: 1.6, wall: 2.5 };
+  const uv = { asphalt: 5, parking: 5, pavers: 2.2, lawn: 3, deck: 2.4, terrace: 2.4, curb: 1.2, soil: 6, wild: 6, pool: 1.6, wall: 2.5 };
 
-  const zoneMat = { road: 'asphalt', parking: 'parking', pavers: 'pavers', lawn: 'lawn', deck: 'deck',
+  const zoneMat = { road: 'asphalt', parking: 'parking', pavers: 'pavers', lawn: 'lawn', deck: 'deck', terrace: 'terrace',
     court_pavers: 'pavers', court_lawn: 'lawn', court_deck: 'deck' };
   const surfaces = {};
   const curbs = [];
@@ -212,12 +217,22 @@ export async function buildGround(level, scene, colliders) {
     d.receiveShadow = true;
     group.add(d);
   }
-  const roadsOut = { asphalt: [], gravel: [] };
+  const roadsOut = { asphalt: [], gravel: [], concrete: [], paving: [] };
   for (const s of level.surroundings.streets) {
-    roadsOut[s.surface].push(ribbonGeometry(s.line, s.w, s.surface === 'asphalt' ? 0.022 : 0.008, uv.asphalt));
+    roadsOut[s.surface].push(ribbonGeometry(s.line, s.w, s.surface === 'gravel' ? 0.008 : 0.022, uv.asphalt));
   }
   if (roadsOut.asphalt.length) {
     const m = new THREE.Mesh(mergeGeometries(roadsOut.asphalt), mats.asphalt);
+    m.receiveShadow = true;
+    group.add(m);
+  }
+  if (roadsOut.paving.length) {
+    const m = new THREE.Mesh(mergeGeometries(roadsOut.paving), mats.pavers);
+    m.receiveShadow = true;
+    group.add(m);
+  }
+  if (roadsOut.concrete.length) {
+    const m = new THREE.Mesh(mergeGeometries(roadsOut.concrete), mats.street);
     m.receiveShadow = true;
     group.add(m);
   }

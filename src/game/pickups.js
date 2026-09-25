@@ -1,13 +1,20 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { pointInPoly } from '../world/geom.js';
+import { DEFS } from './weapons.js';
 
-// Loot lying around the complex: ammo cans, first-aid kits and bundles of lari. They float over a
-// glowing ring; walk (or drive) over one to take it. More turn up away from you every wave,
-// a few of them on the roofs (take the stairs).
-const MAX = { ammo: 7, health: 6, cash: 9 };
-export const PICKUP_COLORS = { ammo: '#9bd35a', health: '#ff6b6b', cash: '#ffe066' };
-const RING = { ammo: 0x7fd13a, health: 0xff4a4a, cash: 0xffc93a };
+// Loot lying around the complex: ammo cans, first-aid kits, bundles of lari and now and then a gun.
+// They float over a glowing ring; walk (or drive) over one to take it. More turn up away from you
+// every wave, and every half a minute or so during one, a few of them on the roofs (take the
+// stairs). A gun you don't have is yours; one you have, its ammo.
+const MAX = { ammo: 7, health: 6, cash: 10, gun: 3, word: 3 };
+export const PICKUP_COLORS = { ammo: '#9bd35a', health: '#ff6b6b', cash: '#ffe066', gun: '#ff9f43', word: '#b98cff' };
+const RING = { ammo: 0x7fd13a, health: 0xff4a4a, cash: 0xffc93a, gun: 0xff8a2a, word: 0x9d6bff };
+// (word crates only where English practice is on: the host's, or yours alone)
+// the guns that lie around (the cheaper ones more often) and their models
+const GUNS = [['deagle', 0.2], ['shotgun', 0.18], ['m4', 0.16], ['autosniper', 0.08], ['mg', 0.08], ['bow', 0.12], ['aug', 0.1], ['msr', 0.05], ['chainsaw', 0.03]];
+const GUN_MODEL = { deagle: 'deagle', shotgun: 'shotgun_mossberg', m4: 'm4', autosniper: 'autosniper', mg: 'mg', bow: 'bow', aug: 'aug', msr: 'msr', chainsaw: 'chainsaw' };
+const pickGun = () => { let r = Math.random(); for (const [k, p] of GUNS) { if (r < p) return k; r -= p; } return 'deagle'; };
 
 function normalize(g, size) {
   g.computeBoundingBox();
@@ -118,9 +125,19 @@ export class Pickups {
       this.g.scene.add(im);
       return im;
     };
-    this.meshes = { ammo: make(ammo, MAX.ammo + 4), health: make(health, MAX.health + 4), cash: make(bundle, (MAX.cash + 4) * 3) };
+    // a word crate: violet, with ABC on its sides
+    const wc = document.createElement('canvas'); wc.width = 128; wc.height = 96;
+    const x = wc.getContext('2d');
+    x.fillStyle = '#5b3aa8'; x.fillRect(0, 0, 128, 96);
+    x.strokeStyle = '#2d1b5c'; x.lineWidth = 8; x.strokeRect(4, 4, 120, 88);
+    x.fillStyle = '#fff'; x.font = 'bold 44px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('ABC', 64, 50);
+    const wt = new THREE.CanvasTexture(wc); wt.colorSpace = THREE.SRGBColorSpace;
+    const wm = new THREE.MeshStandardMaterial({ map: wt, roughness: 0.6, emissive: 0x2a1060, emissiveIntensity: 0.6 });
+    const word = { geometry: new THREE.BoxGeometry(0.42, 0.32, 0.32), material: wm };
+    this.meshes = { ammo: make(ammo, MAX.ammo + 4), health: make(health, MAX.health + 4), cash: make(bundle, (MAX.cash + 4) * 3), word: make(word, MAX.word + 4) };
+    this.weaponModels = (models && models.weapons) || {};
     const ring = new THREE.RingGeometry(0.42, 0.58, 40).rotateX(-Math.PI / 2);
-    this.rings = new THREE.InstancedMesh(ring, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }), MAX.ammo + MAX.health + MAX.cash + 12);
+    this.rings = new THREE.InstancedMesh(ring, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }), MAX.ammo + MAX.health + MAX.cash + MAX.gun + MAX.word + 20);
     this.rings.count = 0; this.rings.frustumCulled = false;
     this.rings.setColorAt(0, this.c.set(0xffffff));
     this.g.scene.add(this.rings);
@@ -166,7 +183,9 @@ export class Pickups {
   }
 
   spawn(kind, spot) {
-    const amount = kind === 'cash' ? 50 * (2 + Math.floor(Math.random() * Math.random() * 5)) : 0;
+    const tough = this.g.director ? this.g.director.toughness() : 1;
+    const amount = kind === 'cash' ? 50 * Math.round((2 + Math.floor(Math.random() * Math.random() * 5)) * tough)
+      : kind === 'gun' ? GUNS.findIndex(([k]) => k === pickGun()) : 0;
     const it = { id: this.seq = (this.seq || 0) + 1, kind, x: spot.x, y: spot.y, z: spot.z, phase: Math.random() * 6.28, amount, t: 0 };
     this.list.push(it);
     if (this.g.mode === 'host') this.g.net.pickupAdd(it);
@@ -178,14 +197,58 @@ export class Pickups {
     this.list.push({ id, kind, x, y, z, amount, phase: Math.random() * 6.28, t: 0 });
   }
 
+  // a gun on the ground: its own model, laid flat (made the first time it's drawn)
+  gunMesh(it) {
+    if (it.mesh) return it.mesh;
+    const key = GUNS[it.amount] ? GUNS[it.amount][0] : 'deagle';
+    const src = this.weaponModels[GUN_MODEL[key]];
+    const holder = new THREE.Group();
+    if (src) {
+      const m = src.scene.clone(true);
+      m.traverse((o) => { if (o.isMesh) { o.castShadow = true; if (o.isSkinnedMesh) o.frustumCulled = false; } });
+      // laid on its side: its thinnest way up
+      const lay = new THREE.Group();
+      lay.add(m);
+      const s0 = new THREE.Box3().setFromObject(m).getSize(new THREE.Vector3());
+      if (s0.x <= s0.y && s0.x <= s0.z) lay.rotation.z = Math.PI / 2;
+      else if (s0.z <= s0.y) lay.rotation.x = Math.PI / 2;
+      lay.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(lay), size = box.getSize(new THREE.Vector3()), c = box.getCenter(new THREE.Vector3());
+      const k = (key === 'mg' || key === 'autosniper' || key === 'msr' ? 1.05 : key === 'bow' ? 1.0 : key === 'deagle' ? 0.42 : 0.85) / Math.max(size.x, size.y, size.z);
+      lay.scale.setScalar(k);
+      lay.position.copy(c).multiplyScalar(-k);
+      holder.add(lay);
+    } else holder.add(new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.12, 0.08), new THREE.MeshStandardMaterial({ color: 0x2a2a2a })));
+    this.g.scene.add(holder);
+    it.mesh = holder;
+    it.gun = key;
+    return holder;
+  }
+
+  dropMesh(it) { if (it.mesh) { it.mesh.removeFromParent(); it.mesh = null; } }
+
+  // what a gun on the ground gives: the gun, or (if you have it) its ammo
+  takeGun(key) {
+    const g = this.g, w = g.weapons, def = DEFS[key];
+    if (!def) return;
+    if (!w.owned[key]) { w.give(key); g.hud.notice(`Found a ${def.name}!`); g.audio.play('buy', { vol: 0.9 }); return; }
+    const a = w.owned[key];
+    a.mag = def.mag; a.reserve = w.reserveCap(key);
+    w.hudWeapon();
+    g.hud.notice(`${def.short}: full of ammo again`);
+    g.audio.play('pickup', { vol: 0.9 });
+  }
+
   // co-op client: someone took one (if it was us: the ammo goes in our pockets)
   taken(id, mine, kind, amount) {
     const i = this.list.findIndex((it) => it.id === id);
-    if (i >= 0) this.list.splice(i, 1);
+    if (i >= 0) { this.dropMesh(this.list[i]); this.list.splice(i, 1); }
     if (!mine) return;
     const g = this.g;
     if (kind === 'ammo') { g.weapons.topUp(); g.hud.notice('Ammo can: spare magazines and a grenade'); g.audio.play('pickup', { vol: 0.9 }); }
     else if (kind === 'health') { g.hud.notice('First aid kit: +50 health'); g.audio.play('heal', { vol: 0.9 }); }
+    else if (kind === 'gun') this.takeGun(GUNS[amount] ? GUNS[amount][0] : 'deagle');
+    else if (kind === 'word') g.practice?.crate();
     else { g.hud.notice(`${amount} lari (+${amount} points)`); g.audio.play('cash', { vol: 0.9 }); }
   }
 
@@ -202,6 +265,7 @@ export class Pickups {
   // top every kind back up to its count, away from the player
   replenish(minFromPlayer = 25) {
     for (const kind of Object.keys(MAX)) {
+      if (kind === 'word' && !(this.g.practice && this.g.practice.on && !this.g.pvp?.on)) continue;
       for (let n = this.count(kind); n < MAX[kind]; n++) {
         const spot = this.randomSpot(minFromPlayer);
         if (!spot) break;
@@ -210,10 +274,33 @@ export class Pickups {
     }
   }
 
-  clear() { this.list.length = 0; }
+  clear() { for (const it of this.list) this.dropMesh(it); this.list.length = 0; }
+
+  // during a wave, every half a minute or so: one more thing somewhere (where the loot is real)
+  trickle(dt) {
+    const g = this.g;
+    if (g.mode === 'client' || !g.director || g.director.state !== 'active') return;
+    this.trickleT = (this.trickleT ?? 30) - dt;
+    if (this.trickleT > 0) return;
+    this.trickleT = 30 + Math.random() * 20;
+    // (with English practice on, one in five is a word crate; the rest as ever)
+    let r = Math.random(), kind = null;
+    if (this.g.practice && this.g.practice.on && !this.g.pvp?.on) { if (r < 0.2) kind = 'word'; else r = (r - 0.2) / 0.8; }
+    kind = kind || (r < 0.35 ? 'cash' : r < 0.65 ? 'ammo' : r < 0.8 ? 'health' : 'gun');
+    const spot = this.count(kind) < MAX[kind] + 3 && this.randomSpot(20);
+    if (!spot) return;
+    this.spawn(kind, spot);
+    if (kind === 'gun') { g.hud.notice('A gun turned up somewhere: check the map (M)'); g.net?.notice?.('A gun turned up somewhere: check the map (M)'); }
+  }
 
   collect(it) {
     const g = this.g, pl = g.player;
+    if (it.kind === 'word') {
+      if (g.practice && g.practice.open) return false;   // (one at a time)
+      g.practice?.crate();
+      g.audio.play('pickup', { vol: 0.8, rate: 1.2 });
+      return true;
+    }
     if (it.kind === 'ammo') {
       if (!g.weapons.topUp()) return false;
       g.hud.notice('Ammo can: spare magazines and a grenade');
@@ -223,6 +310,8 @@ export class Pickups {
       pl.health = Math.min(pl.maxHealth, pl.health + 50);
       g.hud.notice('First aid kit: +50 health');
       g.audio.play('heal', { vol: 0.9 });
+    } else if (it.kind === 'gun') {
+      this.takeGun(GUNS[it.amount] ? GUNS[it.amount][0] : 'deagle');
     } else {
       g.director.addPoints(it.amount);
       g.hud.notice(`${it.amount} lari (+${it.amount} points)`);
@@ -235,8 +324,9 @@ export class Pickups {
     if (!this.meshes) return;
     const g = this.g;
     this.t += dt;
-    const counts = { ammo: 0, health: 0, cash: 0 };
+    const counts = { ammo: 0, health: 0, cash: 0, word: 0 };
     let rings = 0;
+    this.trickle(dt);
     // (a co-op client only draws them: the host says who took what)
     const players = g.mode === 'client' ? [] : g.players || [g.player];
     for (let i = this.list.length - 1; i >= 0; i--) {
@@ -246,6 +336,7 @@ export class Pickups {
         if (p.dead || Math.abs(it.x - p.pos.x) >= 1.25 || Math.abs(it.z - p.pos.z) >= 1.25 || Math.abs(it.y - p.pos.y) >= 1.7) continue;
         if (!(p === g.player ? this.collect(it) : this.collectRemote(it, p))) continue;
         this.list.splice(i, 1);
+        this.dropMesh(it);
         if (g.mode === 'host') g.net.pickupGone(it, p === g.player ? g.localSlot ?? 0 : p.slot);
         break;
       }
@@ -253,7 +344,12 @@ export class Pickups {
     for (const it of this.list) {
       const spin = this.t * 1.1 + it.phase, y = it.y + 0.45 + Math.sin(this.t * 2.2 + it.phase) * 0.05;
       const im = this.meshes[it.kind];
-      if (it.kind === 'cash') {
+      if (it.kind === 'gun') {
+        // lying across the ring, turning slowly
+        const m = this.gunMesh(it);
+        m.position.set(it.x, y + 0.05, it.z);
+        m.rotation.set(0, spin * 0.6, 0);
+      } else if (it.kind === 'cash') {
         // three bundles: two side by side and one across the top
         const layout = [[-0.085, 0, 0], [0.085, 0, 0], [0, 0.056, Math.PI / 2]];
         for (const [ox, oy, r] of layout) {

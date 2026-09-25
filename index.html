@@ -2,7 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<!-- added to a phone's home screen it opens full screen, in landscape -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Green Diamond">
+<meta name="theme-color" content="#07080a">
+<link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 <title>Green Diamond: Dighomi Outbreak</title>
 <link rel="stylesheet" href="src/style.css">
 <script type="importmap">
@@ -34,10 +42,12 @@
   <div id="vhud"></div>
   <div id="prompt"></div>
   <div id="banner"></div>
+  <div id="boss"><span>GIANT</span><i><b></b></i></div>
+  <div id="killfeed"></div>
   <canvas id="minimap" width="220" height="220"></canvas>
   <div id="keys">
     <span><b>WASD</b> move</span><span><b>Shift</b> sprint</span><span><b>Space</b> jump</span><span><b>Ctrl</b> crouch</span>
-    <span><b>Click</b> shoot</span><span><b>E</b> aim</span><span><b>R</b> reload</span><span><b>Q</b>/<b>1–7</b> weapon</span><span><b>G</b> grenade</span>
+    <span><b>Click</b> shoot</span><span><b>E</b> aim</span><span><b>R</b> reload</span><span><b>Q</b>/<b>1–8</b> weapon</span><span><b>G</b> grenade</span>
     <span><b>V</b> knife</span><span><b>F</b> buy · stairs · drive</span><span><b>L</b> light</span><span><b>M</b> map</span><span id="key-talk" class="hidden"><b>T</b> talk</span><span><b>H</b> hide keys</span>
   </div>
   <div id="stats"></div>
@@ -47,30 +57,26 @@
 </div>
 <div id="clicktoplay" class="hidden"><b>Click to play</b><span>the match is on</span></div>
 
+<div id="rotate"><b>⟳</b>Turn your phone sideways to play</div>
 <div id="fade"></div>
 <div id="net" class="hidden"></div>
 
 <div id="loading" class="screen">
   <div class="brand">
-    <div class="kicker">მწვანე ალმასი · Dighomi, Tbilisi</div>
+    <div class="kicker">მწვანე ალმასი · 32 Bob Walsh St · Dighomi, Tbilisi</div>
     <h1>GREEN DIAMOND</h1>
     <div class="sub">Outbreak</div>
+    <p class="lede">Something got into the complex after dark. The gates on Bob Walsh Street won't hold.
+      Survive as many waves as you can.</p>
   </div>
   <div id="load-bar"><div id="load-fill"></div></div>
   <div id="load-text">Loading…</div>
 </div>
 
 <div id="menu" class="screen hidden">
-  <div class="brand">
-    <div class="kicker">მწვანე ალმასი · 32 Bob Walsh St · Dighomi, Tbilisi</div>
-    <h1>GREEN DIAMOND</h1>
-    <div class="sub">Outbreak</div>
-  </div>
-  <p class="lede">Something got into the complex after dark. The gates on Bob Walsh Street won't hold.
-    Survive as many waves as you can.</p>
   <button id="play" class="btn">Play</button>
   <div id="mp">
-    <div class="mp-title" id="mp-title">Play with friends <span>co-op · up to 4</span></div>
+    <div class="mp-title" id="mp-title">Play with friends <span>co-op or against each other · up to 4</span></div>
     <form id="mp-form" autocomplete="off">
       <!-- (plain text boxes, not a login: no "Save password?" from the browser or a password manager) -->
       <input id="mp-name" type="text" placeholder="Your name" maxlength="16" spellcheck="false" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore data-form-type="other">
@@ -84,6 +90,17 @@
       <button id="mp-copy" class="btn ghost" type="button">Copy link</button>
     </div>
     <div id="mp-status"></div>
+    <!-- the host picks the game; the others see what was picked -->
+    <div id="mp-rules" class="hidden">
+      <div class="mp-row">
+        <label>Mode <select id="mp-mode"><option value="coop">Co-op vs zombies</option><option value="ffa">PvP: everyone for themselves</option><option value="teams">PvP: two teams</option></select></label>
+        <label data-pvp>Zombies <select id="mp-zombies"><option value="1">around</option><option value="0">none</option></select></label>
+        <label>Time <select id="mp-minutes"><option value="5">5 min</option><option value="10">10 min</option><option value="15">15 min</option><option value="20">20 min</option></select></label>
+        <label data-pvp>Win at <select id="mp-kills"><option value="10">10 kills</option><option value="20">20 kills</option><option value="30">30 kills</option><option value="50">50 kills</option><option value="0">no limit</option></select></label>
+      </div>
+      <div id="mp-teams" class="hidden"></div>
+      <div id="mp-summary"></div>
+    </div>
     <button id="mp-start" class="btn hidden" type="button">Start match</button>
   </div>
   <div class="settings">
@@ -91,24 +108,30 @@
     <label>Volume <input id="vol" type="range" min="0" max="1" step="0.05" value="0.8"></label>
     <label>Graphics
       <select id="quality">
+        <option value="phone">Phone (lightest)</option>
         <option value="low">Low (fastest)</option>
         <option value="medium">Medium</option>
         <option value="high" selected>High</option>
       </select>
     </label>
   </div>
-  <div class="controls">
-    <span><b>WASD</b> move</span><span><b>Shift</b> sprint</span><span><b>Space</b> jump</span><span><b>Ctrl</b> crouch</span>
-    <span><b>Click</b> shoot (hold to draw the bow)</span><span><b>E</b> aim (or hold right-click)</span><span><b>R</b> reload</span>
-    <span><b>Q</b> or <b>1–7</b> switch weapon (again: next in the group)</span><span><b>Shift</b> (scoped) hold breath</span><span><b>G</b> throw a grenade</span><span><b>V</b> knife</span>
-    <span><b>F</b> buy · take the stairs · get in a car, bike or drone</span><span><b>L</b> flashlight</span><span><b>M</b> map</span><span><b>T</b> talk (co-op)</span><span><b>Esc</b> pause</span>
+  <div class="settings learnrow">
+    <label>English practice
+      <select id="learn"><option value="off">Off</option><option value="light">Light</option><option value="normal">Normal</option><option value="intense">Intense</option></select>
+    </label>
+    <label><input type="checkbox" id="learnka" checked> Georgian hints</label>
+    <button id="learnme" class="btn ghost small" type="button">My English</button>
   </div>
-  <div class="credits" id="credits"></div>
+  <div class="fsrow"><button id="fs" class="btn ghost" type="button">Full screen</button><span id="fs-note" class="fs-note"></span></div>
+  <div class="credits">Map data © OpenStreetMap contributors · <button id="credits-btn" class="linkbtn" type="button">Credits</button></div>
+  <div id="credits" class="credits-full hidden"></div>
 </div>
 
 <div id="pause" class="screen hidden">
   <h2>Paused</h2>
   <button id="resume" class="btn">Resume</button>
+  <button id="fs2" class="btn ghost" type="button">Full screen</button>
+  <span id="fs2-note" class="fs-note"></span>
   <button id="quit" class="btn ghost">Quit to menu</button>
 </div>
 

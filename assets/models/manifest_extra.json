@@ -2562,6 +2562,361 @@
   "preview_kind": "Blender 4.1 EEVEE render of the delivered GLB (front 3/4, rear 3/4, high chase, left side, right side, night with the lamps and light bar lit); glTF axes at the origin: +X red, +Y green, +Z blue."
  },
  {
+  "file": "assets/models/vehicles/civic.glb",
+  "category": "vehicle",
+  "name": "Honda Civic sedan, 10th generation (FC, 2016-2021; a 2018 in the game), Modern Steel Metallic dark grey (hero car 'ბექას მანქანა')",
+  "source_url": "https://sketchfab.com/3d-models/honda-civic-ff844e296f214e709c0d0691d031c68b",
+  "download_url": "https://huggingface.co/datasets/allenai/objaverse/resolve/main/glbs/000-093/ff844e296f214e709c0d0691d031c68b.glb",
+  "download_note": "Fetched with no login from the Objaverse mirror on Hugging Face (allenai/objaverse; every object keeps the licence its author gave it on Sketchfab). Source GLB 18.5 MB, sha1 704b28742527cbe000c65059216859df8011e84e, 672k faces. Name, author, licence (CC Attribution 4.0) and download permission checked with the Sketchfab API on 2026-09-25.",
+  "author": "Aldios (Sketchfab user Aldios, https://sketchfab.com/Aldios); cabin, tyres, brake discs, number plates and plate texture made for this project",
+  "license": "CC-BY 4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "size_bytes": 2579316,
+  "sha1": "74fbd2d5fff9fa7a20623da37deabbff865059cc",
+  "triangles": 64893,
+  "bbox": {
+   "min": [
+    -2.3577,
+    0,
+    -1.0323
+   ],
+   "max": [
+    2.2799,
+    1.4202,
+    1.0323
+   ],
+   "size": [
+    4.6376,
+    1.4202,
+    2.0646
+   ],
+   "space": "model units (metres), after all node transforms; the width includes the mirrors; max x is the front plate"
+  },
+  "forward_axis": "+X (nose)",
+  "up_axis": "+Y",
+  "right_axis": "+Z (driver's side, left, is -Z; left-hand drive)",
+  "scale_to_m": 1.0,
+  "size_m": [
+   4.638,
+   1.42,
+   2.065
+  ],
+  "dimensions_m": {
+   "length_bumpers": 4.631,
+   "length_with_plates": 4.638,
+   "width_body": 1.841,
+   "width_with_mirrors": 2.065,
+   "roof_height": 1.42,
+   "wheelbase": 2.654,
+   "track": 1.522,
+   "lowest_body_point": 0.205,
+   "front_overhang": 0.946,
+   "rear_overhang": 1.031,
+   "real_2018_civic_sedan": "4.631 x 1.799 x 1.416 m, wheelbase 2.700 m"
+  },
+  "origin": "on the ground (tyre contact plane, y = 0), midway between the front and rear wheel centres (x = 0), on the centreline (z = 0)",
+  "skinned": false,
+  "joints": 0,
+  "meshes": 9,
+  "primitives": 31,
+  "materials": 19,
+  "material_names": {
+   "Paint": "Modern Steel Metallic-like dark grey, sRGB #4f5358 (linear 0.0782, 0.0865, 0.0976), metallic 0.55, roughness 0.33, KHR_materials_clearcoat 1.0 / 0.04; base colour x AO map",
+   "Glass": "dark tinted windows, alpha BLEND 0.42, roughness 0.05 (the game caps opacity at 0.5 and turns depthWrite off)",
+   "HeadLight": "chrome headlight reflectors / LED strips behind the clear LampLens covers; emissive off (black) by default, the game lights it (0xfff4e0)",
+   "TailLight": "red tail-lamp lenses; emissive off (black) by default, the game lights it (0xff1a0a, 0.15 idle, 4 braking)",
+   "LampLens": "clear headlight covers, alpha BLEND 0.14",
+   "Indicator": "amber indicators (front corners, mirrors)",
+   "Reflector": "red rear-bumper reflectors (not a lamp)",
+   "Trim_Black": "matte black plastic (grilles, lower trim, window seals, underbody, arch liners)",
+   "Trim_GlossBlack": "piano black trim",
+   "Chrome": "the chrome wing across the grille, H badges, window trim",
+   "Mirror": "mirror glass",
+   "Caliper": "brake calipers (in Body, so they do not spin)",
+   "Rim": "machined silver alloy faces, metallic 1.0, roughness 0.28",
+   "Rim_Dark": "dark grey pockets of the two-tone alloy wheels",
+   "Tyre": "rubber, roughness 0.9 (tyres made for this project)",
+   "Disc": "brake discs (inside the wheel nodes; made for this project)",
+   "Interior": "cabin, dark charcoal (made for this project)",
+   "Interior_Light": "seat faces, dark grey (made for this project)",
+   "Plate": "number plates 520 x 110 x 4 mm, textured (see plates)"
+  },
+  "textures": [
+   "civic_ao_final (image/jpeg, 1024x1024 greyscale ambient-occlusion atlas, 133 texels/m; baseColorTexture of the Body and wheel materials, multiplied by their baseColorFactor)",
+   "plate_beka_flipv (image/png, 1024x256: assets/textures/plates/BEKA.png stored vertically flipped, see plates. The plate base (border, flag, GE) is drawn by tools/make_plates.py's own code; the text 'ბექას მანქანა' is set in SF Georgian Heavy, condensed to DIN proportions, because DIN Condensed has no Georgian letters)"
+  ],
+  "plates": {
+   "material": "Plate",
+   "node": "Plates (front and rear plate, one mesh)",
+   "size_mm": [
+    520,
+    110
+   ],
+   "aspect": 4.727,
+   "texture_file": "assets/textures/plates/BEKA.png (1024 x 256; HEROES.civic.plate = 'BEKA', loaded by plateTexture())",
+   "uv_convention": "TEXCOORD_0 (= three.js geometry uv) covers each plate's outer face as the full 0..1 range: u 0 -> 1 left to right as the plate is read, v 0 at the bottom edge -> 1 at the top edge, on both plates (the Prius and Leaf convention); the game's plateFlip() reads {u: false, v: true} from them and plateTexture() then draws the PNG upright (checked in three.js r186 and in the running game). Plate edges and backs sample one background texel (u 0.2, v 0.05).",
+   "fallback_texture_note": "The same plate is embedded, stored upside down, so glTF viewers (flipY = false) also show it upright."
+  },
+  "extensions_used": [
+   "KHR_materials_clearcoat"
+  ],
+  "animations": [],
+  "nodes": {
+   "Civic": "root, identity transform",
+   "Body": "paint shell, trim, chrome, mirrors, calipers, reflectors",
+   "Glass": "all windows",
+   "Lights": "HeadLight, LampLens, TailLight, Indicator",
+   "Plates": "front and rear number plates",
+   "Interior": "front seats, rear bench, floor, console, dashboard, binnacle, steering wheel (left-hand drive), parcel shelf",
+   "Wheel_FL": "front left wheel (tyre, rim, brake disc); pivot at the wheel centre [1.3269, 0.3236, -0.7611]",
+   "Wheel_FR": "front right wheel (tyre, rim, brake disc); pivot at the wheel centre [1.3269, 0.3236, 0.761]",
+   "Wheel_RL": "rear left wheel (tyre, rim, brake disc); pivot at the wheel centre [-1.3269, 0.3236, -0.7611]",
+   "Wheel_RR": "rear right wheel (tyre, rim, brake disc); pivot at the wheel centre [-1.3269, 0.3236, 0.761]"
+  },
+  "wheels": {
+   "names": [
+    "Wheel_FL",
+    "Wheel_FR",
+    "Wheel_RL",
+    "Wheel_RR"
+   ],
+   "radius_m": 0.3236,
+   "tyre_width_m": 0.263,
+   "tyre_size_like": "215/50 R17",
+   "note": "identity rotation, unit scale; tyre + rim + disc only (calipers stay in Body), so Box3 height / 2 = radius. The front wheels are copies of the rear ones; the pivots sit on the tyre centre plane, so the Box3 centre of a steered front wheel moves 4.7 mm (the rim face stands proud of the tyre).",
+   "segments_around": 48,
+   "centres": {
+    "Wheel_FL": [
+     1.3269,
+     0.3236,
+     -0.7611
+    ],
+    "Wheel_FR": [
+     1.3269,
+     0.3236,
+     0.761
+    ],
+    "Wheel_RL": [
+     -1.3269,
+     0.3236,
+     -0.7611
+    ],
+    "Wheel_RR": [
+     -1.3269,
+     0.3236,
+     0.761
+    ]
+   },
+   "spin": "about local +Z; rolling forward (+X) is negative rotation.z (rotation.z -= speed * dt / 0.3236)",
+   "steer": "about local +Y (use rotation.order 'YXZ' so steering is applied after the spin)"
+  },
+  "notes": "Hero car 'ბექას მანქანა' (Beka's car). HEROES.civic in src/game/vehicles.js already uses plate 'BEKA' (assets/textures/plates/BEKA.png), and assets.js loads 'civic'. Same conventions as prius.glb and leaf.glb: nose +X, up +Y, the car's left side is -Z (Wheel_FL has z < 0), metres, origin on the ground between the axles, wheel nodes with identity rotation, materials named Paint / Glass / HeadLight / TailLight / Plate for the heroMesh upgrade. Nothing else is named 'brake' or 'livery', and there is no Livery material. Source search: of the free 10th-generation Civics, the NSJayden23 upload was rejected because it is the 3D Warehouse 'honda civic 2016' by another author (identical 4480.4 x 2045.1 x 1413.5 mm bounds). This CC-BY sedan (fastback roof, chrome wing grille, boomerang tail lamps) was the best of the rest. Provenance caveat: the licence is the one the uploader declared on Sketchfab, and the uploader (4 models) calls it 'Honda Civic 2016'. The original authorship could not be verified independently. Styling caveat: its headlights (round projector units) and two-tone multi-spoke alloys look aftermarket rather than a stock 2018 trim. Changes: turned to nose +X and scaled x0.00742 to 4.631 m long; origin on the ground between the axles; the source's 62k-triangle rims decimated to 1.3k each with new revolved tyres (48 segments) and brake discs, and the front wheels rebuilt as copies of the rear ones so all four match; materials classified and re-authored as PBR (19 materials, 31 primitives = draw calls); repainted Modern Steel grey; clear LampLens over chrome HeadLight reflectors, red TailLight lenses; decimated per material (paint 100.5k -> 28k with smooth-by-angle 35 degrees, chrome 50k -> 4.2k, black trim 29.8k -> 6.5k, lamps 25.8k -> 5.6k), total 64.9k triangles; the source has no interior, so a simple left-hand-drive cabin was built (2.9k triangles); 520 x 110 mm plates added front (bumper) and rear (boot lid); ambient occlusion baked in Cycles (1024 px, 256 samples, 0.5 m reach; body occluded by the ground, wheels, cabin and lamps; wheels self-occlusion only), with UV fold-overs detected and re-unwrapped so no two faces share a texel. The AO rides in the base-colour texture because heroMesh keeps map when it rebuilds Paint. Lamps have black emissive in the file; the game sets them. Limits: decimation softens a few small details (grille slats, badge edges); the cabin is simple and dark (seen through tinted glass); doors and bonnet are not separate.",
+  "validation": {
+   "glb_magic": true,
+   "json_chunk_parsed": true,
+   "glb_chunks": [
+    [
+     "JSON",
+     27268
+    ],
+    [
+     "BIN",
+     2552020
+    ]
+   ],
+   "khronos_validator": {
+    "version": "2.0.0-dev.3.10",
+    "errors": 0,
+    "warnings": 0,
+    "infos": 0,
+    "hints": 0,
+    "codes": []
+   },
+   "threejs_r186_load": "ok (GLTFLoader in headless Chromium, the heroMesh material upgrade and plateTexture copied from vehicles.js: Paint became MeshPhysicalMaterial with its AO map kept, Wheel_FL/FR/RL/RR found, wheelR 0.3236, the wheel pivots hold under spin and steer, plateFlip {u: false, v: true}, BEKA.png reads upright front and rear, no console messages)",
+   "game_check": "ok: loaded by the running game (assets.js + spawnHeroes, already wired) at http://127.0.0.1:8765. Spawned in the bay next to the Prius with wheelR 0.3236, 4 wheels (2 front), 1 HeadLight and 1 TailLight material, paint 0x4f5358, and plate BEKA.png loaded (1024 px, repeat [1, -1]). Driven with W and then W + D: 20 km/h after 1.5 s, the wheels spin and the fronts steer to -0.5 rad. The notice reads 'Honda Civic, 2018 (ბექას მანქანა)'."
+  },
+  "preview": "assets/previews/models/extra_civic.jpg",
+  "preview_kind": "Blender 4.1 EEVEE render of the delivered GLB (front 3/4, rear 3/4, high chase, left side, plate close-ups front | rear, night with HeadLight and TailLight lit); glTF axes at the origin: +X red, +Y green, +Z blue."
+ },
+ {
+  "file": "assets/models/vehicles/lambo.glb",
+  "category": "vehicle",
+  "name": "Lamborghini Huracán EVO (2020 look), Verde Mantis pearl green (hero car)",
+  "source_url": "https://sketchfab.com/3d-models/lamborghini-huracan-2020-370b7cce49864e0fb4651879d0fee18c",
+  "download_url": "https://huggingface.co/datasets/allenai/objaverse/resolve/main/glbs/000-026/370b7cce49864e0fb4651879d0fee18c.glb",
+  "download_note": "Fetched with no login from the Objaverse mirror on Hugging Face (allenai/objaverse; every object keeps the licence its author gave it on Sketchfab). Source GLB 62.9 MB, sha1 e3631bf1c5809ef170c4ba2864bc778ecddbc867, 1.75M faces. Name, author, licence (CC Attribution 4.0) and download permission checked with the Sketchfab API on 2026-09-25.",
+  "author": "Kirigami (Sketchfab user kirigami318, https://sketchfab.com/kirigami318); cabin, wheel-arch liners, tyres, brake discs, number plates and plate texture made for this project",
+  "license": "CC-BY 4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "size_bytes": 2806420,
+  "sha1": "cb3eab099248adb1f18ac64423ce129f3c859b10",
+  "triangles": 66943,
+  "bbox": {
+   "min": [
+    -2.1604,
+    -0.0005,
+    -1.1194
+   ],
+   "max": [
+    2.3614,
+    1.1773,
+    1.1194
+   ],
+   "size": [
+    4.5218,
+    1.1778,
+    2.2388
+   ],
+   "space": "model units (metres), after all node transforms; the width includes the mirrors; min y is the rear tyres (0.5 mm)"
+  },
+  "forward_axis": "+X (nose)",
+  "up_axis": "+Y",
+  "right_axis": "+Z (driver's side, left, is -Z; left-hand drive)",
+  "scale_to_m": 1.0,
+  "size_m": [
+   4.522,
+   1.178,
+   2.239
+  ],
+  "dimensions_m": {
+   "length_bumpers": 4.522,
+   "length_with_plates": 4.522,
+   "width_body": 1.959,
+   "width_with_mirrors": 2.239,
+   "roof_height": 1.177,
+   "wheelbase": 2.635,
+   "track_front": 1.706,
+   "track_rear": 1.705,
+   "lowest_body_point": 0.12,
+   "front_overhang": 1.044,
+   "rear_overhang": 0.843,
+   "real_huracan_evo": "4.520 x 1.933 x 1.165 m (2.236 m wide with mirrors), wheelbase 2.620 m"
+  },
+  "origin": "on the ground (tyre contact plane, y = 0), midway between the front and rear wheel centres (x = 0), on the centreline (z = 0)",
+  "skinned": false,
+  "joints": 0,
+  "meshes": 9,
+  "primitives": 26,
+  "materials": 17,
+  "material_names": {
+   "Paint": "Verde Mantis-like pearl green, sRGB #6cb52a (linear 0.150, 0.462, 0.023), metallic 0.45, roughness 0.3, KHR_materials_clearcoat 1.0 / 0.03; base colour x AO map. The source car is red (about #aa0008) and was repainted.",
+   "Glass": "dark tinted windows, alpha BLEND 0.42, roughness 0.05 (the game caps opacity at 0.5 and turns depthWrite off)",
+   "HeadLight": "chrome headlight reflectors / LED strips behind the clear LampLens covers; emissive off (black) by default, the game lights it (0xfff4e0)",
+   "TailLight": "red tail-lamp lenses; emissive off (black) by default, the game lights it (0xff1a0a, 0.15 idle, 4 braking)",
+   "LampLens": "clear headlight covers, alpha BLEND 0.14",
+   "Trim_Black": "matte black plastic (grilles, lower trim, window seals, underbody, arch liners) and the hexagon grilles",
+   "Trim_GlossBlack": "piano black (the engine cover and other trim)",
+   "Emblem": "gold bull badge on the bonnet",
+   "Exhaust": "tail pipes, brushed metal",
+   "Mirror": "mirror glass",
+   "Caliper": "brake calipers (in Body, so they do not spin)",
+   "Rim": "gloss black alloy wheels, metallic 0.85, roughness 0.32",
+   "Tyre": "rubber, roughness 0.9 (tyres made for this project)",
+   "Disc": "brake discs (inside the wheel nodes; made for this project)",
+   "Interior": "cabin, dark charcoal (made for this project)",
+   "Interior_Light": "seat faces and door-card inserts, dark grey (made for this project)",
+   "Plate": "number plates 520 x 110 x 4 mm, textured (see plates)"
+  },
+  "textures": [
+   "lambo_ao_final (image/jpeg, 1024x1024 greyscale ambient-occlusion atlas, 89 texels/m; baseColorTexture of the Body and wheel materials, multiplied by their baseColorFactor)",
+   "plate_la777mb_flipv (image/png, 1024x256: assets/textures/plates/LA-777-MB.png, made with tools/make_plates.py, stored vertically flipped, see plates)"
+  ],
+  "plates": {
+   "material": "Plate",
+   "node": "Plates (front and rear plate, one mesh)",
+   "size_mm": [
+    520,
+    110
+   ],
+   "aspect": 4.727,
+   "texture_file": "assets/textures/plates/LA-777-MB.png (1024 x 256; HEROES.lambo.plate = 'LA-777-MB', loaded by plateTexture())",
+   "uv_convention": "TEXCOORD_0 (= three.js geometry uv) covers each plate's outer face as the full 0..1 range: u 0 -> 1 left to right as the plate is read, v 0 at the bottom edge -> 1 at the top edge, on both plates (the Prius and Leaf convention); the game's plateFlip() reads {u: false, v: true} from them and plateTexture() then draws the PNG upright (checked in three.js r186 and in the running game). Plate edges and backs sample one background texel (u 0.2, v 0.05).",
+   "fallback_texture_note": "The same plate is embedded, stored upside down, so glTF viewers (flipY = false) also show it upright."
+  },
+  "extensions_used": [
+   "KHR_materials_clearcoat"
+  ],
+  "animations": [],
+  "nodes": {
+   "Huracan": "root, identity transform",
+   "Body": "paint shell, trim, grilles, badge, exhaust, mirrors, calipers, wheel-arch liners",
+   "Glass": "all windows (the engine-cover glass stays opaque gloss black trim)",
+   "Lights": "HeadLight, LampLens, TailLight",
+   "Plates": "front and rear number plates",
+   "Interior": "seats, floor, centre tunnel, dashboard, steering wheel (left-hand drive), firewall, bulkhead, door cards",
+   "Wheel_FL": "front left wheel (tyre, rim, brake disc); pivot at the wheel centre [1.3174, 0.3313, -0.8531]",
+   "Wheel_FR": "front right wheel (tyre, rim, brake disc); pivot at the wheel centre [1.3174, 0.3313, 0.8531]",
+   "Wheel_RL": "rear left wheel (tyre, rim, brake disc); pivot at the wheel centre [-1.3174, 0.3415, -0.8527]",
+   "Wheel_RR": "rear right wheel (tyre, rim, brake disc); pivot at the wheel centre [-1.3174, 0.3415, 0.8527]"
+  },
+  "wheels": {
+   "names": [
+    "Wheel_FL",
+    "Wheel_FR",
+    "Wheel_RL",
+    "Wheel_RR"
+   ],
+   "radius_m": 0.3314,
+   "radius_rear_m": 0.3419,
+   "tyre_width_m": 0.246,
+   "tyre_width_rear_m": 0.254,
+   "tyre_size_like": "245/30 R20 front, 305/30 R20 rear (staggered, as the real car)",
+   "note": "identity rotation, unit scale; tyre + rim + disc only (calipers stay in Body). heroMesh takes wheelR from Wheel_FL (0.3314); the rear tyres are 3 % bigger, so they turn 3 % fast at the same speed, which cannot be seen. One missing source caliper (front right) was mirrored from the left.",
+   "segments_around": 48,
+   "centres": {
+    "Wheel_FL": [
+     1.3174,
+     0.3313,
+     -0.8531
+    ],
+    "Wheel_FR": [
+     1.3174,
+     0.3313,
+     0.8531
+    ],
+    "Wheel_RL": [
+     -1.3174,
+     0.3415,
+     -0.8527
+    ],
+    "Wheel_RR": [
+     -1.3174,
+     0.3415,
+     0.8527
+    ]
+   },
+   "spin": "about local +Z; rolling forward (+X) is negative rotation.z (rotation.z -= speed * dt / 0.3314)",
+   "steer": "about local +Y (use rotation.order 'YXZ' so steering is applied after the spin)"
+  },
+  "notes": "Hero car. HEROES.lambo in src/game/vehicles.js already uses plate 'LA-777-MB' (assets/textures/plates/LA-777-MB.png) and SPEC.supercar, and assets.js loads 'lambo'. Same conventions as prius.glb and leaf.glb: nose +X, up +Y, the car's left side is -Z (Wheel_FL has z < 0), metres, origin on the ground between the axles, wheel nodes with identity rotation, materials named Paint / Glass / HeadLight / TailLight / Plate for the heroMesh upgrade. Nothing else is named 'brake' or 'livery', and there is no Livery material. Source search: the free Aventadors found (e.g. Haris3D's) are declared Forza / CSR2 rips; another Huracán carries 'lod0' game-export names and an SVJ has Forza-style material names, so all were rejected. This Huracán EVO was the best clean CC-BY candidate: the uploader says it was modelled in Blender (a 24 h timelapse) and offers it for free. Provenance caveat: the licence is the one the uploader declared on Sketchfab, and the authorship could not be verified independently. Colour: the source paint is red (about #aa0008) and was not remarkable, so the car was repainted Verde Mantis green as the brief preferred. Changes: turned to nose +X and scaled x1.496 to 4.52 m long; origin on the ground between the axles; wheels split out of the source meshes into pivoted nodes, with the rims welded and decimated (165-181k -> 1.3k triangles each) and new revolved tyres and brake discs; materials classified and re-authored as PBR (17 materials, 26 primitives = draw calls); the source's opaque black windows made tinted see-through Glass; front and rear lamp parts split into HeadLight / LampLens / TailLight; paint cleaned before decimation (5.8k paint faces hidden under trim and 6.0k inner-shell faces removed), then decimated (paint 168.5k -> 24k, black trim and grilles 212k -> 18.3k with per-part decimation and filled honeycombs, glass 16k -> 0.9k), total 66.9k triangles; the source has no interior and open wheel arches, so a simple left-hand-drive cabin and adaptive wheel-arch liners were built; 520 x 110 mm plates added front (lower grille) and rear (diffuser); ambient occlusion baked in Cycles (1024 px, 256 samples, 0.5 m reach; body occluded by the ground, wheels, cabin and lamps; wheels self-occlusion only), with UV fold-overs detected and re-unwrapped so no two faces share a texel. Lamps have black emissive in the file; the game sets them. Limits: decimation softens the sharpest creases a little, the hexagon grille meshes are simplified (filled behind), the cabin is simple and dark, and doors, engine cover and wing are not separate.",
+  "validation": {
+   "glb_magic": true,
+   "json_chunk_parsed": true,
+   "glb_chunks": [
+    [
+     "JSON",
+     24320
+    ],
+    [
+     "BIN",
+     2782072
+    ]
+   ],
+   "khronos_validator": {
+    "version": "2.0.0-dev.3.10",
+    "errors": 0,
+    "warnings": 0,
+    "infos": 0,
+    "hints": 0,
+    "codes": []
+   },
+   "threejs_r186_load": "ok (GLTFLoader in headless Chromium, the heroMesh material upgrade and plateTexture copied from vehicles.js: Paint became MeshPhysicalMaterial with its AO map kept, Wheel_FL/FR/RL/RR found, wheelR 0.3314, the wheel pivots hold under spin and steer, plateFlip {u: false, v: true}, LA-777-MB.png reads upright front and rear, no console messages)",
+   "game_check": "ok: loaded by the running game (assets.js + spawnHeroes, already wired) at http://127.0.0.1:8765. Spawned in its bay with wheelR 0.3314, 4 wheels (2 front), 1 HeadLight and 1 TailLight material, paint 0x6cb52a, SPEC.supercar, and plate LA-777-MB.png loaded (1024 px, repeat [1, -1]). Driven with W and then W + D: the wheels spin and the fronts steer to -0.5 rad (it stopped against the parked cars ahead of its bay). The notice reads 'Lamborghini'."
+  },
+  "preview": "assets/previews/models/extra_lambo.jpg",
+  "preview_kind": "Blender 4.1 EEVEE render of the delivered GLB (front 3/4, rear 3/4, high chase, left side, plate close-ups front | rear, night with HeadLight and TailLight lit); glTF axes at the origin: +X red, +Y green, +Z blue."
+ },
+ {
   "file": "assets/models/players/survivor.glb",
   "category": "player",
   "name": "Survivor / SWAT operator (co-op teammate avatar)",

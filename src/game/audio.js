@@ -287,6 +287,21 @@ export class Audio {
         }
         break;
       }
+      // a mini missile leaving the tube: a thump and a rushing hiss; someone else's chainsaw
+      case 'missile': env(tone('sine', 140, 60, 0.25), 0.002, 0.9, 0.25); env(noise(2600, 0.8, 'highpass'), 0.02, 0.6, 0.9); env(noise(900, 1), 0.005, 0.7, 0.4); break;
+      case 'saw': { const o = tone('sawtooth', 118, 112, 0.16); const f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1500; f.Q.value = 0.9; o.connect(f); env(f, 0.005, 0.5, 0.15); break; }
+      // acid: a wet hock, a splash and a sizzle; the giant: a roar, its footsteps
+      case 'spit': env(noise(1700, 2.5, 'bandpass'), 0.004, 0.8, 0.14); env(tone('sine', 320, 110, 0.12), 0.002, 0.35, 0.12); break;
+      case 'splat': env(noise(800, 1.2), 0.002, 0.8, 0.16); env(noise(4200, 1.2, 'highpass'), 0.04, 0.22, 0.9); break;
+      case 'stomp': env(tone('sine', 58, 26, 0.4), 0.003, 1.3, 0.4); env(noise(260, 0.8), 0.003, 0.8, 0.3); break;
+      case 'roar': {
+        const o = tone('sawtooth', 110, 52, 2.2);
+        const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 700; f.Q.value = 3;
+        const lfo = c.createOscillator(); lfo.frequency.value = 13;
+        const lg = c.createGain(); lg.gain.value = 18; lfo.connect(lg).connect(o.frequency); lfo.start(t); lfo.stop(t + 2.3);
+        o.connect(f); env(f, 0.12, 1.2, 2.0); env(noise(520, 1.4), 0.1, 0.7, 1.9); env(tone('sine', 48, 30, 2), 0.1, 0.8, 1.9);
+        break;
+      }
       // a piece of car landing
       case 'clank': env(noise(1900 + Math.random() * 800, 5, 'bandpass'), 0.001, 0.6, 0.18); env(tone('triangle', 320, 180, 0.12), 0.001, 0.3, 0.12); break;
       case 'waveSoft': {

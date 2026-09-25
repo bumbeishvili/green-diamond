@@ -27,6 +27,8 @@ const SPEC = {
     latGrip: 7.5, spinFric: 4.5, spinDamp: 1.6, inertia: 0.35, bounce: 0.32, wallFric: 0.5 },
   drone: { accel: 10, vmax: 14, vUp: 6.5, radius: 1.35, hw: 1.3, hd: 1.3, seat: [0, 1.2, 0], ceiling: 90, exitSide: 1.8 },
 };
+// the Lamborghini: twice the shove, far more top end, sticky tyres and big brakes, low and wide
+SPEC.supercar = { ...SPEC.car, accel: 9, brake: 14, vmax: 36, grip: 9.5, latGrip: 11, steerRate: 1.5, hd: 0.98, seat: [0.1, 0.92, -0.4], step: 0.35, spinFric: 3 };
 
 // Which way a model's plate UVs run, read from the front plate's face: seen from in front of the
 // car the text must run left to right (towards -Z, the car's left is +Z) and stand upright (with
@@ -52,9 +54,11 @@ function plateFlip(car) {
 
 // the detailed cars: what the notice calls them, their plates and how they sound
 const HEROES = {
-  prius: { name: 'Toyota Prius, 2010', plate: 'QQ-939-QC', sound: 'hybrid' },
+  prius: { name: 'Toyota Prius, 2010 (თათიას მანქანა)', plate: 'TATIA', sound: 'hybrid' },
   corolla: { name: 'Toyota Corolla, 2023', plate: 'VV-186-RV', sound: 'car' },
-  leaf: { name: 'Nissan Leaf security car', plate: 'GD-001-SC', sound: 'ev' },
+  leaf: { name: 'Nissan Leaf security car (დაცვა)', plate: 'DATSVA', sound: 'ev', livery: 'leaf_datsva' },
+  civic: { name: 'Honda Civic, 2018 (ბექას მანქანა)', plate: 'BEKA', sound: 'car' },
+  lambo: { name: 'Lamborghini', plate: 'LA-777-MB', sound: 'v10', spec: 'supercar' },
 };
 
 function proceduralBike(color = 0xb3261e) {
@@ -195,16 +199,21 @@ export class Vehicles {
     const bays = (x, y) => [...L.stalls].sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y));
     const first = bays(gate.x, gate.y)[0];
     if (!first) return;
-    if (V.prius) this.spawnHero('prius', V.prius, first.x, -first.y, first.h + Math.PI);
-    const next = bays(first.x, first.y).find((b) => b !== first && Math.abs(Math.sin(b.h - first.h)) < 0.2);
-    if (V.corolla && next) this.spawnHero('corolla', V.corolla, next.x, -next.y, next.h + Math.PI);
-    if (V.leaf) {
-      // the security car noses out of the bay nearest the Gate 1 booth
-      const booth = L.buildings.find((b) => b.group === 'guard' && polyCentroid(b.poly.outer)[1] < 0);
-      const [bx, by] = booth ? polyCentroid(booth.poly.outer) : [gate.x, gate.y];
-      const bay = bays(bx, by).find((b) => b !== first && b !== next);
-      if (bay) this.spawnHero('leaf', V.leaf, bay.x, -bay.y, bay.h + Math.PI);
-    }
+    // (each in a bay of its own: the free one nearest a point, lined up with `like` if given)
+    const used = new Set();
+    const free = (x, y, like = null) => bays(x, y).find((b) => !used.has(b) && (!like || Math.abs(Math.sin(b.h - like.h)) < 0.2));
+    const put = (kind, bay) => { if (!V[kind] || !bay) return; used.add(bay); this.spawnHero(kind, V[kind], bay.x, -bay.y, bay.h + Math.PI); };
+    put('prius', first);
+    used.add(first);
+    // the Corolla and Beka's Civic in the bays along from the Prius
+    put('corolla', free(first.x, first.y, first));
+    put('civic', free(first.x, first.y, first));
+    // the Lamborghini in the bay nearest the start, by the pool
+    put('lambo', free(4, -10));
+    // the security car noses out of the bay nearest the Gate 1 booth
+    const booth = L.buildings.find((b) => b.group === 'guard' && polyCentroid(b.poly.outer)[1] < 0);
+    const [bx, by] = booth ? polyCentroid(booth.poly.outer) : [gate.x, gate.y];
+    put('leaf', free(bx, by));
   }
 
   spawnHero(kind, src, x, z, heading) {
@@ -217,6 +226,7 @@ export class Vehicles {
     g.scene.add(h.mesh);
     const v = this.makeRecord('car', h.mesh, x, z, heading, {
       hero: kind, wheels: h.wheels, front: h.front, wheelR: h.wheelR, lights: h.lights, vid: this.nextVid++, paint: h.paint,
+      ...(HEROES[kind].spec ? { spec: SPEC[HEROES[kind].spec] } : {}),
     });
     this.park(v);
     this.list.push(v);
@@ -262,6 +272,8 @@ export class Vehicles {
           // lettering on the body: cut out, not blended, and pulled forward so it never flickers
           n = m.clone(); n.transparent = false; n.alphaTest = 0.5; n.alphaToCoverage = true;
           n.polygonOffset = true; n.polygonOffsetFactor = -2; n.polygonOffsetUnits = -2;
+          // (a car with lettering of its own, drawn to the model's decal layout)
+          if (spec.livery && m.map) n.map = this.liveryTexture(spec.livery, m.map);
         }
         upgraded.set(m, n);
         return n;
@@ -275,6 +287,14 @@ export class Vehicles {
     if (wheels[0]) { const b = new THREE.Box3().setFromObject(wheels[0]); wheelR = Math.max(0.2, (b.max.y - b.min.y) / 2); }
     const paint = [...upgraded.values()].find((m) => /paint/i.test(m.name || ''));
     return { mesh, lights, wheels, front: wheels.filter((w) => /F[LR]$/.test(w.name)), wheelR, paint: paint ? paint.color.getHex() : 0x8a8f96 };
+  }
+
+  // a car's lettering from a file, laid on the decal UVs like the texture it replaces
+  liveryTexture(name, like) {
+    const t = new THREE.TextureLoader().load(`assets/textures/liveries/${name}.png`);
+    t.flipY = like.flipY; t.wrapS = like.wrapS; t.wrapT = like.wrapT; t.colorSpace = like.colorSpace;
+    t.repeat.copy(like.repeat); t.offset.copy(like.offset); t.anisotropy = 8;
+    return t;
   }
 
   plateTexture(number, flip = { u: false, v: false }) {
@@ -402,6 +422,8 @@ export class Vehicles {
     v.mesh.rotation.set(0, v.heading, 0, 'YXZ');
     if (v.type !== 'drone') { v.mesh.rotation.z = v.tilt.x; v.mesh.rotation.x = v.tilt.y + (v.type === 'bike' ? v.lean : 0); }
     else { v.mesh.rotation.z = v.tilt.x; v.mesh.rotation.x = v.tilt.y; }
+    // zombies clawing at it: it shudders on its springs
+    if (v.rock > 0.002) { const t = performance.now() / 1000; v.mesh.rotation.x += v.rock * Math.sin(t * 31); v.mesh.rotation.z += v.rock * 0.5 * Math.sin(t * 23); }
   }
 
   // The closest vehicle (or parked car) the player can get into.
@@ -621,6 +643,7 @@ export class Vehicles {
     for (const v of this.list) if (v.shots && v.shots.n && now - v.shots.t > 0.15) this.flushShots(v);
     // (the fallen bike sliding on: moved where the world is simulated for real)
     if (g.mode !== 'client') for (const v of this.list) if (v.coasting) this.coastTick(v, dt);
+    for (const v of this.list) if (v.rock) { v.rock *= Math.exp(-5 * dt); if (v.rock < 0.002) { v.rock = 0; if (v.driver == null && !v.coasting) this.place(v); } }
     this.kickVel.addScaledVector(this.kick, -90 * dt).multiplyScalar(Math.exp(-9 * dt));
     this.kick.addScaledVector(this.kickVel, dt);
     if (!playing) return;
@@ -739,6 +762,18 @@ export class Vehicles {
         contacts.push({ ox: fx * off - (dx / d) * s.radius, oz: fz * off - (dz / d) * s.radius, nx: dx / d, nz: dz / d });
         pushX += dx; pushZ += dz; hits++;
       }
+      // a giant is a wall that walks
+      for (const zb of g.zombies.list) {
+        if (!zb.def || !zb.def.boss || zb.state === 'dead' || zb.state === 'climb' || Math.abs(zb.pos.y - v.pos.y) > 2) continue;
+        const R = 0.34 * zb.scale;
+        for (const off of s.circles) {
+          const dx = nx + fx * off - zb.pos.x, dz = nz + fz * off - zb.pos.z, d = Math.hypot(dx, dz), min = s.radius + R;
+          if (d >= min || d < 1e-4) continue;
+          const ux = dx / d, uz = dz / d;
+          contacts.push({ ox: fx * off - ux * s.radius, oz: fz * off - uz * s.radius, nx: ux, nz: uz, giant: zb });
+          pushX += ux * (min - d); pushZ += uz * (min - d); hits++;
+        }
+      }
     }
     // --- impulses at the contacts (unit mass; turning inertia s.inertia) ---
     const preSpeed = Math.hypot(vx, vz);
@@ -768,6 +803,17 @@ export class Vehicles {
     }
     if (!blocked) { v.pos.x = nx + (hits ? pushX / hits : 0); v.pos.z = nz + (hits ? pushZ / hits : 0); }
     if (hit && J > 2.2 && !v.replaying) this.crashed(v, hit, J, preSpeed);
+    // (ramming a giant hurts it too: where the zombies are real)
+    if (hit && hit.giant && J > 3 && !v.replaying && g.mode !== 'client') {
+      const zb = hit.giant, by = v.driver ?? g.localSlot ?? 0;
+      if (!(zb.rammedT > g.time)) {
+        zb.rammedT = (g.time || 0) + 0.4;
+        const at = zb.pos.clone(); at.y += 1.2;
+        const killed = g.zombies.damage(zb, J * J * 4, at, new THREE.Vector3(-hit.nx, 0.2, -hit.nz).normalize(), false, 'vehicle', by);
+        if (g.weapons.onHit) g.weapons.onHit(zb, killed, false, by);
+        g.weapons.credit(by, killed, false);
+      }
+    }
 
     // ride the ground: pitch and roll from the terrain under the wheels, plus a little body
     // movement from braking/accelerating and cornering, and a corner down where a wheel's gone
@@ -879,10 +925,11 @@ export class Vehicles {
       const wx = e.p[0] * c + e.p[2] * sn, wz = -e.p[0] * sn + e.p[2] * c;
       const n = new THREE.Vector3(-(e.d[0] * c + e.d[1] * sn), 0, -(-e.d[0] * sn + e.d[1] * c));
       const at = new THREE.Vector3(v.pos.x + wx, v.pos.y + e.p[1], v.pos.z + wz);
-      if (e.k === 'shot') this.crash.bulletFx(v, at, n, e.j, e.glass);
+      if (e.k === 'shot' || e.k === 'claw') this.crash.bulletFx(v, at, n, e.j, e.glass);
       else this.crash.impactFx(v, at, n, e.j, { local: v === this.active, glass: e.glass });
     }
     v.dmg = Math.max(v.dmg, e.dmg || 0);
+    if (e.k === 'claw') { v.rock = Math.min(0.09, (v.rock || 0) + 0.035); if (v === this.active) g.player.shake = Math.min(1, g.player.shake + 0.25); }
     const depth = e.dd ?? (e.j > 3.5 ? Math.min(0.3, 0.035 * (e.j - 2)) : 0);
     if (v.type === 'car' && depth > 0.005) {
       this.crash.dent(v, new THREE.Vector3(e.p[0], e.p[1], e.p[2]), new THREE.Vector3(e.d[0], 0, e.d[1]).normalize(), depth, e.k === 'shot' ? 0.35 : null);
@@ -1034,6 +1081,56 @@ export class Vehicles {
     return best;
   }
 
+  // A zombie claws at a car with someone in it (where the zombies are real: alone, or the host).
+  // Every blow dents it and wears it down a little. From 60% damage the windows are gone and they
+  // can reach the driver through them (true back); when it's done for, they drag the driver out.
+  clawHit(v, zb) {
+    const g = this.g, s = v.spec, c = Math.cos(v.heading), sn = Math.sin(v.heading);
+    const dx = zb.pos.x - v.pos.x, dz = zb.pos.z - v.pos.z, d = Math.hypot(dx, dz) || 1;
+    // the point on the body nearest the zombie
+    const lx = THREE.MathUtils.clamp(dx * c - dz * sn, -s.hw, s.hw), lz = THREE.MathUtils.clamp(dx * sn + dz * c, -s.hd, s.hd);
+    const ox = lx * c + lz * sn, oz = -lx * sn + lz * c;
+    const was = v.dmg, big = !!zb.def.boss;   // (a giant's fists: big dents, and the car goes flying)
+    const e = this.damageFrom(v, { ox, oz, nx: dx / d, nz: dz / d }, big ? 9 : 2.5, {
+      kind: 'claw', y: 0.75 + Math.random() * 0.5, dmg: zb.damage * 0.03 * (zb.def.shove ? 2.2 : 1) * (big ? 5 : 1), wear: zb.damage * 0.04 * (big ? 3 : 1),
+      dent: big ? 0.09 + Math.random() * 0.06 : 0.02 + Math.random() * 0.025,
+    });
+    if ((was < 60 && e.dmg >= 60) || (big && Math.random() < 0.5)) e.glass = 1;
+    this.applyDamage(v, e, true);
+    g.net?.vehicleCrash?.(v, e);
+    if (big) {
+      const push = 2.5 + Math.random() * 1.5, ux = -dx / d, uz = -dz / d, fx = Math.cos(v.heading) * v.fwdSign, fz = -Math.sin(v.heading) * v.fwdSign;
+      // (sideways it slides and the tyres soon stop it; along its length it would roll on: less of that)
+      v.speed += (ux * fx + uz * fz) * push * 0.35;
+      v.slip += (ux * -fz + uz * fx) * push;
+      v.spin += (Math.random() - 0.5) * 2.5;
+      if (v === this.active) g.player.shake = 1;
+      g.audio.play('crashBig', { pos: v.pos, vol: 1 });
+    }
+    if (v === this.active && was < 60 && e.dmg >= 60) g.hud.notice('The windows are gone: they can reach you!');
+    if (e.dmg >= 100 && v.who) { this.draggedOut(v); return false; }
+    return e.dmg >= 60;
+  }
+
+  // the car's done for: the zombies pull the driver out
+  draggedOut(v) {
+    const g = this.g, p = v.who;
+    if (!p) return;
+    if (g.net && g.net.forceOut) g.net.forceOut(p, v.driver, p === g.player, 'dragged');
+    else {
+      const spot = this.exitSpot(v, p) || { x: v.pos.x + Math.sin(v.heading) * 2, y: v.pos.y, z: v.pos.z + Math.cos(v.heading) * 2 };
+      this.dropControls(v);
+      this.release(v, p, spot);
+    }
+    if (p === g.player) this.draggedFx();
+  }
+
+  draggedFx() {
+    const p = this.g.player;
+    this.g.hud.notice('The zombies dragged you out of the car!');
+    p.shake = 1; p.tumble = Math.max(p.tumble, 0.45);
+  }
+
   // A blast (a grenade, a bloater bursting): every car and bike near it is damaged as if hit hard
   // from that side, and shoved (a parked one rolls a little way; a bike goes down).
   blast(x, y, z, radius, power) {
@@ -1172,8 +1269,22 @@ export class Vehicles {
     const g = this.g, s = v.spec, by = v.driver ?? g.localSlot ?? 0, who = v.who || g.player;
     const c = Math.cos(v.heading), sn = Math.sin(v.heading);
     const spd = Math.abs(v.speed);
+    // (PvP: and your foes on foot)
+    if (g.pvp && g.pvp.on && spd > 4) {
+      for (const q of g.pvp.players()) {
+        if (q === who || q.dead || q.vehicle || !g.pvp.foes(by, q.slot) || Math.abs(q.pos.y - v.pos.y) > 1.5 || (q.runT || 0) > g.time) continue;
+        const dx = q.pos.x - v.pos.x, dz = q.pos.z - v.pos.z, lx = dx * c - dz * sn, lz = dx * sn + dz * c;
+        if (Math.abs(lx) > s.hw + 0.4 || Math.abs(lz) > s.hd + 0.4) continue;
+        q.runT = g.time + 0.6;
+        const dir = new THREE.Vector3(v.vel.x, 0.3, v.vel.z).normalize(), at = q.pos.clone(); at.y += 1;
+        const killed = g.pvp.hurt(q, spd * spd * 1.2 * (v.type === 'bike' ? 0.6 : 1), by, v.type === 'bike' ? 'bike' : 'car', at, dir);
+        g.weapons.credit(by, killed, false);
+        q.vel.x += v.vel.x * 0.6; q.vel.z += v.vel.z * 0.6; q.vel.y += 3; q.onGround = false;
+        v.speed *= 0.85;
+      }
+    }
     for (const zb of g.zombies.list) {
-      if (zb.state === 'dead' || zb.state === 'climb' || zb.species === 'crow') continue;
+      if (zb.state === 'dead' || zb.state === 'climb' || zb.species === 'crow' || zb.def.boss) continue;   // (a giant stops the car instead)
       const dx = zb.pos.x - v.pos.x, dz = zb.pos.z - v.pos.z;
       if (Math.abs(dx) > 4 || Math.abs(dz) > 4 || Math.abs(zb.pos.y - v.pos.y) > 1.5) continue;
       const lx = dx * c - dz * sn, lz = dx * sn + dz * c;   // into the vehicle's frame (x forward, z right)
@@ -1284,12 +1395,12 @@ export class Vehicles {
       return;
     }
     const gain = c.createGain(); gain.gain.value = 0;
-    const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = type === 'drone' ? 1800 : 700;
-    const oscs = (type === 'drone' ? [1, 1.013, 0.987, 1.5] : [1, 0.5, 1.01]).map((m) => {
+    const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = type === 'drone' ? 1800 : type === 'v10' ? 1400 : 700;
+    const oscs = (type === 'drone' ? [1, 1.013, 0.987, 1.5] : type === 'v10' ? [1, 2, 0.5, 1.007] : [1, 0.5, 1.01]).map((m) => {
       const o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 50 * m; o.connect(lp); o.start(); return { o, m };
     });
     lp.connect(gain).connect(a.master);
-    gain.gain.setTargetAtTime(type === 'drone' ? 0.07 : 0.09, c.currentTime, 0.3);
+    gain.gain.setTargetAtTime(type === 'drone' ? 0.07 : type === 'v10' ? 0.12 : 0.09, c.currentTime, 0.3);
     this.engine = { gain, oscs, type };
   }
 
@@ -1306,7 +1417,7 @@ export class Vehicles {
       return;
     }
     const load = v.type === 'drone' ? 0.6 + Math.hypot(v.vel.x, v.vel.z, v.vel.y) / 12 : Math.abs(v.speed) / v.spec.vmax;
-    const base = v.type === 'drone' ? 120 + load * 60 : v.type === 'bike' ? 55 + load * 160 : 38 + load * 90;
+    const base = v.type === 'drone' ? 120 + load * 60 : v.type === 'bike' ? 55 + load * 160 : e.type === 'v10' ? 62 + load * 190 : 38 + load * 90;
     for (const { o, m } of e.oscs) o.frequency.setTargetAtTime(base * m, c.currentTime, 0.08);
   }
 

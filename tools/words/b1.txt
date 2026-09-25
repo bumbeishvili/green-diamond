@@ -1,0 +1,301 @@
+# band 1 — format: w|p|t|ka|ex|e
+the|det|grammar|განსაზღვრული არტიკლი|The sun is very hot today.|
+be|v|grammar|ყოფნა|It will be cold tomorrow.|
+and|conj|grammar|და|I like tea and coffee.|
+of|prep|grammar|-ის|The price of bread is going up.|
+a|det|grammar|განუსაზღვრელი არტიკლი|She has a new job.|
+to|prep|grammar|-ში, -კენ|We walk to the park every day.|
+in|prep|grammar|-ში|My keys are in the bag.|
+have|v|actions|ქონა|I have two sisters.|
+I|pron|grammar|მე|I live in a small town.|
+it|pron|grammar|ის (საგანი)|Where is my phone? I can't find it.|
+you|pron|grammar|შენ, თქვენ|Can you help me, please?|
+that|det|grammar|ის|Look at that big house!|
+for|prep|grammar|-თვის|This gift is for you.|
+not|adv|grammar|არ|I am not hungry.|
+on|prep|grammar|-ზე|The book is on the table.|
+with|prep|grammar|-თან ერთად|I live with my parents.|
+he|pron|grammar|ის (კაცი)|He works in a bank.|
+she|pron|grammar|ის (ქალი)|She is my best friend.|
+we|pron|grammar|ჩვენ|We have dinner at seven.|
+they|pron|grammar|ისინი|They live next door.|
+do|v|actions|კეთება|I do the shopping on Saturdays.|
+at|prep|grammar|-თან|Meet me at the station.|
+this|det|grammar|ეს|This coffee is very good.|
+but|conj|grammar|მაგრამ|I like tea, but I don't like coffee.|
+from|prep|grammar|-დან|I am from Georgia.|
+by|prep|grammar|-ით|I go to work by bus.|
+or|conj|grammar|ან|Do you want tea or coffee?|
+say|v|communication|თქმა|Sorry, what did you say?|
+what|pron|grammar|რა|What is your phone number?|
+go|v|actions|წასვლა|Let's go to the cinema tonight.|
+can|v|grammar|შეძლება|I can swim very well.|
+will|v|grammar|მომავალი დრო|I will call you tomorrow.|
+my|det|grammar|ჩემი|This is my brother.|
+your|det|grammar|შენი, თქვენი|Is this your bag?|
+his|det|grammar|მისი (კაცის)|His car is red.|
+her|det|grammar|მისი (ქალის)|Her sister is a doctor.|
+our|det|grammar|ჩვენი|Our house is near the river.|
+their|det|grammar|მათი|Their children go to school here.|
+me|pron|grammar|მე (ობიექტი)|Send me a message when you arrive.|
+him|pron|grammar|მას (კაცს)|I often see him at the gym.|
+us|pron|grammar|ჩვენ (ობიექტი)|Please wait for us.|
+them|pron|grammar|მათ|I miss my parents and call them every day.|
+there|adv|grammar|იქ|The bank is over there.|
+here|adv|grammar|აქ|Please wait here for a moment.|
+get|v|actions|მიღება|Did you get my message?|
+make|v|actions|გაკეთება|I will make a cake for the party.|
+know|v|actions|ცოდნა|I don't know his address.|
+think|v|actions|ფიქრი|I think it will rain today.|
+take|v|actions|აღება|Take a free map at the entrance.|
+see|v|actions|დანახვა|I can see the sea from my window.|
+come|v|actions|მოსვლა|Can you come to my party?|
+want|v|feelings|ნდომა|I want a glass of water.|
+look|v|actions|შეხედვა|Look at this photo!|
+use|v|actions|გამოყენება|Can I use your phone?|
+find|v|actions|პოვნა|I can't find my keys.|
+give|v|actions|მიცემა|Please give me the salt.|
+tell|v|communication|მოყოლა|Tell me about your new job.|
+work|v|work|მუშაობა|I work in an office.|
+call|v|communication|დარეკვა|Please call me after lunch.|
+try|v|actions|ცდა|I will try to come early.|
+ask|v|communication|შეკითხვა|Can I ask you something?|
+need|v|actions|საჭიროება|I need a new phone.|
+feel|v|feelings|გრძნობა|I feel much better today.|
+yes|int|communication|კი, დიახ|Yes, I would love to come.|
+no|int|communication|არა|No, thank you, I'm full.|
+hello|int|communication|გამარჯობა|Hello, how are you?|👋
+goodbye|int|communication|ნახვამდის|Goodbye, see you tomorrow!|
+please|int|communication|გთხოვთ|Two coffees and a tea, please.|
+thanks|int|communication|მადლობა|Thanks for your help.|
+sorry|int|communication|ბოდიში|Sorry, I am late.|
+okay|int|communication|კარგი|Okay, see you at six.|
+who|pron|grammar|ვინ|Who is that woman?|
+where|adv|grammar|სად|Where do you live?|
+when|adv|grammar|როდის|When does the shop open?|
+why|adv|grammar|რატომ|Why are you so tired?|
+how|adv|grammar|როგორ|How do you make this soup?|
+which|det|grammar|რომელი|Which bus goes to the centre?|
+all|det|grammar|ყველა|All my friends are here.|
+some|det|grammar|რამდენიმე|I need some eggs.|
+any|det|grammar|ნებისმიერი|Take any seat you like.|
+many|det|grammar|ბევრი|There are many shops in this street.|
+much|det|grammar|ბევრი|I don't have much time.|
+more|det|grammar|მეტი|Can I have more bread, please?|
+other|det|grammar|სხვა|The other shop is closed.|
+every|det|grammar|ყოველი|I go swimming every Sunday.|
+very|adv|grammar|ძალიან|This bag is very heavy.|
+also|adv|grammar|ასევე|She also speaks English.|
+too|adv|grammar|ზედმეტად|This coffee is too hot.|
+only|adv|grammar|მხოლოდ|I only have ten minutes.|
+just|adv|grammar|უბრალოდ|I just want to go home.|
+now|adv|time|ახლა|I am busy now.|
+then|adv|time|მერე|We had lunch, then we went for a walk.|
+today|adv|time|დღეს|It is very hot today.|
+tomorrow|adv|time|ხვალ|The shop is closed tomorrow.|
+yesterday|adv|time|გუშინ|I saw her yesterday.|
+always|adv|time|ყოველთვის|She is always on time.|
+never|adv|time|არასოდეს|I never drink coffee at night.|
+often|adv|time|ხშირად|We often eat out on Fridays.|
+sometimes|adv|time|ზოგჯერ|Sometimes I walk to work.|
+again|adv|grammar|ისევ|Please say that again.|
+well|adv|qualities|კარგად|She speaks English very well.|
+really|adv|grammar|მართლა|I really like your dress.|
+still|adv|time|ჯერ კიდევ|Are you still at work?|
+soon|adv|time|მალე|The bus will come soon.|
+if|conj|grammar|თუ|Call me if you need help.|
+because|conj|grammar|იმიტომ რომ|I am tired because I worked late.|
+so|conj|grammar|ამიტომ|It was late, so I took a taxi.|
+than|conj|grammar|ვიდრე|My brother is taller than me.|
+about|prep|grammar|შესახებ|Let's talk about your plans.|
+after|prep|time|შემდეგ|Let's meet after work.|
+before|prep|time|წინ|Wash your hands before dinner.|
+under|prep|grammar|ქვეშ|The cat is under the bed.|
+between|prep|grammar|შორის|The bank is between the cafe and the hotel.|
+near|prep|grammar|ახლოს|I live near the park.|
+up|adv|grammar|მაღლა|Look up at the stars!|
+down|adv|grammar|დაბლა|Please sit down and relax.|
+out|adv|grammar|გარეთ|Let's go out tonight.|
+back|adv|grammar|უკან|I will be back in five minutes.|
+home|adv|home|შინ|I usually get home at six.|
+one|num|numbers|ერთი|I have one brother and two sisters.|1️⃣
+two|num|numbers|ორი|We have two cats.|2️⃣
+three|num|numbers|სამი|The film starts in three minutes.|3️⃣
+four|num|numbers|ოთხი|There are four people in my family.|4️⃣
+five|num|numbers|ხუთი|I work five days a week.|5️⃣
+six|num|numbers|ექვსი|Dinner is at six.|6️⃣
+seven|num|numbers|შვიდი|There are seven days in a week.|7️⃣
+eight|num|numbers|რვა|I sleep eight hours every night.|8️⃣
+nine|num|numbers|ცხრა|The shop opens at nine.|9️⃣
+ten|num|numbers|ათი|I will be ready in ten minutes.|🔟
+hundred|num|numbers|ასი|This jacket costs a hundred lari.|💯
+first|num|numbers|პირველი|This is my first visit to London.|🥇
+something|pron|grammar|რაღაც|I want to eat something sweet.|
+nothing|pron|grammar|არაფერი|There is nothing in the fridge.|
+everything|pron|grammar|ყველაფერი|Thank you for everything.|
+must|v|grammar|უნდა|You must stop at a red light.|
+should|v|grammar|ჯობია|You should see a doctor.|
+would|v|grammar|პირობითი კილო|I would like a cup of tea.|
+could|v|grammar|შეეძლო|She could read when she was four.|
+help|v|actions|დახმარება|Can you help me with my bag?|
+talk|v|communication|საუბარი|We need to talk.|
+speak|v|communication|ლაპარაკი|Do you speak English?|
+start|v|actions|დაწყება|Classes start at nine.|
+show|v|actions|ჩვენება|Can you show me the way?|
+hear|v|actions|გაგონება|I can't hear you.|
+play|v|sport|თამაში|The children play in the garden.|
+run|v|sport|სირბილი|I run in the park every morning.|
+like|v|feelings|მოწონება|I like your new haircut.|
+live|v|home|ცხოვრება|We live in Tbilisi.|
+bring|v|actions|მოტანა|Please bring your passport.|
+write|v|communication|წერა|I write a lot of emails at work.|
+read|v|school|კითხვა|I like to read before bed.|
+sit|v|actions|დაჯდომა|Can I sit next to you?|
+stand|v|actions|დგომა|We had to stand on the bus.|
+pay|v|money|გადახდა|Can I pay by card?|
+meet|v|people|შეხვედრა|Nice to meet you.|
+eat|v|food|ჭამა|What do you want to eat?|
+drink|v|food|დალევა|I drink a lot of water.|
+sleep|v|home|ძილი|I can't sleep when it is hot.|
+buy|v|shopping|ყიდვა|I need to buy some milk.|
+open|v|actions|გაღება|Can you open the window?|
+close|v|actions|დახურვა|Please close the door.|
+wait|v|actions|ლოდინი|Wait for me here.|
+stop|v|actions|გაჩერება|The bus doesn't stop here.|
+walk|v|actions|სიარული|I walk to work every day.|
+learn|v|school|სწავლა|I want to learn English.|
+understand|v|communication|გაგება|I don't understand this word.|
+love|v|feelings|სიყვარული|I love my family.|
+watch|v|actions|ყურება|We watch TV in the evening.|
+listen|v|actions|მოსმენა|I listen to music in the car.|
+put|v|actions|დადება|Put your bag on the chair.|
+leave|v|actions|დატოვება|Don't leave your bag here.|
+let|v|actions|ნების მიცემა|Let me carry that for you.|
+time|n|time|დრო|What time is it?|
+year|n|time|წელი|I started this job last year.|
+day|n|time|დღე|Have a nice day!|
+week|n|time|კვირა|I go to the gym twice a week.|
+month|n|time|თვე|My sister visits us once a month.|
+hour|n|time|საათი|I waited for an hour.|
+minute|n|time|წუთი|Wait a minute, please.|
+morning|n|time|დილა|I drink coffee in the morning.|🌅
+night|n|time|ღამე|I work at night.|🌙
+evening|n|time|საღამო|We usually eat at home in the evening.|
+man|n|people|კაცი|A man is waiting for you outside.|👨
+woman|n|people|ქალი|That woman is my teacher.|👩
+child|n|people|ბავშვი|Every child needs love.|🧒
+boy|n|people|ბიჭი|The boy is playing football.|👦
+girl|n|people|გოგონა|The little girl has a red bag.|👧
+baby|n|family|ჩვილი|The baby is sleeping.|👶
+people|n|people|ხალხი|Many people live in the city.|👥
+person|n|people|ადამიანი|She is a very kind person.|🧑
+friend|n|people|მეგობარი|He is my best friend.|
+family|n|family|ოჯახი|I have a big family.|👪
+mother|n|family|დედა|My mother is a teacher.|
+father|n|family|მამა|My father works in a bank.|
+brother|n|family|ძმა|My brother is older than me.|
+sister|n|family|და|My sister lives in Batumi.|
+son|n|family|ვაჟიშვილი|Their son is five years old.|
+daughter|n|family|ქალიშვილი|Their daughter is a nurse.|
+wife|n|family|ცოლი|This is my wife, Nino.|
+husband|n|family|ქმარი|Her husband is a good cook.|
+name|n|people|სახელი|My name is Giorgi.|
+house|n|home|სახლი|They live in a big house.|🏠
+room|n|home|ოთახი|My room is on the second floor.|
+door|n|home|კარი|Someone is at the door.|🚪
+window|n|home|ფანჯარა|The window is open.|
+table|n|home|მაგიდა|The keys are on the table.|
+chair|n|home|სკამი|This chair is very comfortable.|🪑
+bed|n|home|საწოლი|I go to bed at eleven.|🛏️
+kitchen|n|home|სამზარეულო|We eat in the kitchen.|
+water|n|food|წყალი|Can I have a glass of water?|💧
+food|n|food|საჭმელი|The food here is very good.|
+bread|n|food|პური|I buy fresh bread every morning.|🍞
+milk|n|food|რძე|We need milk and eggs.|🥛
+tea|n|food|ჩაი|Do you take sugar in your tea?|🍵
+coffee|n|food|ყავა|Would you like a coffee?|☕
+apple|n|food|ვაშლი|She eats an apple every day.|🍎
+egg|n|food|კვერცხი|I had an egg for breakfast.|🥚
+meat|n|food|ხორცი|I don't eat meat.|🥩
+fish|n|food|თევზი|We had fish for dinner.|🐟
+breakfast|n|food|საუზმე|Breakfast is on the table.|🍳
+lunch|n|food|სადილი|Let's have lunch together.|
+dinner|n|food|ვახშამი|What would you like for dinner?|
+car|n|transport|მანქანა|My car is outside.|🚗
+bus|n|transport|ავტობუსი|The bus is late again.|🚌
+train|n|transport|მატარებელი|The train leaves at nine.|🚆
+street|n|city|ქუჩა|I live on this street.|
+road|n|city|გზა|Be careful on the road.|🛣️
+city|n|city|ქალაქი|Tbilisi is a beautiful city.|🏙️
+country|n|places|ქვეყანა|Georgia is a small country.|
+school|n|school|სკოლა|My son goes to school.|🏫
+teacher|n|school|მასწავლებელი|Our teacher is very kind.|
+student|n|school|სტუდენტი|She is a student at the university.|
+book|n|school|წიგნი|I am reading a good book.|📖
+money|n|money|ფული|I don't have any money.|💰
+job|n|work|სამსახური|I have a new job.|
+shop|n|shopping|მაღაზია|The shop closes at ten.|🏪
+phone|n|technology|ტელეფონი|My phone is on the table.|📱
+hand|n|body|ხელი|Give me your hand.|✋
+head|n|body|თავი|My head hurts today.|
+eye|n|body|თვალი|I have something in my eye.|👁️
+face|n|body|სახე|Wash your face with cold water.|
+hair|n|body|თმა|She has long black hair.|
+leg|n|body|ფეხი|My leg hurts after the run.|🦵
+dog|n|animals|ძაღლი|We have a big dog.|🐕
+cat|n|animals|კატა|The cat is sleeping on the sofa.|🐈
+sun|n|weather|მზე|The sun is very strong today.|☀️
+rain|n|weather|წვიმა|The rain stopped at noon.|🌧️
+tree|n|nature|ხე|There is a big tree in our garden.|🌳
+place|n|places|ადგილი|This is a nice place for lunch.|
+thing|n|abstract|ნივთი|What is this thing?|
+way|n|abstract|გზა|Is this the way to the station?|
+word|n|school|სიტყვა|What does this word mean?|
+question|n|school|კითხვა|I have a question for you.|❓
+answer|n|school|პასუხი|I know the answer.|
+doctor|n|health|ექიმი|The doctor will see you now.|
+life|n|abstract|ცხოვრება|Life in the city is expensive.|
+world|n|places|მსოფლიო|I want to travel around the world.|🌍
+weather|n|weather|ამინდი|The weather is nice today.|
+problem|n|abstract|პრობლემა|We have a small problem.|
+idea|n|abstract|იდეა|That's a great idea!|
+number|n|numbers|ნომერი|What is your room number?|
+hospital|n|health|საავადმყოფო|My aunt works in a hospital.|🏥
+bank|n|money|ბანკი|The bank opens at ten.|🏦
+hotel|n|travel|სასტუმრო|Our hotel is near the sea.|🏨
+good|adj|qualities|კარგი|This is a good restaurant.|
+bad|adj|qualities|ცუდი|I have bad news.|
+big|adj|qualities|დიდი|They have a big garden.|
+small|adj|qualities|პატარა|I live in a small flat.|
+new|adj|qualities|ახალი|I need new shoes.|
+old|adj|qualities|ძველი|This is a very old church.|
+young|adj|qualities|ახალგაზრდა|My parents are still young.|
+long|adj|qualities|გრძელი|It was a long day.|
+short|adj|qualities|მოკლე|She has short hair.|
+hot|adj|weather|ცხელი|Be careful, the soup is hot.|
+cold|adj|weather|ცივი|The water is very cold.|
+happy|adj|feelings|ბედნიერი|I am so happy for you!|😊
+sad|adj|feelings|მოწყენილი|Why are you sad?|😢
+beautiful|adj|qualities|ლამაზი|What a beautiful view!|
+nice|adj|qualities|სასიამოვნო|It was nice to see you.|
+easy|adj|qualities|ადვილი|This exercise is easy.|
+difficult|adj|qualities|რთული|English grammar is difficult.|
+great|adj|qualities|შესანიშნავი|We had a great time.|
+different|adj|qualities|განსხვავებული|We have different ideas.|
+same|adj|qualities|იგივე|We were born in the same year.|
+important|adj|qualities|მნიშვნელოვანი|This is a very important meeting.|
+right|adj|qualities|მარჯვენა|I write with my right hand.|
+left|adj|qualities|მარცხენა|The bank is on the left side of the street.|
+next|adj|time|შემდეგი|The next bus is at ten.|
+last|adj|time|ბოლო|This is the last train tonight.|
+tired|adj|feelings|დაღლილი|I am very tired today.|
+hungry|adj|feelings|მშიერი|Are you hungry? Dinner is ready.|
+cheap|adj|shopping|იაფი|This hotel is cheap but nice.|
+expensive|adj|shopping|ძვირი|This watch is very expensive.|
+clean|adj|home|სუფთა|The room is clean and quiet.|
+red|adj|colours|წითელი|She has a red car.|🔴
+blue|adj|colours|ლურჯი|The sky is blue today.|🔵
+green|adj|colours|მწვანე|I like green tea.|🟢
+black|adj|colours|შავი|He wears a black jacket.|⚫
+white|adj|colours|თეთრი|I need a white shirt.|⚪
+yellow|adj|colours|ყვითელი|She wore a yellow dress.|🟡
