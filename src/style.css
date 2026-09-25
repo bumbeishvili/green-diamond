@@ -433,6 +433,18 @@ body.touch #health { transform: scale(0.5); transform-origin: left top; }
 #quiz .next small { opacity: .6; font-size: 11px; margin-left: 4px; }
 #quiz .next.hidden { display: none; }
 #learnpanel h2 { margin: 0; }
+#learnpanel { z-index: 30; }
+/* the settings screen: over the menu or the pause screen, a label and its control a line */
+#settings { z-index: 26; gap: 16px; background: rgba(7, 8, 10, 0.95); }
+#settings .setbtns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; align-items: center; margin-top: 4px; }
+#settings .setbtns .btn { font-size: 18px; padding: 9px 26px; }
+#settings h2 { font-family: var(--head); font-weight: 400; font-size: 56px; margin: 0; color: #e8f5ea; letter-spacing: .05em; }
+#settings .settings { flex-direction: column; align-items: stretch; gap: 12px; width: min(440px, 92vw); font-size: 15px; }
+#settings .settings label { justify-content: space-between; gap: 16px; }
+#settings .settings input[type=range] { width: 210px; }
+#settings .settings select { min-width: 210px; }
+#settings .learnrow { border-top: 1px solid #2c3036; padding-top: 14px; }
+#settings .learnrow label:has(input[type=checkbox]) { justify-content: flex-start; }
 #learnpanel .lstats { display: grid; grid-template-columns: repeat(3, minmax(140px, 1fr)); gap: 10px; max-width: 620px; }
 #learnpanel .lstats div { background: rgba(20,22,26,.8); border: 1px solid #2c3036; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 4px; }
 #learnpanel .lstats b { font-family: var(--head); font-size: 26px; color: #b98cff; }
@@ -441,4 +453,5 @@ body.touch #health { transform: scale(0.5); transform-origin: left top; }
 #learnpanel .lbtns { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
 .learnrow input[type=checkbox] { accent-color: #b98cff; }
 .btn.small { padding: 5px 14px; font-size: 14px; }
+@media (max-height: 560px) { #settings h2 { font-size: 30px; } #settings .settings { gap: 7px; } #settings .learnrow { padding-top: 8px; } #settings .setbtns .btn { font-size: 16px; padding: 7px 20px; } }
 @media (max-height: 560px) { #quiz .prompt { font-size: 22px; padding: 0; } #quiz .opts button { padding: 8px; font-size: 15px; } #learnpanel .lstats { grid-template-columns: repeat(3, 1fr); } }

@@ -178,8 +178,6 @@ class Game {
     this.zombies.onBlastVehicles = (x, y, z, r, power) => this.vehicles?.blast(x, y, z, r, power);
     // (and they claw at the car you're sitting in)
     this.zombies.onClawCar = (v, zb) => this.vehicles.clawHit(v, zb);
-    // (a blow stopped by someone's riot shield: sparks off it, a clank)
-    this.zombies.onBlocked = (pl, x, z) => { this.shieldFx(pl, x, z); if (pl !== this.player) this.net?.blocked?.(pl, x, z); };
     // (spitters' acid: the others draw the globs and puddles)
     this.zombies.onSpit = (id, o, v) => this.net?.spit?.(id, o, v);
     this.zombies.onSplat = (id, p, r) => this.net?.splat?.(id, p, r);
@@ -273,7 +271,11 @@ class Game {
     vol.oninput = () => { settings.vol = +vol.value; this.audio.setVolume(settings.vol); saveSettings(); };
     q.onchange = () => { settings.quality = q.value; if (this.touch) settings.touchChosen = true; saveSettings(); this.reload(); };
     $('play').onclick = () => this.beginPlay();
-    $('resume').onclick = () => { $('pause').classList.add('hidden'); this.input.lock(); this.state = 'playing'; };
+    $('resume').onclick = () => { $('pause').classList.add('hidden'); $('settings').classList.add('hidden'); this.input.lock(); this.state = 'playing'; };
+    // the settings: a screen of their own, from the menu or the pause screen (Done or Esc closes it)
+    for (const id of ['settings-open', 'settings-open2']) $(id).onclick = () => $('settings').classList.remove('hidden');
+    $('settings-close').onclick = () => $('settings').classList.add('hidden');
+    addEventListener('keydown', (e) => { if (e.code === 'Escape' && !$('settings').classList.contains('hidden')) $('settings').classList.add('hidden'); });
     // leaving a co-op match: tell the others (the host leaving ends it for everyone)
     const leave = () => { this.netui?.session.leave(); this.reload(); };
     $('quit').onclick = () => (this.mode === 'solo' ? this.reload() : leave());
@@ -293,15 +295,6 @@ class Game {
     lm.value = this.practice.mode; lk.checked = settings.learnHints !== false;
     lm.onchange = lk.onchange = () => this.practice.setMode(lm.value, lk.checked);
     $('learnme').onclick = () => this.practice.panel();
-  }
-
-  // sparks off a riot shield where a blow landed, and the clank (yours shakes in your hands)
-  shieldFx(pl, x, z) {
-    const dx = x - pl.pos.x, dz = z - pl.pos.z, d = Math.hypot(dx, dz) || 1;
-    const at = new THREE.Vector3(pl.pos.x + (dx / d) * 0.55, pl.pos.y + 1.15, pl.pos.z + (dz / d) * 0.55);
-    this.effects.emit(at, 10, { color: [1, 0.85, 0.5], speed: 3.5, spread: 1, up: 0.6, life: 0.25, size: 0.04, gravity: 6 });
-    this.audio.play('clank', pl === this.player ? { vol: 1 } : { pos: at, vol: 0.9 });
-    if (pl === this.player) { pl.shake = Math.min(1, pl.shake + 0.2); this.weapons.blockT = 0.2; }
   }
 
   // (touch: the pause button; with a mouse, Esc does it by letting go of the pointer)
@@ -327,6 +320,7 @@ class Game {
 
   async beginPlay() {
     $('menu').classList.add('hidden');
+    $('settings').classList.add('hidden');
     if (!URLFLAGS.autostart) this.input.lock();
     this.state = 'playing';
     this.hud.show(!URLFLAGS.nohud);
@@ -372,7 +366,7 @@ class Game {
     this.mode = mode;
     this.zombies.puppets = mode === 'client';
     this.player.slot = this.localSlot;
-    for (const id of ['menu', 'gameover', 'pause']) $(id).classList.add('hidden');
+    for (const id of ['menu', 'gameover', 'pause', 'settings']) $(id).classList.add('hidden');
     this.state = 'playing';
     if (!URLFLAGS.nolock) this.input.lock();
     this.hud.show(!URLFLAGS.nohud);

@@ -22,7 +22,7 @@ the drone), DUCK, RELOAD, SWAP, NADE, USE (when there's something to use), TALK 
 pause and full screen. Tap the minimap for the big map, or a prompt to do what it says. Phones start
 on the Phone graphics setting: a lighter picture, and fewer zombies at once.
 
-**Full screen:** the button in the menu, on the pause screen, or ⛶ in the game. On an iPhone, Safari
+**Full screen:** in Settings (from the menu or the pause screen), or ⛶ in the game. On an iPhone, Safari
 can't go full screen, so add the page to the home screen (Share, then Add to Home Screen) and play
 from there: it opens full screen, sideways.
 
@@ -51,7 +51,7 @@ Co-op:
   insta-kill, double points, nuke) work for the whole team.
 
 PvP:
-- Guns, the knife, the chainsaw, the shield's shove, grenades, missiles and cars hurt the other side
+- Guns, the knife, the chainsaw, grenades, missiles and cars hurt the other side
   (in teams, never your own side; your own grenade still can). Against a player a gun does half what
   it does to a zombie, and upgrades count for less.
 - **Dying**: you're back 4 seconds later, somewhere away from whoever wants you dead, and nothing can
@@ -125,7 +125,7 @@ npx wrangler deploy                              # then once: npx wrangler secre
 | E (or hold right-click) | aim down the sights / scope |
 | Shift while scoped | hold your breath to steady the scope |
 | R | reload |
-| 1–8 | weapon group: 1 pistols, 2 rifles (AK-74, M4A1, AUG), 3 shotgun, 4 snipers (SVD, SCAR 20S, MSR), 5 heavy (M60, mini-missile launcher), 6 bow, 7 knife and chainsaw, 8 riot shield (press again for the next in the group) |
+| 1–7 | weapon group: 1 pistols, 2 rifles (AK-74, M4A1, AUG), 3 shotgun, 4 snipers (SVD, SCAR 20S, MSR), 5 heavy (M60, mini-missile launcher), 6 bow, 7 knife and chainsaw (press again for the next in the group) |
 | Q | next weapon |
 | G | throw an F-1 grenade (about 3 s fuse) |
 | V | quick knife |
@@ -163,7 +163,7 @@ Drone: WASD to move where you look, Space to climb, Ctrl or Shift to descend, an
 | Format Fit | faster legs |
 | TBC terminal | double points |
 | Gate 2 security booth | SVD Dragunov |
-| Gate 1 security booth | M60 machine gun; riot shield (hold it up: most of what comes from the front stops there; click to shove) |
+| Gate 1 security booth | M60 machine gun |
 | Crates by the stadium (middle courtyard) | compound bow; chainsaw (hold to cut, a few at once; runs on fuel, R refuels) |
 | Cache on the twin tower roof (take the stairs) | FN SCAR 20S auto sniper |
 | Cache on the next highest roof | Remington MSR (semi-automatic .338 sniper) |
@@ -181,7 +181,7 @@ Aim down the sights (E or right-click) and every gun hits twice as hard.
 ### Learn English as you play
 
 For adults learning English (Georgian hints). It's on from the start at Light (a round every third
-wave); in the menu, **English practice** sets Light, Normal (every wave), Intense or Off. Not in PvP
+wave); in **Settings**, **English practice** sets Light, Normal (every wave), Intense or Off. Not in PvP
 matches.
 
 - **Your level first.** The first time, a quick test (three words at each of six levels, from the
@@ -198,7 +198,7 @@ matches.
   known: it won't come back for weeks. A word you miss shows you its meaning in Georgian, a sentence
   that uses it, and how it sounds. Then it comes back a few minutes later, again later that
   session, the next day, and so on until it sticks (spaced repetition). Progress is kept in your
-  browser; **My English** in the menu shows your level, the words you know, what's due, and lets
+  browser; **My English** in Settings shows your level, the words you know, what's due, and lets
   you take the level test again or start over.
 - **What it pays.** Every right answer is money, more for a word you've just learned than for one
   you knew, and more as the waves get tougher. A round with any right answer tops up your ammo; two
@@ -209,7 +209,7 @@ matches.
 
 ### Graphics
 
-The game picks Low, Medium or High from your GPU on the first run. You can change it in the menu. It also lowers the render resolution by itself whenever the frame rate drops below about 50 fps, so it stays smooth on laptops.
+The game picks Low, Medium or High from your GPU on the first run. You can change it in Settings (from the menu or the pause screen). It also lowers the render resolution by itself whenever the frame rate drops below about 50 fps, so it stays smooth on laptops.
 
 ## What is real
 

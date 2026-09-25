@@ -47,7 +47,7 @@
   <canvas id="minimap" width="220" height="220"></canvas>
   <div id="keys">
     <span><b>WASD</b> move</span><span><b>Shift</b> sprint</span><span><b>Space</b> jump</span><span><b>Ctrl</b> crouch</span>
-    <span><b>Click</b> shoot</span><span><b>E</b> aim</span><span><b>R</b> reload</span><span><b>Q</b>/<b>1–8</b> weapon</span><span><b>G</b> grenade</span>
+    <span><b>Click</b> shoot</span><span><b>E</b> aim</span><span><b>R</b> reload</span><span><b>Q</b>/<b>1–7</b> weapon</span><span><b>G</b> grenade</span>
     <span><b>V</b> knife</span><span><b>F</b> buy · stairs · drive</span><span><b>L</b> light</span><span><b>M</b> map</span><span id="key-talk" class="hidden"><b>T</b> talk</span><span><b>H</b> hide keys</span>
   </div>
   <div id="stats"></div>
@@ -103,6 +103,13 @@
     </div>
     <button id="mp-start" class="btn hidden" type="button">Start match</button>
   </div>
+  <button id="settings-open" class="btn ghost" type="button">Settings</button>
+  <div class="credits">Map data © OpenStreetMap contributors · <button id="credits-btn" class="linkbtn" type="button">Credits</button></div>
+  <div id="credits" class="credits-full hidden"></div>
+</div>
+
+<div id="settings" class="screen hidden">
+  <h2>Settings</h2>
   <div class="settings">
     <label>Mouse sensitivity <input id="sens" type="range" min="0.2" max="3" step="0.05" value="1"></label>
     <label>Volume <input id="vol" type="range" min="0" max="1" step="0.05" value="0.8"></label>
@@ -120,16 +127,19 @@
       <select id="learn"><option value="off">Off</option><option value="light">Light</option><option value="normal">Normal</option><option value="intense">Intense</option></select>
     </label>
     <label><input type="checkbox" id="learnka" checked> Georgian hints</label>
-    <button id="learnme" class="btn ghost small" type="button">My English</button>
   </div>
-  <div class="fsrow"><button id="fs" class="btn ghost" type="button">Full screen</button><span id="fs-note" class="fs-note"></span></div>
-  <div class="credits">Map data © OpenStreetMap contributors · <button id="credits-btn" class="linkbtn" type="button">Credits</button></div>
-  <div id="credits" class="credits-full hidden"></div>
+  <div class="setbtns">
+    <button id="learnme" class="btn ghost" type="button">My English</button>
+    <button id="fs" class="btn ghost" type="button">Full screen</button>
+    <button id="settings-close" class="btn" type="button">Done</button>
+  </div>
+  <span id="fs-note" class="fs-note"></span>
 </div>
 
 <div id="pause" class="screen hidden">
   <h2>Paused</h2>
   <button id="resume" class="btn">Resume</button>
+  <button id="settings-open2" class="btn ghost" type="button">Settings</button>
   <button id="fs2" class="btn ghost" type="button">Full screen</button>
   <span id="fs2-note" class="fs-note"></span>
   <button id="quit" class="btn ghost">Quit to menu</button>

@@ -61,12 +61,11 @@ export class Director {
     add(byName('36.6'), 'armour', 'Pharmacy 36.6: body armour', 0);
     add(byName('Format Fit'), 'stamina', 'Format Fit: faster legs', 2000);
     add(byName('TBC Bank'), 'double', 'TBC terminal: double points (30 s)', 1200);
-    // the security booths: Gate 2 sells the Dragunov, Gate 1 the M60 and the riot shield (buy on the courtyard side)
+    // the security booths: Gate 2 sells the Dragunov, Gate 1 the M60 (buy on the courtyard side)
     for (const b of L.buildings.filter((q) => q.group === 'guard')) {
       const [cx, cy] = centroid(b.poly.outer);
       const north = cy > 0;
       S.push({ x: cx - 3.2, z: -cy, item: north ? 'sniper' : 'mg', label: north ? 'SVD Dragunov at the Gate 2 security booth' : 'M60 machine gun at the Gate 1 security booth', cost: DEFS[north ? 'sniper' : 'mg'].price });
-      if (!north) S.push({ x: cx - 3.2, z: -cy + 2.8, item: 'shield', label: 'Riot shield at the Gate 1 security booth', cost: DEFS.shield.price });
     }
     // the Steyr AUG at the corner shop (the one OSM doesn't name)
     add(L.pois.find((p) => !p.name), 'aug', 'Steyr AUG at the corner shop', DEFS.aug.price);
@@ -179,8 +178,7 @@ export class Director {
     return best;
   }
 
-  // (the riot shield is bought like a gun: once)
-  isGun(item) { return !!DEFS[item] && (!DEFS[item].melee || !!DEFS[item].shield); }
+  isGun(item) { return !!DEFS[item] && !DEFS[item].melee; }
 
   // what it costs you now (null: nothing to buy here right now)
   cost(s) {
@@ -207,7 +205,7 @@ export class Director {
       const a = ARMOUR[p.armour];
       return `Pharmacy 36.6: body armour ${a.name}: ${a.max} health, ${Math.round((1 - a.take) * 100)}% less damage`;
     }
-    if (this.isGun(s.item) && w.owned[s.item]) return DEFS[s.item].shield ? 'You have the riot shield' : DEFS[s.item].saw ? 'You have the chainsaw: fuel is at the crate by the pool house' : `You have the ${DEFS[s.item].short}: ammo is at the crate by the pool house`;
+    if (this.isGun(s.item) && w.owned[s.item]) return DEFS[s.item].saw ? 'You have the chainsaw: fuel is at the crate by the pool house' : `You have the ${DEFS[s.item].short}: ammo is at the crate by the pool house`;
     if (s.item === 'stamina' && p.speedMul > 1) return 'Format Fit: already done';
     return s.label;
   }

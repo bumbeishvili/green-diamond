@@ -578,7 +578,7 @@ export class Zombies {
         const pvp = this.pvp && this.pvp.on && (source === 'grenade' || source === 'missile') ? this.pvp : null;
         if (pvp && (pl.shieldT > 0 || (by !== pl.slot && !pvp.foes(by, pl.slot)))) continue;
         if (pvp) pl.lastHit = { by, how: source, t: pvp.g.time || 0 };
-        pl.damage(amount, x, z, false);
+        pl.damage(amount, x, z);
         pl.shake = Math.min(1, pl.shake + 0.9);
         if (this.onPlayerHit) this.onPlayerHit(null, pl, amount, x, z);
       } else if (pd < radius * 4) pl.shake = Math.min(1, pl.shake + 0.5 * (1 - pd / (radius * 4)));
@@ -721,8 +721,7 @@ export class Zombies {
               if (this.onPlayerHit) this.onPlayerHit(zb, pl, hurt, zb.pos.x, zb.pos.z);
             }
           } else if (dist < reach + 0.45 && dy < 1.5 && !pl.dead && !shielded && !(v && v.type === 'drone')) {
-            if (!pl.damage(zb.damage, zb.pos.x, zb.pos.z)) { if (pl.blocks(zb.pos.x, zb.pos.z)) this.shieldBlock(zb, pl, dx, dz, dist, big); }
-            else {
+            if (pl.damage(zb.damage, zb.pos.x, zb.pos.z)) {
               if (zb.def.shove && !v) { pl.vel.x += (dx / (dist || 1)) * zb.def.shove; pl.vel.z += (dz / (dist || 1)) * zb.def.shove; pl.shake = Math.min(1, pl.shake + 0.4); }
               if (big && !v) { pl.vel.y += 4; pl.onGround = false; pl.shake = 1; if (pl === this.player) pl.tumble = Math.max(pl.tumble || 0, 0.55); }
               this.audio.play('bite', pl === this.player ? { vol: 0.9, rate: dog ? 1.3 : 1 } : { pos: pl.pos, vol: 0.8, rate: dog ? 1.3 : 1 });
@@ -978,7 +977,7 @@ export class Zombies {
         if (hit.damage(b.dmg, ox, oz)) {
           if (hit === this.player) this.audio.play('hiss', { vol: 0.5, rate: 1.5 });
           if (this.onPlayerHit) this.onPlayerHit(null, hit, b.dmg, ox, oz);
-        } else { pool = 0; this.onBlocked?.(hit, ox, oz); }
+        }
       } else if (landed && oy >= floor - 0.3) pool = 1.5;   // (it came down on it, not through a wall)
       this.splash(b.pos);
       if (pool) this.puddle(px, py, pz, pool);
@@ -998,7 +997,7 @@ export class Zombies {
       // (standing in it burns; a car or a bike keeps your feet out of it)
       for (const pl of this.targetList()) {
         if (pl.dead || pl.vehicle || Math.abs(pl.pos.y - a.y) > 0.7 || Math.hypot(pl.pos.x - a.x, pl.pos.z - a.z) > a.r * 0.85 * k) continue;
-        pl.damage(a.dmg, pl.pos.x, pl.pos.z);   // (from underfoot: no shield keeps that off)
+        pl.damage(a.dmg, pl.pos.x, pl.pos.z);
         if (pl === this.player) this.audio.play('hiss', { vol: 0.35, rate: 1.7 });
         if (this.onPlayerHit) this.onPlayerHit(null, pl, a.dmg, a.x, a.z);
       }
@@ -1045,10 +1044,7 @@ export class Zombies {
         if (t.dead || t.vehicle || Math.hypot(t.pos.x - zb.pos.x, t.pos.z - zb.pos.z) > 1.15 || Math.abs(t.pos.y - zb.pos.y) > 1.5) continue;
         zb.dealt = true;
         const hurt = zb.damage * 1.2, ux = L.x / (Math.hypot(L.x, L.z) || 1), uz = L.z / (Math.hypot(L.x, L.z) || 1);
-        if (!t.damage(hurt, zb.pos.x, zb.pos.z)) {
-          if (t.blocks(zb.pos.x, zb.pos.z)) { this.shieldBlock(zb, t, t.pos.x - zb.pos.x, t.pos.z - zb.pos.z, 1, false); L.t = L.T; }
-          break;
-        }
+        if (!t.damage(hurt, zb.pos.x, zb.pos.z)) break;
         t.vel.x += ux * 5; t.vel.z += uz * 5;
         t.shake = Math.min(1, t.shake + 0.6);
         if (t === this.player) t.tumble = Math.max(t.tumble || 0, 0.4);
@@ -1069,20 +1065,6 @@ export class Zombies {
     }
     this.animate(zb, dt, 0);
     this.place(zb);
-  }
-
-  // A blow on a riot shield: a clank and sparks, and the zombie reels back (a giant barely does).
-  shieldBlock(zb, pl, dx, dz, dist, big) {
-    const ux = dx / (dist || 1), uz = dz / (dist || 1);
-    if (!big) {
-      const q = { x: zb.pos.x - ux * 0.9, z: zb.pos.z - uz * 0.9 };
-      this.col.resolve(q, 0.3, zb.pos.y + 0.3, zb.pos.y + 1.7, 2, SKIP);
-      zb.pos.x = q.x; zb.pos.z = q.z;
-    }
-    zb.hitT = big ? 0.3 : 0.8;
-    zb.attackCd = Math.max(zb.attackCd, big ? 0.8 : 1.3);
-    if (big && !pl.vehicle) { pl.vel.x += ux * 5; pl.vel.z += uz * 5; }   // (a giant still shoves you back)
-    this.onBlocked?.(pl, zb.pos.x, zb.pos.z);
   }
 
   // The giant's footsteps: a thud, and the ground shakes if you're near.
@@ -1371,7 +1353,7 @@ export class Zombies {
           if (pl.damage(zb.damage, zb.pos.x, zb.pos.z)) {
             this.audio.play('bite', pl === this.player ? { vol: 0.6, rate: 1.8 } : { pos: pl.pos, vol: 0.6, rate: 1.8 });
             if (this.onPlayerHit) this.onPlayerHit(zb, pl, zb.damage, zb.pos.x, zb.pos.z);
-          } else if (pl.blocks(zb.pos.x, zb.pos.z)) this.onBlocked?.(pl, zb.pos.x, zb.pos.z);
+          }
         }
         zb.crowState = 'away';
         zb.climbT = 1.3;

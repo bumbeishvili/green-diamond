@@ -68,14 +68,12 @@ export const DEFS = {
     sound: 'missile', tracer: false, chamber: false, move: 0.88, flash: 0.4, zoom: 0.2, price: 6000, speed: 48, radius: 5.5, blastPlayer: 90 },
   // Chainsaw: hold the trigger and it cuts whatever's in front of it, a few at a time; it runs on fuel (R refuels)
   chainsaw: { name: 'Chainsaw', short: 'Chainsaw', slot: 9.5, saw: true, dmg: 520, head: 1, auto: true, mag: 100, reserve: 200, reload: 2.2, move: 0.93, price: 1800 },
-  // A police riot shield: held up, most of what comes at you from the front stays on the other side; click to shove
-  shield: { name: 'Riot shield', short: 'Shield', slot: 10, shield: true, melee: true, dmg: 45, auto: false, mag: 0, reserve: 0, move: 0.86, price: 1500 },
 };
 
 // Number keys select a category; pressing it again cycles inside it.
 export const CATS = {
   Digit1: ['pistol', 'deagle'], Digit2: ['rifle', 'm4', 'aug'], Digit3: ['shotgun'], Digit4: ['sniper', 'autosniper', 'msr'],
-  Digit5: ['mg', 'launcher'], Digit6: ['bow'], Digit7: ['knife', 'chainsaw'], Digit8: ['shield'],
+  Digit5: ['mg', 'launcher'], Digit6: ['bow'], Digit7: ['knife', 'chainsaw'],
 };
 
 // Where each gun is sold (buy stations in director.js).
@@ -84,7 +82,7 @@ export const WHERE = {
   sniper: 'at the Gate 2 security booth', autosniper: 'in the cache on the twin tower roof (take the stairs)', mg: 'at the Gate 1 security booth',
   bow: 'at the crate by the basketball court',
   aug: 'at the corner shop at the end of the podium', msr: 'in the cache on the other tower roof (take the stairs)',
-  launcher: 'in the crate down in the car park', chainsaw: 'in the groundskeeper\'s crate by the stadium', shield: 'at the Gate 1 security booth',
+  launcher: 'in the crate down in the car park', chainsaw: 'in the groundskeeper\'s crate by the stadium',
 };
 
 export const MAX_GRENADES = 4;
@@ -119,7 +117,6 @@ const VIEW = {
   msr: { pos: [0.15, -0.17, -0.5], ads: [0.0, -0.08, -0.3], rot: [0, 0, 0] },
   launcher: { pos: [0.24, -0.19, -0.34], ads: [0.0, -0.1, -0.2], rot: [0, 0, 0] },
   chainsaw: { pos: [0.28, -0.45, -0.35], ads: [0.28, -0.45, -0.35], rot: [0.6, 0.35, 0.3] },
-  shield: { pos: [-0.17, -0.27, -0.4], ads: [-0.17, -0.27, -0.4], rot: [0, 0.3, 0] },
 };
 
 const RIG_VIEW = { pos: [0, 0, 0], ads: [0, 0, 0], rot: [0, 0, 0] }; // rigs are authored in camera space
@@ -383,34 +380,6 @@ function proceduralChainsaw() {
   return g;
 }
 
-// The riot shield: clear polycarbonate with პოლიცია across it, held up on the left arm (drawn smaller
-// than life, so you can still see past it).
-function proceduralShield() {
-  const g = new THREE.Group();
-  const cv = document.createElement('canvas'); cv.width = 256; cv.height = 512;
-  const c = cv.getContext('2d');
-  c.fillStyle = 'rgba(30,38,50,0.34)'; c.fillRect(0, 0, 256, 512);
-  c.strokeStyle = 'rgba(10,10,12,0.95)'; c.lineWidth = 16; c.strokeRect(8, 8, 240, 496);
-  c.fillStyle = 'rgba(236,240,244,0.85)'; c.fillRect(16, 150, 224, 92);
-  c.fillStyle = '#0f1520'; c.textAlign = 'center'; c.textBaseline = 'middle';
-  c.save(); c.translate(256, 0); c.scale(-1, 1);   // (the lettering is for the ones in front: from behind, it reads backwards)
-  c.font = 'bold 44px sans-serif'; c.fillText('პოლიცია', 128, 184);
-  c.font = 'bold 26px sans-serif'; c.fillText('POLICE', 128, 224);
-  c.restore();
-  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
-  const geo = new THREE.PlaneGeometry(0.3, 0.49, 10, 1);
-  const pa = geo.attributes.position;
-  for (let i = 0; i < pa.count; i++) { const x = pa.getX(i); pa.setZ(i, x * x * 1.0); }
-  geo.computeVertexNormals();
-  const shield = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.15, metalness: 0.1, side: THREE.DoubleSide, depthWrite: false }));
-  shield.position.set(0, 0.06, -0.06);
-  shield.renderOrder = 2;
-  g.add(shield);
-  arms(g, null, [0.03, -0.07, 0.02]);
-  g.userData.muzzle = new THREE.Vector3(0, 0, -0.2);
-  return g;
-}
-
 // A mini missile: a white body with a red nose, four fins, a flame at the back. Nose down -Z.
 function missileMesh() {
   const g = new THREE.Group();
@@ -654,7 +623,6 @@ export class Weapons {
     this.nadeTemplate = grenadeMesh();
     this.missiles = [];
     this.missileTemplate = missileMesh();
-    this.bashT = 0; this.bashHit = true;
     this.tmpDir = new THREE.Vector3();
   }
 
@@ -722,7 +690,6 @@ export class Weapons {
     if (!fromGLTF('msr', 'msr', clips)) fromCode('msr', proceduralMSR());
     if (!fromGLTF('launcher', 'launcher', clips)) fromCode('launcher', proceduralLauncher());
     if (!fromGLTF('chainsaw', 'chainsaw', clips)) fromCode('chainsaw', proceduralChainsaw());
-    fromCode('shield', proceduralShield());
     // (the missile: the downloaded one if there is one, ~35 cm, nose down -Z)
     if (w.missile) {
       const m = w.missile.scene.clone(true), b = new THREE.Box3().setFromObject(m), sz = b.getSize(new THREE.Vector3());
@@ -912,7 +879,6 @@ export class Weapons {
     this.reloading = 0; this.shellLoading = false;
     this.drawT = 0; this.fullT = 0;
     this.switching = instant ? 0 : (kind === 'mg' || kind === 'launcher' ? 0.6 : kind === 'knife' ? 0.2 : 0.35);
-    this.bashT = 0; this.bashHit = true;
     if (kind !== 'chainsaw') this.sawSound(0);
     this.cool = this.switching; // the last gun's cycle time doesn't carry over
     this.bloomNow = 0; this.burst = 0;
@@ -941,7 +907,7 @@ export class Weapons {
     if (slot === (this.g.localSlot ?? 0)) return this.levels[kind] || 0;
     return (this.slotLevels.get(slot) || {})[kind] || 0;
   }
-  canUpgrade(kind) { const d = DEFS[kind]; return !!d && !d.melee && !d.shield; }
+  canUpgrade(kind) { const d = DEFS[kind]; return !!d && !d.melee; }
   // how hard a shot hits: the gun's level, and twice that aimed
   damageMult(kind, slot, aimed) {
     const l = this.level(kind, slot);
@@ -1011,14 +977,6 @@ export class Weapons {
     this.bloomNow = Math.max(0, this.bloomNow - (def.recover || 0.1) * dt);
     if (!input.mouse.left) { this.burst = Math.max(0, this.burst - dt * 6); this.sprayDrift *= Math.exp(-dt * 4); }
     p.speedWeapon = def.move ?? 1;
-    // (a shield held up takes what comes from the front; not mid-shove)
-    p.shielding = !!def.shield && this.switching <= 0 && !(this.bashT > 0.12) && !p.dead && !p.vehicle;
-    if (p.blockT > 0) p.blockT -= dt;
-    if (this.blockT > 0) this.blockT -= dt;
-    if (this.bashT > 0) {
-      this.bashT -= dt;
-      if (!this.bashHit && this.bashT < 0.25) { this.bashHit = true; this.bashStrike(); }
-    }
     if (!def.saw || !canAct || p.dead) { this.sawing = false; if (this.sawNode) this.sawSound(0); }
 
     if (canAct && !p.dead) {
@@ -1037,11 +995,7 @@ export class Weapons {
       if (step && order.length > 1) this.equip(order[(order.indexOf(this.current) + step + order.length) % order.length]);
       if (input.hit('KeyG')) this.throwGrenade();
 
-      if (def.shield) {
-        p.ads = THREE.MathUtils.damp(p.ads, 0, 12, dt);
-        if (input.mouse.leftPressed && this.bashT <= 0 && this.switching <= 0 && this.throwT <= 0) this.bash();
-        if (input.hit('KeyV') && this.knifeT <= 0 && this.throwT <= 0 && this.bashT <= 0) this.swing(false, true);
-      } else if (def.saw) {
+      if (def.saw) {
         this.updateSaw(dt, input, ammo);
       } else if (def.melee) {
         p.ads = THREE.MathUtils.damp(p.ads, 0, 12, dt);
@@ -1184,53 +1138,6 @@ export class Weapons {
     n.o.frequency.setTargetAtTime(freq, t, level === 2 ? 0.06 : 0.15);
     n.f.frequency.setTargetAtTime(bp, t, 0.08);
     n.gain.gain.setTargetAtTime(vol, t, 0.05);
-  }
-
-  // ---------------- the riot shield ----------------
-  bash() {
-    this.bashT = 0.42; this.bashHit = false;
-    this.g.audio.play('throw', { vol: 0.5, rate: 0.7 });
-  }
-
-  bashStrike() {
-    const g = this.g;
-    if (g.mode === 'client') { g.net.bash(); return; }
-    if (this.bashFrom(g.player, g.localSlot ?? 0)) { g.hud?.hitmarker(false, false); g.audio.play('hit', { vol: 0.45, jitter: 0 }); }
-  }
-
-  // a shove with the shield (whoever holds it): what's right in front staggers back, a little hurt
-  bashFrom(p, slot = 0) {
-    const g = this.g, def = DEFS.shield;
-    const fwd = new THREE.Vector3(-Math.sin(p.yaw), 0, -Math.cos(p.yaw));
-    let n = 0;
-    for (const zb of g.zombies.list) {
-      if (n >= 3 || zb.state === 'dead' || zb.state === 'climb' || zb.species === 'crow') continue;
-      const dx = zb.pos.x - p.pos.x, dz = zb.pos.z - p.pos.z, d = Math.hypot(dx, dz);
-      if (d > 2.1 * (zb.def.boss ? 1.4 : 1) || Math.abs(zb.pos.y - p.pos.y) > 1.4 || (dx * fwd.x + dz * fwd.z) / (d || 1) < 0.4) continue;
-      const point = zb.pos.clone(); point.y += 1.1;
-      const killed = g.zombies.damage(zb, def.dmg, point, fwd, false, 'shield', slot);
-      if (this.onHit) this.onHit(zb, killed, false, slot);
-      if (!killed && !zb.def.boss) {
-        const q = { x: zb.pos.x + fwd.x * 1.3, z: zb.pos.z + fwd.z * 1.3 };
-        g.colliders.resolve(q, 0.3, zb.pos.y + 0.3, zb.pos.y + 1.7, 2);
-        zb.pos.x = q.x; zb.pos.z = q.z;
-        zb.hitT = 0.9; zb.attackCd = Math.max(zb.attackCd, 1);
-        if (zb.state === 'attack') zb.state = 'chase';
-      }
-      n++;
-    }
-    const pvp = g.pvp && g.pvp.on ? g.pvp : null;
-    if (pvp) for (const q of pvp.players()) {
-      if (q === p || q.dead || q.vehicle || !pvp.foes(slot, q.slot)) continue;
-      const dx = q.pos.x - p.pos.x, dz = q.pos.z - p.pos.z, d = Math.hypot(dx, dz);
-      if (d > 2.1 || Math.abs(q.pos.y - p.pos.y) > 1.4 || (dx * fwd.x + dz * fwd.z) / (d || 1) < 0.4) continue;
-      const point = q.pos.clone(); point.y += 1.2;
-      pvp.hurt(q, def.dmg * 0.6, slot, 'shield', point, fwd);
-      q.vel.x += fwd.x * 6; q.vel.z += fwd.z * 6;
-      n++;
-    }
-    if (n) g.audio.play('clank', { pos: p.pos, vol: 0.9 });
-    return n;
   }
 
   // ---------------- mini missiles ----------------
@@ -1885,9 +1792,7 @@ export class Weapons {
       const f = 1 - this.throwT / THROW_TIME, k = Math.sin(Math.min(1, f * 1.4) * Math.PI);
       h.position.y -= k * 0.22; rx -= k * 0.5; rz -= k * 0.3;
     }
-    // the shield shoved out and back; the chainsaw shaking (hard when it cuts)
-    if (def.shield && this.bashT > 0) { const k = Math.sin((1 - this.bashT / 0.42) * Math.PI); h.position.z -= k * 0.16; h.position.x += k * 0.06; ry -= k * 0.25; }
-    if (def.shield && this.blockT > 0) { const k = this.blockT / 0.2; h.position.z += k * 0.05; rx += Math.sin(k * 20) * 0.03 * k; }   // (a blow landing on it)
+    // the chainsaw shaking (hard when it cuts)
     if (def.saw && this.ammo.mag > 0) {
       const a = this.sawing ? 0.006 : 0.0018, t = performance.now();
       h.position.x += Math.sin(t * 0.21) * a; h.position.y += Math.sin(t * 0.37) * a;

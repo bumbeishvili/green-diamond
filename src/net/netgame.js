@@ -102,7 +102,6 @@ class Remote {
     if (c.stairs != null) g.stairs.applyCode(p, c.stairs);
     p.yaw = c.yaw; p.pitch = c.pitch; p.ads = c.ads;
     p.speedWeapon = DEFS[WEAPONS[c.weapon]]?.move ?? 1;
-    p.shielding = WEAPONS[c.weapon] === 'shield' && !p.vehicle;
     p.update(TICK, this.input.set(c.bits), true);
     if (p.vehicle) g.vehicles.driveTick(p.vehicle, TICK, this.input);
   }
@@ -343,10 +342,6 @@ export class Host {
         this.fx.push(['w', r.slot]);
         break;
       }
-      case 'bash':
-        if (p.dead) return;
-        if (g.weapons.bashFrom(p, r.slot)) this.s.sendTo(id, 'rel', { t: 'hit', k: false, h: false });
-        break;
       case 'msl':
         if (p.dead) return;
         g.weapons.spawnMissile(v3(m.p), v3(m.v), { by: r.slot, id: m.id });
@@ -649,8 +644,6 @@ export class Host {
   hitFeedback(slot, killed, head) { const r = this.bySlot(slot); if (r) this.s.sendTo(r.id, 'rel', { t: 'hit', k: killed, h: head }); }
   pointsFeed(slot, n) { const r = this.bySlot(slot); if (r) this.s.sendTo(r.id, 'rel', { t: 'pts', n }); }
   hurt(p, amount, x, z) { const r = p.remote; if (r) this.s.sendTo(r.id, 'rel', { t: 'hurt', a: +amount.toFixed(1), x: +x.toFixed(2), z: +z.toFixed(2) }); }
-  // (a blow on someone's shield: everyone sees the sparks, and its holder feels it)
-  blocked(p, x, z) { const slot = p.slot ?? -1; this.say({ t: 'blk', s: slot, x: +x.toFixed(2), z: +z.toFixed(2) }); }
   wave(w, note) { this.say({ t: 'wave', w, note }); }
   waveEnd(w) { this.say({ t: 'waveEnd', w }); }
   notice(text) { this.say({ t: 'notice', text }); }
@@ -736,13 +729,6 @@ export class Client {
       case 'waveEnd': g.hud.banner(`Wave ${m.w} survived`, 'The shops are open: press F to buy'); g.audio.play('waveEnd', { vol: 0.45 }); g.onWaveEnd?.(m.w); break;
       case 'notice': g.hud.notice(m.text); break;
       case 'banner': g.hud.banner(m.a, m.b); break;
-      case 'blk': {
-        // a blow on a riot shield: ours, or someone's we can see
-        const av = m.s === this.slot ? null : this.avatars.list.get(m.s);
-        const pl = m.s === this.slot ? g.player : av ? { pos: av.pos } : null;
-        if (pl) g.shieldFx(pl, m.x, m.z);
-        break;
-      }
       case 'spit': if (this.match) g.zombies.spitFx(m.id, m.p, m.v); break;
       case 'splat': if (this.match) g.zombies.splatFx(m.id, m.p, m.r); break;
       case 'double': g.director.double = 30; g.hud.banner('DOUBLE POINTS', ''); g.audio.play('pickup', { vol: 1 }); break;
@@ -1124,7 +1110,6 @@ export class Client {
   melee(heavy) { this.s.sendTo(this.s.hostId, 'rel', { t: 'melee', heavy }); }
   saw() { this.s.sendTo(this.s.hostId, 'rel', { t: 'saw' }); }
   learnReward(m) { this.s.sendTo(this.s.hostId, 'rel', { t: 'learn', ...m }); }
-  bash() { this.s.sendTo(this.s.hostId, 'rel', { t: 'bash' }); }
   missile(id, p, v) { this.s.sendTo(this.s.hostId, 'rel', { t: 'msl', id, p: r3(p), v: r3(v) }); }
   grenade(p, v) { this.s.sendTo(this.s.hostId, 'rel', { t: 'nade', p: r3(p), v: r3(v) }); }
   arrow(id, p, v, dmg, pierce, aimed) { this.s.sendTo(this.s.hostId, 'rel', { t: 'arrow', id, p: r3(p), v: r3(v), dmg, pierce, a: aimed ? 1 : 0 }); }

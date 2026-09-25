@@ -103,7 +103,7 @@ export class PvP {
     if (victim.shieldT > 0) return false;
     if (by != null) victim.lastHit = { by, how, t: g.time || 0 };
     const fx = point && dir ? point.x - dir.x * 3 : victim.pos.x, fz = point && dir ? point.z - dir.z * 3 : victim.pos.z;
-    if (!victim.damage(amount, fx, fz)) { if (victim.blocks(fx, fz)) g.zombies.onBlocked?.(victim, fx, fz); return false; }
+    if (!victim.damage(amount, fx, fz)) return false;
     if (point) {
       g.effects.bloodBurst(point, dir || this.tmp.set(0, 0, 1));
       g.net?.blood?.('blood', point, dir);

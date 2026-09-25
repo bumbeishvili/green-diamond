@@ -189,9 +189,9 @@ The fallback number-plate texture (Georgian format, made-up number "PR-010-US"; 
 
 CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/): no attribution required. The licence was checked on the poly.pizza model page, on the quaternius.com pages of both packs, on the itch.io page and in the License.txt inside the Universal Animation Library download. Suggested credit: "Survivor built from the SWAT character (Ultimate Modular Men Pack) and the Universal Animation Library by Quaternius (CC0)". Changes: normalised to metres, +Z forward and 1.78 m; parts joined into one mesh; arms lengthened; bones renamed from .L/.R to _L/_R; materials renamed (Swat to Outfit, Swat_Black to Gear) with metallic set to 0; 3 clips dropped and 2 renamed; the Run loops closed; Death and Roll kept above the floor; 7 UAL clips retargeted; 14 two-handed rifle clips and the Weapon_R socket authored. Details are in manifest_extra.json.
 
-## Weapons added 2026-09-25: AUG, MSR, chainsaw, ballistic shield, RPG-7 launcher and rocket
+## Weapons added 2026-09-25: AUG, MSR, chainsaw, RPG-7 launcher and rocket
 
-All six files are static GLBs in metres (1 unit = 1 m) with the same axes as `m4.glb` and `autosniper.glb`: muzzle / bar / tube / shield face along +X, up +Y, the weapon's right side +Z, one root node with an identity transform. Checked with the Khronos glTF Validator (0 errors) and loaded with three.js r186 GLTFLoader (MeshStandardMaterial only, no console messages).
+All five files are static GLBs in metres (1 unit = 1 m) with the same axes as `m4.glb` and `autosniper.glb`: muzzle / bar / tube along +X, up +Y, the weapon's right side +Z, one root node with an identity transform. Checked with the Khronos glTF Validator (0 errors) and loaded with three.js r186 GLTFLoader (MeshStandardMaterial only, no console messages).
 
 ### CC-BY 4.0 (https://creativecommons.org/licenses/by/4.0/), attribution required
 
@@ -212,14 +212,12 @@ Both were downloaded without a login from the Objaverse mirror on Hugging Face (
 | File | Name | Author | Source |
 |---|---|---|---|
 | `weapons/chainsaw.glb` | Chainsaw | loafbrr_1 | https://opengameart.org/content/chainsaw-1 |
-| `weapons/shield.glb` | Ballistic shield | tbbk | https://opengameart.org/content/ballistic-shield |
 | `weapons/launcher.glb` | Low poly RPG7 (launcher with a loaded PG-7 grenade) | Lucian Pavel | https://opengameart.org/content/low-poly-rpg7 |
 | `weapons/missile.glb` | RPG-7 grenade from "Low poly RPG7", tail fins added | Lucian Pavel (fins: made for this project, CC0) | https://opengameart.org/content/low-poly-rpg7 |
 
 Changes (licence checked on each OpenGameArt page, and in the chainsaw's README.txt):
 
 - `chainsaw.glb`: the glTF version from the archive, with its bloodied texture set (base colour, normal, metallic-roughness re-encoded as 1024 px JPEG). Scaled to 0.80 m with the bar along +X (bar and chain on the right side), origin at the rear handle grip; empties `Grip_Front` (top of the front handle), `Bar_Tip` and `Trigger` (4.5 cm ahead of and 3.5 cm above the rear grip, where weapons.js expects a trigger, so its grip finder lands on the rear handle).
-- `shield.glb`: converted from the .blend, turned to face +X, origin at the upper handle (hand grip), 0.60 m wide and 1.00 m tall. Materials re-authored (matte black, steel rim, tinted see-through `Glass` in the viewing window); empties `Handle_Lower` and `Viewport`.
 - `launcher.glb`: converted from FBX, levelled and turned so the tube points along +X, scaled to 1.10 m overall (0.785 m tube plus the loaded grenade), origin at the top of the trigger grip. The loaded grenade is its own node, `Rocket`, so it can be hidden after firing. The tube's front and rear openings are painted dark (`Bore_Dark`). Empties `Attach_Muzzle`, `Attach_Backblast`, `Trigger` and `Grip_Rear`.
 - `missile.glb`: the same grenade as a separate model, 0.45 m long along +X with its origin at its centre; four small tail fins added (flat `Fin_Metal`); empties `Nose` and `Exhaust`.
 

@@ -195,7 +195,7 @@ export class Practice {
         <div><b>${s.best}</b><span>best streak</span></div>
         <div><b>${pct}%</b><span>right, of ${s.answered} answers</span></div>
       </div>
-      <p class="lnote">${this.mode === 'off' ? 'English practice is off: switch it on in the menu (Light, Normal or Intense).' : `Practice is on (${this.mode}): a round after ${EVERY[this.mode] === 1 ? 'every wave' : `every ${EVERY[this.mode]} waves`}, and word crates round the complex.`}</p>
+      <p class="lnote">${this.mode === 'off' ? 'English practice is off: switch it on in Settings (Light, Normal or Intense).' : `Practice is on (${this.mode}): a round after ${EVERY[this.mode] === 1 ? 'every wave' : `every ${EVERY[this.mode]} waves`}, and word crates round the complex.`}</p>
       <div class="lbtns"><button class="btn" data-a="place" type="button">${s.placed ? 'Find my level again' : 'Find my level'}</button>
       <button class="btn ghost" data-a="reset" type="button">Start over</button><button class="btn ghost" data-a="close" type="button">Close</button></div>`;
     el.classList.remove('hidden');

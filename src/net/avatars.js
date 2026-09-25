@@ -177,26 +177,13 @@ function nameTag() {
   return { sp, c, tex, key: '' };
 }
 
-// What else they might be holding instead of the rifle (built once, shared): the riot shield up
-// in front, the chainsaw at the hip, the missile pack on the shoulder.
+// What else they might be holding instead of the rifle (built once, shared): the chainsaw at the hip,
+// the missile pack on the shoulder.
 let carryKit = null;
 function carryParts() {
   if (carryKit) return carryKit;
-  const cv = document.createElement('canvas'); cv.width = 128; cv.height = 256;
-  const c = cv.getContext('2d');
-  c.fillStyle = 'rgba(28,34,46,0.5)'; c.fillRect(0, 0, 128, 256);
-  c.strokeStyle = 'rgba(8,9,12,0.95)'; c.lineWidth = 8; c.strokeRect(4, 4, 120, 248);
-  c.fillStyle = 'rgba(236,240,244,0.95)'; c.fillRect(8, 74, 112, 46);
-  c.fillStyle = '#0f1520'; c.textAlign = 'center'; c.textBaseline = 'middle';
-  c.font = 'bold 22px sans-serif'; c.fillText('პოლიცია', 64, 92);
-  c.font = 'bold 13px sans-serif'; c.fillText('POLICE', 64, 111);
-  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
-  const sg = new THREE.PlaneGeometry(0.6, 1.0, 8, 1), pa = sg.attributes.position;
-  for (let i = 0; i < pa.count; i++) { const x = pa.getX(i); pa.setZ(i, -x * x * 0.5); }
-  sg.computeVertexNormals();
   const M = (color, r = 0.6, m = 0.2) => new THREE.MeshStandardMaterial({ color, roughness: r, metalness: m });
   carryKit = {
-    shieldGeo: sg, shieldMat: new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.2, metalness: 0.2, side: THREE.DoubleSide, depthWrite: false }),
     orange: M(0xe8641c, 0.55, 0.1), steel: M(0xb9bec4, 0.3, 0.9), olive: M(0x4d5540, 0.75, 0.1), black: M(0x151515, 0.7, 0.3),
   };
   return carryKit;
@@ -205,9 +192,7 @@ function carryParts() {
 function carryMesh(kind) {
   const K = carryParts(), g = new THREE.Group();
   const box = (w, h, d, m, x, y, z) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); o.castShadow = true; g.add(o); };
-  if (kind === 'shield') {
-    const s = new THREE.Mesh(K.shieldGeo, K.shieldMat); s.position.set(0.1, 1.05, 0.45); s.castShadow = true; g.add(s);
-  } else if (kind === 'chainsaw') {
+  if (kind === 'chainsaw') {
     box(0.12, 0.13, 0.26, K.orange, -0.12, 1.0, 0.32);
     box(0.012, 0.06, 0.5, K.steel, -0.09, 0.99, 0.7);
     box(0.016, 0.07, 0.5, K.black, -0.09, 0.99, 0.7);
@@ -319,9 +304,9 @@ export class Avatars {
     this.tag(av, st, foe);
   }
 
-  // what's in their hands: the rifle, or the shield / chainsaw / missile pack (the knife: nothing to see)
+  // what's in their hands: the rifle, or the chainsaw / missile pack (the knife: nothing to see)
   carry(av, kind) {
-    const show = kind === 'shield' || kind === 'chainsaw' || kind === 'launcher' ? kind : null;
+    const show = kind === 'chainsaw' || kind === 'launcher' ? kind : null;
     if (av.carrying === (show || kind)) return;
     av.carrying = show || kind;
     if (av.parts.gun) av.parts.gun.visible = !show && kind !== 'knife';
