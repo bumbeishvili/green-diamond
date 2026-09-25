@@ -14,6 +14,8 @@ const POWERUPS = {
 };
 // what each kind pays on top of the kill (the harder ones, the more)
 const KILL_BONUS = { brute: 120, screamer: 60, wolf: 60, spitter: 60, leaper: 50, riot: 90, giant: 600 };
+// the last wave: clear it and Green Diamond is yours (alone and in co-op; PvP plays to its clock)
+export const FINAL_WAVE = 10;
 const centroid = (pts) => [pts.reduce((a, q) => a + q[0], 0) / pts.length, pts.reduce((a, q) => a + q[1], 0) / pts.length];
 
 export class Director {
@@ -318,6 +320,7 @@ export class Director {
   living() { const l = this.players.filter((p) => !p.dead); return l.length ? l : this.players; }
   focus() { const l = this.living(); return l[Math.floor(Math.random() * l.length)]; }
   get teamSize() { return Math.max(1, this.players.length); }
+  get finalWave() { return this.g.pvp && this.g.pvp.on ? 0 : FINAL_WAVE; }
 
   // ---- waves ----
   // bigger teams face more of them, a little tougher (co-op)
@@ -333,31 +336,41 @@ export class Director {
   maxAlive(w) {
     const phone = this.g.quality && this.g.quality.phone ? 0.75 : 1;   // (a phone running the horde: fewer at once)
     if (this.quick) return Math.round(Math.min(10 + w * 2.5, 30) * (1 + 0.4 * (this.teamSize - 1)) * (this.crowd < 1 ? 0.6 : 1) * phone);
-    return Math.round(Math.min(8 + w * 2, 26) * (1 + 0.4 * (this.teamSize - 1)) * phone);
+    return Math.round(Math.min(8 + w * 2, 28) * (1 + 0.4 * (this.teamSize - 1)) * phone);
   }
   spawnGap(w) { return this.quick ? Math.max(0.3, 1.4 - w * 0.1) : Math.max(0.35, 2.2 - w * 0.14); }
-  health(w) { return (w <= 9 ? 90 + 55 * w : (90 + 55 * 9) * Math.pow(1.09, w - 9)) * (1 + 0.1 * (this.teamSize - 1)); }
+  // a zombie's health: 150 at wave 1, the same step up every wave to 1000 at the last (wave 10);
+  // past it (a PvP match runs on) 9% more a wave. A bigger team's are a little tougher.
+  health(w) {
+    const h = w <= FINAL_WAVE ? 150 + (1000 - 150) * (w - 1) / (FINAL_WAVE - 1) : 1000 * Math.pow(1.09, w - FINAL_WAVE);
+    return h * (1 + 0.1 * (this.teamSize - 1));
+  }
   damage(w) { return 34 + Math.min(26, w * 2); }
 
   startWave() {
     this.wave++;
-    const w = this.wave;
+    const w = this.wave, last = w === this.finalWave;
     this.state = 'active';
-    this.toSpawn = this.total = this.waveCount(w);
-    this.spawnT = 1.5;
-    // stray dog packs from wave 3, crows from wave 4
+    // Every wave harder than the one before, for sure (nothing left to chance): the dogs every wave
+    // from 3 (a wolf leads them from 6, a second pack from 7), the crows every wave from 4; and every
+    // fifth wave a giant (two from wave 15, three from 25) in place of twelve of the others, so the
+    // wave after it is harder still.
     this.packs = [];
-    if (w >= 3 && (w % 2 === 1 || Math.random() < 0.5)) this.packs.push({ at: 0.25 + Math.random() * 0.3, kind: 'dogs', n: Math.min(6, 2 + Math.floor(w / 3)) });
-    if (w >= 7 && Math.random() < 0.6) this.packs.push({ at: 0.6 + Math.random() * 0.25, kind: 'dogs', n: Math.min(6, 2 + Math.floor(w / 4)) });
-    if (w >= 4 && Math.random() < 0.7) this.packs.push({ at: 0.35 + Math.random() * 0.4, kind: 'crows', n: Math.min(8, 3 + Math.floor(w / 4)) });
-    // every fifth wave, a giant (two from wave 15, three from 25)
-    if (w % 5 === 0) this.packs.push({ at: 0.15 + Math.random() * 0.15, kind: 'giant', n: 1 + Math.floor((w - 5) / 10) });
+    if (w >= 3) this.packs.push({ at: 0.25 + Math.random() * 0.3, kind: 'dogs', n: Math.min(6, 2 + Math.floor(w / 3)) });
+    if (w >= 7) this.packs.push({ at: 0.6 + Math.random() * 0.25, kind: 'dogs', n: Math.min(6, 2 + Math.floor(w / 4)) });
+    if (w >= 4) this.packs.push({ at: 0.35 + Math.random() * 0.4, kind: 'crows', n: Math.min(8, 3 + Math.floor(w / 4)) });
+    const giants = w % 5 === 0 ? 1 + Math.floor((w - 5) / 10) : 0;
+    if (giants) this.packs.push({ at: 0.15 + Math.random() * 0.15, kind: 'giant', n: giants });
+    this.toSpawn = this.total = Math.max(4, this.waveCount(w) - 12 * giants);
+    this.spawnT = 1.5;
     const g = this.g;
+    g.hud.finalWave = this.finalWave;
     g.hud.wave(w);
-    const note = w === 1 ? 'They’re coming through the gates' : w === 3 ? 'Listen for the dogs'
-      : w === 4 ? 'Watch the sky, and the leapers: they pounce' : w === 5 ? 'Spitters: keep moving, stay out of the acid'
-        : w === 6 ? 'Riot police: the shield stops bullets. Shoot their legs, or get round them' : '';
-    g.hud.banner(`Wave ${w}`, note);
+    const note = last ? 'The last one: hold out through it and Green Diamond is yours'
+      : w === 1 ? 'They’re coming through the gates' : w === 3 ? 'Listen for the dogs'
+        : w === 4 ? 'Watch the sky, and the leapers: they pounce' : w === 5 ? 'Spitters: keep moving, stay out of the acid'
+          : w === 6 ? 'Riot police: the shield stops bullets. Shoot their legs, or get round them' : '';
+    g.hud.banner(last ? 'Final wave' : `Wave ${w}`, note);
     // wave 1: a distant air-raid siren somewhere over Dighomi, quiet and fading; later waves: a soft low boom
     if (w === 1) g.audio.play('waveStart', { vol: 0.3, lowpass: 1300, fade: 5, jitter: 0 });
     else g.audio.play('waveSoft', { vol: 0.8 });
@@ -529,6 +542,7 @@ export class Director {
     const g = this.g;
     const w = g.weapons, a = w.ammo;
     if (g.mode === 'client') return this.clientUpdate(dt);
+    if (this.state === 'won') return;
     if (a && !w.def.melee && !w.def.bow && a.mag + a.reserve <= w.def.mag * 1.5 && !this.ammoHinted?.[w.current]) {
       (this.ammoHinted ||= {})[w.current] = true;
       g.hud.notice('Low on ammo: grab an ammo can, press F at an ammo crate (on the map), or refill where you bought the gun');
@@ -577,6 +591,8 @@ export class Director {
     // the last few: they hurry (and the ones lost far away are brought nearer sooner)
     g.zombies.hurry = this.toSpawn <= 0 && !this.packs.length && g.zombies.alive <= 4;
     if (this.toSpawn <= 0 && !this.packs.length && g.zombies.alive === 0) {
+      // the last one cleared: won (co-op: the host ends the match for everyone)
+      if (this.finalWave && this.wave >= this.finalWave) { this.state = 'won'; g.audio.play('waveEnd', { vol: 0.6 }); g.onVictory?.(); return; }
       this.state = 'intermission';
       this.timer = this.quick ? 7 : 11;
       g.hud.banner(`Wave ${this.wave} survived`, 'The shops are open: press F to buy');

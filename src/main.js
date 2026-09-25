@@ -383,6 +383,7 @@ class Game {
     this.hud.show(!URLFLAGS.nohud);
     this.hud.coop(true);
     this.hud.points(this.director.points);
+    this.hud.finalWave = this.director.finalWave;
     this.hud.wave(this.director.wave, false);
     this.weapons.hudWeapon();
     this.hud.slots(this.weapons.owned, this.weapons.current);
@@ -402,6 +403,7 @@ class Game {
       this.players = null;
       this.zombies.targets = null;
       if (m) { this.hour = m.hour; this.atmo.setHour(this.hour); this.targetHour = m.targetHour ?? null; }
+      this.hud.finalWave = this.director.finalWave;
       if (m && m.wave) this.hud.wave(m.wave, false);
     }
     const mins = (rules && rules.minutes) || 15, team = teamOf(rules, this.localSlot ?? 0);
@@ -422,7 +424,7 @@ class Game {
     const mins = Math.round(((this.rules && this.rules.minutes) || 15));
     $('go-title').textContent = m.win ? 'You held Green Diamond' : 'Overrun';
     $('go-title').classList.toggle('win', !!m.win);
-    $('go-sub').textContent = m.win ? `${mins} minutes, ${m.wave} wave${m.wave === 1 ? '' : 's'}, and you're still standing.`
+    $('go-sub').textContent = m.win ? (this.rules && this.rules.timed ? `${mins} minutes, ${m.wave} wave${m.wave === 1 ? '' : 's'}, and you're still standing.` : `All ${m.wave} waves: Green Diamond is yours.`)
       : `Everyone went down in wave ${m.wave}${m.wave > 1 ? `: you held out through ${m.wave - 1}` : ''}.`;
     const esc = (t) => String(t).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
     const st = $('go-stats');
@@ -492,8 +494,9 @@ class Game {
 
   clientWave(w, note) {
     this.director.wave = w;
+    this.hud.finalWave = this.director.finalWave;
     this.hud.wave(w);
-    this.hud.banner(`Wave ${w}`, note || '');
+    this.hud.banner(w === this.hud.finalWave ? 'Final wave' : `Wave ${w}`, note || '');
     if (w === 1) this.audio.play('waveStart', { vol: 0.3, lowpass: 1300, fade: 5, jitter: 0 });
     else this.audio.play('waveSoft', { vol: 0.8 });
     this.onWave(w);
@@ -596,6 +599,22 @@ class Game {
     if (w <= 2) this.hud.flashKeys(6);
     // the evening goes on: 17:15 at wave 1, sunset around wave 8, night after wave 11
     if (URLFLAGS.time == null) this.targetHour = START_HOUR + (w - 1) * HOURS_PER_WAVE;
+  }
+
+  // the last wave cleared: alone, the win screen; in co-op the host ends the match for everyone
+  onVictory() {
+    if (this.mode === 'host' && this.net) { this.net.end(true); return; }
+    if (this.mode !== 'solo' || this.state !== 'playing') return;
+    this.state = 'over';
+    this.input.unlock();
+    const d = this.director, w = this.weapons.stats;
+    this.hud.banner('Green Diamond is yours', `All ${d.wave} waves, and you're still standing`);
+    $('go-title').textContent = 'You held Green Diamond';
+    $('go-title').classList.add('win');
+    $('go-sub').textContent = `All ${d.wave} waves, and you're still standing.`;
+    $('go-stats').innerHTML = `<span>Waves survived</span><span>${d.wave}</span><span>Zombies killed</span><span>${d.kills}</span>`
+      + `<span>Headshots</span><span>${d.headshots}</span><span>Accuracy</span><span>${w.shots ? Math.round((w.hits / w.shots) * 100) : 0}%</span><span>Points</span><span>${d.points}</span>`;
+    setTimeout(() => $('gameover').classList.remove('hidden'), 2500);
   }
 
   gameOver() {

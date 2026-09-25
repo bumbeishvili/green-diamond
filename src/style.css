@@ -117,6 +117,7 @@ canvas#game { position: fixed; inset: 0; width: 100vw; height: 100vh; display: b
   text-shadow: 0 0 14px rgba(180, 0, 0, .8), 2px 2px 0 #300; letter-spacing: .02em;
 }
 #wave.flash { animation: waveflash 2.4s ease-in-out; }
+#wave-of { font-size: .36em; margin-left: .06em; opacity: .8; letter-spacing: 0; }
 @keyframes waveflash { 0%, 100% { color: #a3050c; } 20%, 60% { color: #fff; text-shadow: 0 0 30px #fff; } }
 #points { position: absolute; right: 36px; bottom: 150px; font-size: 34px; color: #f2d36b; text-shadow: 0 2px 0 #000, 0 0 10px rgba(0,0,0,.6); }
 #feed { position: absolute; right: 36px; bottom: 190px; display: flex; flex-direction: column-reverse; align-items: flex-end; gap: 2px; }

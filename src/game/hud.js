@@ -16,7 +16,7 @@ const $ = (id) => document.getElementById(id);
 export class HUD {
   constructor(level) {
     this.el = {
-      hud: $('hud'), wave: $('wave'), waveNum: $('wave-num'), points: $('points-num'), feed: $('feed'),
+      hud: $('hud'), wave: $('wave'), waveNum: $('wave-num'), waveOf: $('wave-of'), points: $('points-num'), feed: $('feed'),
       health: $('health'), healthBar: $('health-bar'), ammoName: $('ammo-name'), mag: $('ammo-mag'), res: $('ammo-res'),
       prompt: $('prompt'), banner: $('banner'), hit: $('hitmarker'), dmg: $('damage'), lowhp: $('lowhp'),
       cross: $('crosshair'), map: $('minimap'), stats: $('stats'),
@@ -111,6 +111,7 @@ export class HUD {
 
   wave(n, flash = true) {
     this.el.waveNum.textContent = n > 0 ? n : '';
+    if (this.el.waveOf) this.el.waveOf.textContent = n > 0 && this.finalWave ? `/${this.finalWave}` : '';   // (of how many)
     if (flash) { this.el.wave.classList.remove('flash'); void this.el.wave.offsetWidth; this.el.wave.classList.add('flash'); }
   }
 

@@ -48,8 +48,8 @@ When everyone is in, the host presses **Start match**. Two players is enough, an
 match that's already running (in co-op they turn up next to the team; in teams, on the smaller side).
 
 Co-op:
-- **The match**: no clock. Wave after wave, as alone, but grown for the team, until the whole team
-  is down at once.
+- **The match**: no clock. The ten waves, as alone, but grown for the team: clear the tenth and
+  Green Diamond is yours. If the whole team is down at once, it's over.
 - **Going down**: you come back after 4 seconds, next to a teammate. If the whole team is down at
   once, it's over.
 - **Points and shops**: everyone has their own points, weapons and ammo. Power-ups (max ammo,
@@ -146,7 +146,8 @@ Drone: WASD to move where you look, Space to climb, Ctrl or Shift to descend, an
 
 ### How it plays
 
-- Zombies come in waves: out of the lobbies, up the ramps from the underground car parks, through the Bob Walsh Street gates, over the courtyard railing, and through broken fence panels on the construction side.
+- Ten waves, each harder than the one before, the last with a giant: clear the tenth and Green Diamond is yours (the counter shows how far you are, 3/10). A zombie's health climbs the same step each wave, from 150 at wave 1 to 1000 at wave 10; there are more of them each time, they come faster, hit harder, and the dogs (from wave 3) and crows (from 4) come every wave.
+- Zombies come out of the lobbies, up the ramps from the underground car parks, through the Bob Walsh Street gates, over the courtyard railing, and through broken fence panels on the construction side.
 - Kinds of zombie: walkers; runners; crawlers (low, hard to hit); brutes (big, soak up bullets, knock you back); screamers (stop and scream, which speeds up everything nearby and brings more); bloaters (glowing hazmat suits that burst when they reach you or die, taking out anything close). From wave 3, packs of zombie dogs, mangy and rotting, ribs through a torn flank, eyes burning (a wolf leads them from wave 6); from wave 4, crows that dive at your head. The animals nip rather than maul, but they're fast. Crows find you on the roofs and in the drone too.
 - And newer ones: **leapers** (wave 4 on) crouch a few metres off and pounce, knocking you down; **spitters** (wave 5 on) keep their distance and spit acid in an arc, and the puddle burns while you stand in it; **riot police** (wave 6 on) carry a helmet and a პოლიცია shield that stops most bullets from the front: shoot their legs, catch them mid-swing, get round them or blow them up; and every fifth wave a **giant** twice your height, with its health bar across the top. It shrugs off a magazine or three, flings you, stops a car dead and smashes the one you're sitting in.
 - Sitting in a car doesn't save you for long: zombies claw at it, dent it and break the windows, then reach in, and when it's a wreck they drag you out.
@@ -154,7 +155,7 @@ Drone: WASD to move where you look, Space to climb, Ctrl or Shift to descend, an
 - The clock is real Tbilisi sun: wave 1 starts at 17:15, sunset comes around wave 8, and it's night after that.
 - Every block with a roof housing has stairs. Press F at a lobby door to go up and at the roof door to come down. The zombies use the stairs too, so a roof is a choke point, not a safe room.
 - Ammo cans, first-aid kits, bundles of lari and now and then a gun lie around the complex, some of them up on the roofs. More turn up every wave and during it (they show on the minimap). A gun you don't have is yours; one you have, its ammo.
-- You earn points for hits and kills, and more as the waves get tougher (a kill pays about 2.5 times as much by wave 10). Spend them at the shops:
+- You earn points for hits and kills, and more as the waves get tougher (a kill pays about 3 times as much by wave 10). Spend them at the shops:
 
 | Place | Sells |
 |---|---|
