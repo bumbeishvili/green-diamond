@@ -57,7 +57,8 @@ export class Director {
     // (OSM calls it Diamond; the shop there is the fruit and vegetable shop by Gate 1)
     add(byName('Diamond'), 'deagle', 'Desert Eagle at ხილ ბოსტანი, the fruit shop', DEFS.deagle.price);
     add(byName('Nikora'), 'shotgun', 'TOZ-194 shotgun at Nikora', DEFS.shotgun.price);
-    // (ammo is only at the crate by the pool house; the gunsmith's bench and the armour are shops of their own)
+    // (the gunsmith's bench and the armour are shops of their own; ammo: the crates below, and each gun
+    // shop fills up the gun it sold you)
     add(byName('Ori Nabiji'), 'upgrade', 'Gunsmith\'s bench behind 2 Nabiji', 0);
     add(byName('36.6'), 'armour', 'Pharmacy 36.6: body armour', 0);
     add(byName('Format Fit'), 'stamina', 'Format Fit: faster legs', 2000);
@@ -92,6 +93,38 @@ export class Director {
     if (south && south.lights.length) {
       const [lx, ly] = south.lights[Math.floor(south.lights.length * 0.7)];
       S.push({ x: lx, z: -ly, y: south.floor, item: 'laser', label: 'Helios laser rifle in the crate down in the south car park', cost: DEFS.laser.price, crate: true, fixed: true });
+    }
+    // more ammo crates round the complex: at both gate booths, by the round courts east and
+    // north-west, and down in each car park (nearest the middle, away from its other crate).
+    // (Every player's list must match, index for index, whatever their settings: the trees, fewer
+    // on low quality, don't count, and a crate goes in even where there's no better spot.)
+    const NOTREES = { tree: true };
+    const clear = (x, z, y) => {   // (a spot near x, z with room for the crate beside it, clear of the rest)
+      for (const d of [0, 1.5, 3, 4.5, 6]) for (let k = 0; k < (d ? 8 : 1); k++) {
+        const a = k * Math.PI / 4, px = x + Math.cos(a) * d, pz = z + Math.sin(a) * d, py = y ?? g.hm.atWorld(px, pz);
+        if (y == null && L.buildings.some((b) => pointInPoly(px, -pz, b.poly.outer) || pointInPoly(px + 1, -pz, b.poly.outer))) continue;
+        if (S.some((q) => Math.hypot(q.x - px, q.z - pz) < 3.2 && Math.abs((q.y ?? py) - py) < 2)) continue;
+        if (g.colliders.resolve({ x: px, z: pz }, 1.1, py + 0.1, py + 1.5, 1, NOTREES) || g.colliders.resolve({ x: px + 1, z: pz }, 0.8, py + 0.1, py + 1.5, 1, NOTREES)) continue;
+        return { x: px, z: pz };
+      }
+      return { x, z };
+    };
+    const ammo = (x, z, where, y = null) => {
+      const p = clear(x, z, y);
+      S.push({ x: p.x, z: p.z, y: y ?? undefined, item: 'ammo', label: `Ammo crate ${where}: every gun full, and grenades`, cost: 750, crate: true, fixed: true });
+    };
+    for (const b of L.buildings.filter((q) => q.group === 'guard')) {
+      const [cx, cy] = centroid(b.poly.outer);
+      ammo(cx - 5.5, -cy, cy > 0 ? 'at the Gate 2 booth' : 'at the Gate 1 booth');
+    }
+    for (const c of (L.sport || []).filter((q) => q.kind === 'court_round' && q !== stadium)) ammo(c.x + c.w / 2 + 2.5, -c.y, `by the round court (${-c.y < 0 ? 'north' : 'south'}${c.x < 0 ? '-west' : '-east'})`);
+    for (const u of g.underground?.list || []) {
+      if (!u.lights.length) continue;
+      const mx = u.lights.reduce((a, l) => a + l[0], 0) / u.lights.length, my = u.lights.reduce((a, l) => a + l[1], 0) / u.lights.length;
+      const mine = S.filter((q) => q.y != null && q.y < -1 && u.lights.some(([lx, ly]) => Math.hypot(lx - q.x, -ly - q.z) < 10));
+      const score = ([lx, ly]) => Math.min(30, ...mine.map((q) => Math.hypot(lx - q.x, -ly - q.z))) - Math.hypot(lx - mx, ly - my) * 0.5;
+      const [lx, ly] = u.lights.reduce((a, l) => (score(l) > score(a) ? l : a));
+      ammo(lx, -ly, `down in the ${u.name === 'middle' ? 'big' : u.name} car park`, u.floor);
     }
     // the SCAR 20S: a cache on the highest roof you can climb to; the MSR on the next highest
     const roofs = [...g.stairs.list].sort((a, b) => b.top - a.top);
@@ -192,7 +225,7 @@ export class Director {
     const w = this.g.weapons, p = this.g.player;
     if (s.item === 'upgrade') { const l = w.level(w.current); return w.canUpgrade(w.current) && l < UPGRADES.length ? UPGRADES[l].price : null; }
     if (s.item === 'armour') return p.armour < ARMOUR.length ? ARMOUR[p.armour].price : null;
-    if (this.isGun(s.item) && w.owned[s.item]) return null;   // (you have it: ammo is at the crate)
+    if (this.isGun(s.item) && w.owned[s.item]) return this.full(s.item) ? null : this.refillCost(s.item);   // (you have it: the shop fills it up)
     if (s.item === 'stamina' && p.speedMul > 1) return null;
     return s.cost;
   }
@@ -212,9 +245,25 @@ export class Director {
       const a = ARMOUR[p.armour];
       return `Pharmacy 36.6: body armour ${a.name}: ${a.max} health, ${Math.round((1 - a.take) * 100)}% less damage`;
     }
-    if (this.isGun(s.item) && w.owned[s.item]) return DEFS[s.item].saw ? 'You have the chainsaw: fuel is at the crate by the pool house' : `You have the ${DEFS[s.item].short}: ammo is at the crate by the pool house`;
+    if (this.isGun(s.item) && w.owned[s.item]) {
+      const d = DEFS[s.item], what = d.saw ? 'fuel' : d.bow ? 'arrows' : d.launcher ? 'missiles' : 'ammo';
+      if (d.laser) return `You have the ${d.short}: its battery charges by itself`;
+      if (this.full(s.item)) return `You have the ${d.short}, full of ${what}`;
+      return `${what[0].toUpperCase()}${what.slice(1)} for your ${d.short}: filled up`;
+    }
     if (s.item === 'stamina' && p.speedMul > 1) return 'Format Fit: already done';
     return s.label;
+  }
+
+  // a gun you have, bought again where you got it: filled up (its ammo, arrows, missiles or fuel),
+  // for less than the ammo crates charge for everything
+  refillCost(item) {
+    const d = DEFS[item];
+    return !d || d.melee || d.laser ? null : Math.min(600, Math.max(150, Math.round(d.price * 0.2 / 50) * 50));
+  }
+  full(item) {
+    const w = this.g.weapons, a = w.owned[item], d = DEFS[item];
+    return !a || d.laser || (a.mag >= d.mag && a.reserve >= w.reserveCap(item));
   }
 
   tryBuy(s) {
@@ -225,7 +274,7 @@ export class Director {
     // co-op: points are kept by the host; it says yes (buyOk) or no
     if (g.mode === 'client') { g.net.buy(this.stations.indexOf(s), cost, !!(this.isGun(s.item) && w.owned[s.item]), w.current); return; }
     this.addPoints(-cost, true);
-    this.bought(s.item, { w: w.current });
+    this.bought(s.item, { w: w.current, refill: this.isGun(s.item) && !!w.owned[s.item] });
     if (s.item === 'double') this.g.net?.teamDouble();
   }
 
@@ -233,7 +282,7 @@ export class Director {
   bought(item, m = {}) {
     const g = this.g, w = g.weapons;
     g.audio.play('buy');
-    if (this.isGun(item)) w.give(item);
+    if (this.isGun(item)) { if (m.refill) w.refill(item); else w.give(item); }
     else if (item === 'ammo') w.refillAll();
     else if (item === 'upgrade') {
       const k = m.w || w.current;
@@ -482,7 +531,7 @@ export class Director {
     if (g.mode === 'client') return this.clientUpdate(dt);
     if (a && !w.def.melee && !w.def.bow && a.mag + a.reserve <= w.def.mag * 1.5 && !this.ammoHinted?.[w.current]) {
       (this.ammoHinted ||= {})[w.current] = true;
-      g.hud.notice('Low on ammo: grab an ammo can, or press F at the pool-house crate (750) or 2 Nabiji (600)');
+      g.hud.notice('Low on ammo: grab an ammo can, press F at an ammo crate (on the map), or refill where you bought the gun');
     }
     if (a && a.reserve > w.def.mag * 2 && this.ammoHinted) this.ammoHinted[w.current] = false;
     if (this.double > 0) this.double -= dt;

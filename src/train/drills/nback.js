@@ -1,7 +1,8 @@
-// Dual n-back: every couple of seconds a square lights up on a 3 x 3 grid and a note plays. Press
-// Position when the square is the one from n steps back, Sound when the note is. Two streams held
-// and updated at once, which is working memory at full stretch. Harder levels: further back (n from
-// 1 to 4), and less time for each step.
+// Dual n-back: every couple of seconds a square lights up on a 3 x 3 grid and a note plays. Somewhere
+// in the stream the square (or the note) is the one from n steps back: press Position (or Sound) when
+// it comes. One such match a round (two from a puzzle crate), and every step until then held against
+// the one n back, both streams at once: working memory at full stretch. Harder levels: further back
+// (n from 1 to 4), and less time for each step.
 
 import { rand, shuffle, style } from '../util.js';
 
@@ -9,11 +10,11 @@ import { rand, shuffle, style } from '../util.js';
 const NOTES = [262, 294, 330, 392, 440, 523, 587, 659];
 const SQUARES = [0, 1, 2, 3, 5, 6, 7, 8];   // (the middle of the grid is the cross)
 
-// `len` steps of 0..7, exactly `k` of them the same as the one n back (none of the first n can be);
-// the others never the one just before either (runs of one square read as a match when they aren't)
-function stream(len, n, k) {
+// `len` steps of 0..7, the same as the one n back exactly at the steps in `at`; the others never the
+// one just before either (runs of one square read as a match when they aren't)
+function stream(len, n, at) {
   const hit = Array(len).fill(false);
-  for (const i of shuffle(Array.from({ length: len - n }, (_, i) => i + n)).slice(0, k)) hit[i] = true;
+  for (const i of at) hit[i] = true;
   const s = [];
   for (let i = 0; i < len; i++) {
     let v = hit[i] ? s[i - n] : rand(0, 7);
@@ -24,7 +25,7 @@ function stream(len, n, k) {
 }
 
 export default {
-  how: 'A square lights up and a note plays, again and again. Press <b>Position</b> when the square is where it was <b>n steps back</b>, <b>Sound</b> when the note is the same as n back.',
+  how: 'A square lights up and a note plays, again and again. When the square is where it was <b>n steps back</b>, press <b>Position</b>; when the note is the one from n back, <b>Sound</b>.',
 
   async run(ctx) {
     style('nback', `
@@ -54,10 +55,12 @@ export default {
         #train .d-nback .play button { height: auto; font-size: 20px; } }`);
     ctx.stage.classList.add('d-nback');
     const lv = ctx.level, n = lv <= 2 ? 1 : lv <= 6 ? 2 : lv <= 9 ? 3 : 4;
-    const len = 14 + n, step = Math.round(2800 - (lv - 1) * 90), show = 500, fb = 350;
-    const st = [stream(len, n, rand(4, 5)), stream(len, n, rand(4, 5))];   // (where, and which note: 4 or 5 matches each)
+    const k = ctx.items, len = n + 4 + k + rand(0, 2), step = Math.round(2800 - (lv - 1) * 90), show = 500, fb = 350;
+    // the match (or two): at steps well into the stream, each in the squares or the notes
+    const when = shuffle(Array.from({ length: len - n - 2 }, (_, i) => i + n + 2)).slice(0, k), which = when.map(() => rand(0, 1));
+    const st = [0, 1].map((j) => stream(len, n, when.filter((_, i) => which[i] === j)));
     const count = ctx.el('div', 't-score');
-    ctx.el('div', 'ask t-hint', null, `<b>n = ${n}</b>: press when it matches ${n === 1 ? 'the one before' : `${n} back`}`);
+    ctx.el('div', 'ask t-hint', null, `<b>n = ${n}</b>: ${k > 1 ? 'two matches are' : 'a match is'} coming, with ${n === 1 ? 'the one before' : `the one ${n} back`}`);
     const play = ctx.el('div', 'play');
     const grid = ctx.el('div', 'grid', play);
     const cells = Array.from({ length: 9 }, (_, i) => ctx.el('i', i === 4 ? 'mid' : '', grid, i === 4 ? '+' : null));
@@ -104,9 +107,8 @@ export default {
     }
     ctx.key(null);
     await ctx.sleep(450);
-    // each stream: the matches caught, less the false alarms, over the matches there were
-    const part = st.map((x, j) => Math.max(0, (hits[j] - fas[j]) / x.hit.filter(Boolean).length));
-    const total = st.reduce((a, x) => a + x.hit.filter(Boolean).length, 0);
-    return { score: (part[0] + part[1]) / 2, right: hits[0] + hits[1], total };
+    // the matches caught, less half a one for each press where there wasn't one
+    const caught = hits[0] + hits[1], rash = fas[0] + fas[1];
+    return { score: Math.max(0, caught - rash / 2) / k, right: caught, total: k };
   },
 };

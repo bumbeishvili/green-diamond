@@ -86,7 +86,7 @@ export default {
         #train .d-ufov .ic { width: 56px; height: 32px; }
         #train .d-ufov .ring button { width: 48px; height: 48px; } }`);
     ctx.stage.classList.add('d-ufov');
-    const lv = ctx.level, n = 8;
+    const lv = ctx.level, n = ctx.items;
     // the glimpse: 300 ms at level 1 down to 60 at 10; then, within the round, shorter after two right
     // running and longer after a miss (between half and twice the level's own)
     const base = 300 * 0.2 ** ((lv - 1) / 9), lo = Math.max(34, base / 2), hi = Math.min(600, base * 2);

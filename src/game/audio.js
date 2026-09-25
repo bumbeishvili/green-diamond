@@ -13,6 +13,7 @@ const BANK = {
   bite: n('zombies/zombie_bite', 2), hurt: n('player/player_hurt', 3), step: n('player/footstep_concrete', 4),
   heartbeat: ['player/heartbeat_fast_loop'],
   flesh: n('impacts/bullet_flesh', 3), concrete: n('impacts/bullet_concrete', 3), metal: n('impacts/bullet_metal', 3),
+  carBody: n('impacts/car_body', 3), carHood: ['impacts/car_hood'], bone: n('impacts/bone_crack', 4), bodyFall: n('impacts/body_fall', 2),
   waveStart: ['ui/wave_start_siren'], waveEnd: ['ui/wave_complete'], pickup: ['ui/pickup'], hit: ['ui/hit_marker'], buy: ['ui/buy'],
   ambience: ['ambience/suburb_distant_traffic_loop'], sirens: ['ambience/distant_siren_loop'],
 };
@@ -53,6 +54,7 @@ export class Audio {
   }
 
   resume() { if (this.ctx && this.ctx.state !== 'running') this.ctx.resume(); }
+  has(key) { return !!this.buffers[key]; }
   setVolume(v) { if (this.master) this.master.gain.value = v; }
 
   setListener(pos, forward) {
@@ -69,7 +71,7 @@ export class Audio {
     }
   }
 
-  // Play a sound. opts: {pos: {x,y,z}, vol, rate, loop}
+  // Play a sound. opts: {pos: {x,y,z}, vol, rate, loop, delay (s)}
   play(key, opts = {}) {
     if (!this.ctx || this.ctx.state !== 'running') return null;
     const bufs = this.buffers[key];
@@ -95,7 +97,7 @@ export class Audio {
       g.connect(head); head = g;
     }
     src.connect(head);
-    src.start();
+    src.start(this.ctx.currentTime + (opts.delay || 0));
     if (opts.fade) src.stop(this.ctx.currentTime + opts.fade + 0.1);
     return src;
   }
@@ -277,7 +279,7 @@ export class Audio {
         break;
       }
       // a car into a body: a dull heavy thump, the bonnet's hollow knock and ring, a wet crunch just after
-      case 'roadkill': {
+      case 'roadkill': case 'carBody': {
         env(tone('sine', 88, 32, 0.32), 0.002, 1.3, 0.32);
         env(noise(360, 0.8), 0.002, 1.1, 0.22);
         env(noise(720 + Math.random() * 160, 3.5, 'bandpass'), 0.003, 0.6, 0.32);
@@ -300,7 +302,7 @@ export class Audio {
       case 'laserOff': env(tone('sine', 1500, 280, 0.35), 0.005, 0.22, 0.33); env(noise(3000, 2, 'bandpass'), 0.002, 0.12, 0.1); break;
       case 'sizzle': env(noise(4200, 0.9, 'highpass'), 0.01, 0.35, 0.28); env(noise(900, 2.5, 'bandpass'), 0.004, 0.18, 0.12); break;
       // a body under the wheels: a soft low thud and a squelch
-      case 'bump': env(tone('sine', 62, 30, 0.22), 0.004, 1.0, 0.22); env(noise(480, 1.1), 0.004, 0.55, 0.14); env(noise(1300, 2, 'bandpass'), 0.02, 0.2, 0.12); break;
+      case 'bump': case 'bodyFall': env(tone('sine', 62, 30, 0.22), 0.004, 1.0, 0.22); env(noise(480, 1.1), 0.004, 0.55, 0.14); env(noise(1300, 2, 'bandpass'), 0.02, 0.2, 0.12); break;
       // glass going: a burst, then tinkling bits
       case 'glass': {
         env(noise(5200, 0.9, 'highpass'), 0.001, 0.8, 0.25);

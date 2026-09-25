@@ -1,8 +1,8 @@
 // Memory palace (the method of loci): a walk round Green Diamond itself, past places you know (the
-// gates, the shops, the pools, the playgrounds, the blocks), with a thing left at each stop; then the
-// walk again, and what was where. Tying things to places along a route is the oldest way there is to
-// remember a list (memory), and the things are English words, to learn some on the way. Harder
-// levels: more stops, less time at each, harder words.
+// gates, the shops, the pools, the playgrounds, the blocks), with a thing left at each stop; then what
+// was at one of them (two, from a puzzle crate), any of them. Tying things to places along a route is
+// the oldest way there is to remember a list (memory), and the things are English words, to learn
+// some on the way. Harder levels: more stops, less time at each, harder words.
 
 import { el, esc, shuffle, style, svg } from '../util.js';
 import { blockName } from '../../world/buildings.js';
@@ -155,7 +155,7 @@ export default {
         #train .d-route .answers .e { font-size: 24px; } }`);
     ctx.stage.classList.add('d-route');
     const lv = ctx.level, L = ctx.game.level || {};
-    const n = Math.round(4 + (lv - 1) * 6 / 9);
+    const n = Math.round(3 + (lv - 1) * 5 / 9);   // (3 stops at level 1, 8 at 10)
     const show = 3200 - (lv - 1) * 1200 / 9, limit = 11000 - (lv - 1) * 400;
     const words = await ctx.words();
     if (ctx.aborted) return null;
@@ -198,13 +198,15 @@ export default {
     }
     if (ctx.aborted) return null;
     mark(-1);
-    side.innerHTML = '<div class="lead">Now walk it again:<br>what was where?</div>';
+    side.innerHTML = '<div class="lead">Now: what was where?</div>';
     ctx.expect(null);
     await ctx.sleep(1100);
 
-    // the walk again: what was at each stop (the right thing, or three others from this walk)
+    // what was at a stop or two, any of them (the right thing, or three others from this walk)
+    const asked = shuffle([...Array(k).keys()]).slice(0, Math.min(ctx.items, k)).sort((a, b) => a - b);
     let right = 0;
-    for (let i = 0; i < k && !ctx.aborted; i++) {
+    for (const i of asked) {
+      if (ctx.aborted) break;
       mark(i);
       side.innerHTML = `<div class="t-hint">Stop ${i + 1} of ${k}</div><div class="ask">What was at <b>${esc(stops[i].name)}</b>?</div>`;
       const opts = shuffle([i, ...shuffle(Array.from({ length: k }, (_, j) => j).filter((j) => j !== i)).slice(0, 3)]);
@@ -216,6 +218,6 @@ export default {
       ctx.flash(r.ok);
       await ctx.sleep(r.ok ? 200 : 900);
     }
-    return { score: k ? right / k : 0, right, total: k };
+    return { score: asked.length ? right / asked.length : 0, right, total: asked.length };
   },
 };

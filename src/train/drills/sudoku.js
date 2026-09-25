@@ -1,6 +1,8 @@
-// Mini sudoku: a small grid to fill so every row, column and box has each number once. Logic: what
-// can go where, by ruling out what can't. Harder levels: fewer numbers given, then (from level 5)
-// the 6 x 6 grid, and a little less time.
+// Mini sudoku: a small grid where every row, column and box has each number once, some of it filled
+// in; which number goes in the square with the question mark (two squares, from a puzzle crate)?
+// Logic: what can go where, by ruling out what can't. Harder levels: fewer numbers given, then (from
+// level 5) the 6 x 6 grid, and squares that take more working out: at the easy levels one that's
+// forced straight away, later one that needs others worked out first.
 
 import { shuffle, style } from '../util.js';
 
@@ -80,58 +82,58 @@ function make(S, target, simple) {
   return best;
 }
 
-// the end of a round shown a moment: Space or Enter (or the test hook) goes on at once
-function hold(ctx, ms) {
-  return new Promise((resolve) => {
-    let gone = false;
-    const go = () => { if (!gone) { gone = true; ctx.key(null); ctx.expect(null); resolve(); } };
-    ctx.key((code) => { if (!/^(Space|Enter|NumpadEnter)$/.test(code)) return false; go(); return true; });
-    ctx.expect(go);
-    ctx.sleep(ms).then(go);
-  });
+// how deep each empty square is: the round of forced moves (the only number that fits a square, the
+// only square in a house a number fits) that fills it in, 1 the first; 0 if forced moves never get there
+function depths(g0, S) {
+  const g = [...g0], at = new Array(g.length).fill(0);
+  for (let round = 1, moved = true; moved; round++) {
+    moved = false;
+    const fill = [];
+    for (let i = 0; i < g.length; i++) {
+      if (g[i]) continue;
+      const ds = [];
+      for (let d = 1; d <= S.n; d++) if (fits(g, i, d, S)) ds.push(d);
+      if (ds.length === 1) fill.push([i, ds[0]]);
+    }
+    for (const h of S.houses) for (let d = 1; d <= S.n; d++) {
+      if (h.some((i) => g[i] === d)) continue;
+      const at1 = h.filter((i) => !g[i] && fits(g, i, d, S));
+      if (at1.length === 1) fill.push([at1[0], d]);
+    }
+    for (const [i, d] of fill) if (!g[i]) { g[i] = d; at[i] = round; moved = true; }
+  }
+  return at;
 }
 
 export default {
-  how: 'Fill the grid so every row, column and <b>box</b> has each number once. Pick a square, then its number.',
+  how: 'Every row, column and <b>box</b> has each number once. Which number goes in the square with the <b>?</b>',
 
   async run(ctx) {
     style('sudoku', `
-      #train .d-sudoku .t-row { gap: 26px; }
-      #train .d-sudoku .board { --cs: 64px; display: grid; gap: 3px; padding: 3px; background: #5d626c; border-radius: 6px; user-select: none; -webkit-user-select: none; }
-      #train .d-sudoku .board.n6 { --cs: 50px; }
+      #train .d-sudoku .board { --cs: 58px; display: grid; gap: 3px; padding: 3px; background: #5d626c; border-radius: 6px; user-select: none; -webkit-user-select: none; }
+      #train .d-sudoku .board.n6 { --cs: 44px; }
       #train .d-sudoku .box { display: grid; gap: 1px; background: #353a44; }
-      #train .d-sudoku .sq { width: var(--cs); height: var(--cs); display: flex; align-items: center; justify-content: center; background: #16191e; color: #b98cff;
-        font: 700 calc(var(--cs) * .56) var(--body); cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-      #train .d-sudoku .sq.giv { color: #fff; font-weight: 800; }
-      #train .d-sudoku .sq.hl { background: #211d30; }
-      #train .d-sudoku .sq.sel { background: #342a5c; box-shadow: inset 0 0 0 2px #b98cff; }
-      #train .d-sudoku .sq.no { color: #ff5a4a; }
-      #train .d-sudoku .sq.no:not(.sel) { background: #2e1a1d; }
-      #train .d-sudoku .sq.miss { color: #6d6962; }
-      #train .d-sudoku .board.won .sq:not(.giv) { color: #7fe07f; }
-      #train .d-sudoku .pad { display: grid; grid-template-columns: repeat(var(--pc), 64px); gap: 8px; }
-      #train .d-sudoku .pad button { height: 58px; border-radius: 8px; background: #1b1f25; border: 1px solid #333840; color: var(--ink); font: 700 26px var(--body); cursor: pointer;
-        -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-      #train .d-sudoku .pad button:hover { border-color: #b98cff; }
-      #train .d-sudoku .pad button:active { background: #2a2340; }
-      #train .d-sudoku .pad .er { grid-column: 1 / -1; font-size: 16px; font-weight: 600; color: var(--muted); }
-      @media (max-height: 520px) {
-        #train .d-sudoku .t-row { gap: 20px; }
-        #train .d-sudoku .board { --cs: 48px; } #train .d-sudoku .board.n6 { --cs: 34px; }
-        #train .d-sudoku .pad { grid-template-columns: repeat(var(--pc), 56px); gap: 6px; } #train .d-sudoku .pad button { height: 46px; font-size: 22px; } }`);
+      #train .d-sudoku .sq { width: var(--cs); height: var(--cs); display: flex; align-items: center; justify-content: center; background: #16191e; color: #fff;
+        font: 800 calc(var(--cs) * .56) var(--body); }
+      #train .d-sudoku .sq.ask { background: #342a5c; box-shadow: inset 0 0 0 2px #b98cff; color: #d9ceff; animation: sdAsk 1s ease-in-out infinite alternate; }
+      #train .d-sudoku .sq.ok { background: #1d3a22; color: #7fe07f; animation: none; }
+      #train .d-sudoku .sq.no { background: #3a1d1d; color: #ff9a8a; animation: none; }
+      @keyframes sdAsk { from { box-shadow: inset 0 0 0 2px #8f6ae0; } to { box-shadow: inset 0 0 0 3px #d9ceff; } }
+      #train .d-sudoku .answers { max-width: 420px; }
+      @media (max-height: 520px) { #train .d-sudoku .board { --cs: 38px; } #train .d-sudoku .board.n6 { --cs: 26px; } #train .d-sudoku { gap: 8px; } }`);
     ctx.stage.classList.add('d-sudoku');
     const lv = ctx.level, big = lv >= 5;
     const S = big ? shape(6, 2, 3) : shape(4, 2, 2), n = S.n;
     const { sol, g } = make(S, GIVEN[lv - 1], lv <= 7);
-    const given = g.map((v) => v > 0), cur = [...g];
-    const empties = given.filter((x) => !x).length;
-    const secs = big ? 150 - (lv - 5) * 4 : 75 - (lv - 1) * 3;
-    const boxOf = (i) => Math.floor(Math.floor(i / n) / S.bh) * (n / S.bw) + Math.floor((i % n) / S.bw);
+    const secs = big ? 50 - (lv - 5) * 2 : 30 - (lv - 1) * 2;
+    // the squares to ask about: as deep as the level wants, or the nearest to it there are
+    const d = depths(g, S), want = lv <= 3 ? 1 : lv <= 6 ? 2 : 3;
+    const gap = (i) => Math.abs((d[i] || 9) - want);
+    const asked = shuffle(g.map((v, i) => (v ? -1 : i)).filter((i) => i >= 0)).sort((a, b) => gap(a) - gap(b)).slice(0, ctx.items);
 
     // the grid, drawn a box at a time (the thick lines between boxes, the thin ones inside)
     const count = ctx.el('div', 't-score');
-    const row = ctx.el('div', 't-row');
-    const board = ctx.el('div', `board n${n}`, row);
+    const board = ctx.el('div', `board n${n}`);
     board.style.gridTemplateColumns = `repeat(${n / S.bw}, auto)`;
     const sq = [];
     for (let b = 0; b < n; b++) {
@@ -139,74 +141,25 @@ export default {
       box.style.gridTemplateColumns = `repeat(${S.bw}, var(--cs))`;
       for (let k = 0; k < n; k++) {
         const r = Math.floor(b / (n / S.bw)) * S.bh + Math.floor(k / S.bw), c = (b % (n / S.bw)) * S.bw + (k % S.bw), i = r * n + c;
-        const e = sq[i] = ctx.el('div', given[i] ? 'sq giv' : 'sq', box);
-        e.onclick = () => { if (!over) { sel = i; draw(); } };
+        sq[i] = ctx.el('div', 'sq', box, g[i] || '');
       }
     }
-    // the numbers to put in, and erase
-    const pad = ctx.el('div', 'pad', row);
-    pad.style.setProperty('--pc', big ? 3 : 2);
-    for (let d = 1; d <= n; d++) { const b = ctx.el('button', '', pad, d); b.type = 'button'; b.onclick = () => put(d); }
-    const er = ctx.el('button', 'er', pad, 'Erase');
-    er.type = 'button'; er.onclick = () => put(0);
-
-    let sel = cur.indexOf(0), mistakes = 0, over = false, won;
-    const solved = new Promise((r) => { won = r; });
-    const draw = () => {
-      const r0 = Math.floor(sel / n), c0 = sel % n, b0 = boxOf(sel);
-      sq.forEach((e, i) => {
-        e.textContent = cur[i] || '';
-        e.classList.toggle('sel', i === sel);
-        e.classList.toggle('hl', i !== sel && (Math.floor(i / n) === r0 || i % n === c0 || boxOf(i) === b0));
-        e.classList.toggle('no', !!cur[i] && cur[i] !== sol[i]);
-      });
-      count.textContent = mistakes ? `${mistakes} mistake${mistakes === 1 ? '' : 's'}` : '';
-    };
-    // a number in the square picked (0 clears it); one that doesn't belong there is a mistake
-    const put = (d) => {
-      if (over || given[sel] || cur[sel] === d) return;
-      cur[sel] = d;
-      if (d && d !== sol[sel]) mistakes++;
-      draw();
-      if (cur.every((v, i) => v === sol[i])) won();
-    };
-    const move = (dr, dc) => {
-      const r = Math.max(0, Math.min(n - 1, Math.floor(sel / n) + dr)), c = Math.max(0, Math.min(n - 1, sel % n + dc));
-      sel = r * n + c;
-      draw();
-    };
-    draw();
-    ctx.key((code) => {
-      const m = /^(?:Digit|Numpad)(\d)$/.exec(code);
-      if (m) { if (+m[1] <= n) put(+m[1]); return true; }
-      if (code === 'Backspace' || code === 'Delete') { put(0); return true; }
-      const mv = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] }[code];
-      if (mv) { move(...mv); return true; }
-      return code === 'Enter' || code === 'NumpadEnter' || code === 'Space';   // (not a second press of the button last clicked)
-    });
-    // (tests: a square still to do, its number, or a wrong one, the way a player would)
-    ctx.expect((ok) => {
-      const todo = cur.map((_, i) => i).filter((i) => !given[i] && cur[i] !== sol[i]);
-      if (!todo.length) return;
-      sel = ok ? todo[0] : todo.find((i) => !cur[i]) ?? todo[0];
-      draw();
-      const d = sol[sel] % n + 1;   // (a wrong one: the next number round, or the one after if that's there already)
-      put(ok ? sol[sel] : d === cur[sel] ? d % n + 1 : d);
-    });
-
-    const clock = ctx.clock(secs);
-    await Promise.race([clock.done, solved]);
-    over = true;
-    ctx.key(null); ctx.expect(null);
-    if (ctx.aborted) return null;
-    const done = cur.every((v, i) => v === sol[i]);
-    const right = cur.filter((v, i) => !given[i] && v === sol[i]).length;
-    if (done) board.classList.add('won');
-    else sq.forEach((e, i) => { if (cur[i] !== sol[i]) { e.textContent = sol[i]; e.classList.remove('no'); e.classList.add('miss'); } });   // (what it should have been)
-    sq.forEach((e) => e.classList.remove('sel', 'hl'));
-    ctx.flash(done);
-    await hold(ctx, done ? 1300 : 1800);
-    // (a wrong number shows red at once, so guessing till it sticks has to cost: each one, a good bit)
-    return { score: done ? Math.max(0.25, 1 - 0.15 * mistakes) : 0.6 * right / empties, right, total: empties };
+    let right = 0;
+    for (let q = 0; q < asked.length && !ctx.aborted; q++) {
+      const i = asked[q];
+      if (asked.length > 1) count.textContent = `${q + 1} / ${asked.length}`;
+      sq[i].classList.add('ask');
+      sq[i].textContent = '?';
+      ctx.clock(secs);
+      const r = await ctx.choose(Array.from({ length: n }, (_, k) => String(k + 1)), { right: sol[i] - 1, limit: secs * 1000, hold: 700, cols: n });
+      if (ctx.aborted) return null;
+      if (r.ok) right++;
+      sq[i].classList.remove('ask');
+      sq[i].classList.add(r.ok ? 'ok' : 'no');
+      sq[i].textContent = sol[i];   // (what it is, either way)
+      ctx.flash(r.ok);
+      await ctx.sleep(r.ok ? 400 : 1200);
+    }
+    return { score: asked.length ? right / asked.length : 0, right, total: asked.length };
   },
 };

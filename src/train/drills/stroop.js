@@ -16,7 +16,7 @@ export default {
       #train .d-stroop .sw { display: block; width: 38px; height: 38px; border-radius: 50%; border: 2px solid rgba(255,255,255,.25); }
       @media (max-height: 520px) { #train .d-stroop .t-big { font-size: 54px; min-height: 66px; } }`);
     const lv = ctx.level, cols = COLS.slice(0, lv >= 7 ? 5 : 4);
-    const n = lv <= 3 ? 16 : 20, mismatch = Math.min(0.85, 0.5 + lv * 0.04), limit = Math.round(3000 - (lv - 1) * 200);
+    const n = ctx.items, mismatch = Math.min(0.85, 0.5 + lv * 0.04), limit = Math.round(3000 - (lv - 1) * 200);
     ctx.stage.classList.add('d-stroop');
     const count = ctx.el('div', 't-score');
     const word = ctx.el('div', 't-big');

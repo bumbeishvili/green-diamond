@@ -24,9 +24,10 @@ export const URLFLAGS = {
   pvp: params.get('pvp'),
   pvpz: params.has('pvpz') ? params.get('pvpz') !== '0' : null,
   pvpkills: params.has('pvpkills') ? parseInt(params.get('pvpkills'), 10) : null,
-  training: params.get('training'),   // brain training for this visit: off / light / normal / intense (test runs: off unless given)
-  drill: params.get('drill'),         // (testing a puzzle: play this one as soon as the game starts, ?drill=stroop&drilllevel=5)
+  training: params.get('training'),   // brain training for this visit: off / light / normal (test runs: off unless given)
+  drill: params.get('drill'),         // (testing a puzzle: play this one as soon as the game starts, ?drill=stroop&drilllevel=5&drillitems=1)
   drilllevel: params.has('drilllevel') ? parseInt(params.get('drilllevel'), 10) : null,
+  drillitems: params.has('drillitems') ? parseInt(params.get('drillitems'), 10) : 2,
   // a phone or tablet: touch controls (?touch forces them, for testing)
   touch: params.has('touch') || (typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches && (navigator.maxTouchPoints || 0) > 0),
 };

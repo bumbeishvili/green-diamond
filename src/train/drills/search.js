@@ -63,7 +63,7 @@ export default {
         #train .d-search .ask { font-size: 15px; min-height: 24px; }
         #train .d-search svg.cue { width: 22px; height: 22px; } }`);
     ctx.stage.classList.add('d-search');
-    const lv = ctx.level, num = SIZES[lv - 1], n = 10, limit = 8 - (lv - 1) * 4 / 9;
+    const lv = ctx.level, num = SIZES[lv - 1], n = ctx.items, limit = 8 - (lv - 1) * 4 / 9;
     // the target, and the kinds of distractor: Ls; or bars that share its colour or its angle
     const conj = lv >= 5;
     const tc = pick(['red', 'blue']), tr = pick([0, 90]);

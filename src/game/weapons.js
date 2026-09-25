@@ -990,6 +990,14 @@ export class Weapons {
     this.equip(kind);
   }
 
+  // one gun full again (bought again at its shop)
+  refill(kind) {
+    const a = this.owned[kind];
+    if (!a || DEFS[kind].melee) return;
+    a.mag = DEFS[kind].mag; a.reserve = this.reserveCap(kind);
+    this.hudWeapon();
+  }
+
   refillAll() {
     for (const k of Object.keys(this.owned)) { if (DEFS[k].melee) continue; this.owned[k].mag = DEFS[k].mag; this.owned[k].reserve = this.reserveCap(k); }
     this.grenades = MAX_GRENADES;
@@ -1168,7 +1176,7 @@ export class Weapons {
     const cutting = input.mouse.left && ammo.mag > 0 && this.switching <= 0 && this.reloading <= 0 && this.throwT <= 0 && !p.sprinting;
     this.sawing = cutting;
     this.sawSound(ammo.mag > 0 && this.reloading <= 0 ? (cutting ? 2 : 1) : 0);
-    if (!cutting) { if (input.mouse.leftPressed && ammo.mag <= 0) { g.audio.play('empty'); g.hud?.notice(ammo.reserve > 0 ? 'Out of fuel: R to refuel' : 'Out of fuel: the ammo crate has more'); } return; }
+    if (!cutting) { if (input.mouse.leftPressed && ammo.mag <= 0) { g.audio.play('empty'); g.hud?.notice(ammo.reserve > 0 ? 'Out of fuel: R to refuel' : 'Out of fuel: any ammo crate has more, or the shop fills it'); } return; }
     ammo.mag = Math.max(0, ammo.mag - 6 * dt);
     this.sawT = (this.sawT || 0) - dt;
     if (this.sawT > 0) return;

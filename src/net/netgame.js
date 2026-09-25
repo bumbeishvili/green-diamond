@@ -456,7 +456,10 @@ export class Host {
     } else if (st.item === 'armour') {
       if (p.armour >= ARMOUR.length) return no('Best armour already');
       cost = ARMOUR[p.armour].price;
-    } else if (d.isGun(st.item) && m.owned) return no('');
+    } else if (d.isGun(st.item) && m.owned) {
+      cost = d.refillCost(st.item);   // (theirs, filled up)
+      if (cost == null) return no('');
+    }
     if (st.item === 'stamina' && p.speedMul > 1) return no('Already bought');
     if (t.points < cost || Math.hypot(st.x - p.pos.x, st.z - p.pos.z) > 4 || Math.abs(st.y - p.pos.y) > 2.5) return no();
     t.points -= cost;
@@ -464,7 +467,7 @@ export class Host {
     if (st.item === 'armour') p.setArmour(p.armour + 1);
     if (st.item === 'stamina') p.speedMul = 1.18;
     if (st.item === 'double') this.teamDouble();
-    this.s.sendTo(r.id, 'rel', { t: 'buyOk', item: st.item, pts: t.points, w: m.w });
+    this.s.sendTo(r.id, 'rel', { t: 'buyOk', item: st.item, pts: t.points, w: m.w, refill: !!(d.isGun(st.item) && m.owned) });
   }
 
   // ---- the fixed tick ----
@@ -608,8 +611,9 @@ export class Host {
       if (this.tick % (link && link.relayed ? 3 : SNAP_EVERY)) continue;
       let zs = all;
       if (all.length > MAX_SNAP_ZOMBIES) {
-        const p = r.player.pos;
-        zs = [...all].sort((a, b) => Math.hypot(a.x - p.x, a.z - p.z) - Math.hypot(b.x - p.x, b.z - p.z)).slice(0, MAX_SNAP_ZOMBIES);
+        // (the nearest, the living first: bodies only fill what's left)
+        const p = r.player.pos, key = (a) => Math.hypot(a.x - p.x, a.z - p.z) + (a.state === 3 ? 1000 : 0);
+        zs = [...all].sort((a, b) => key(a) - key(b)).slice(0, MAX_SNAP_ZOMBIES);
       }
       const buf = encodeSnapshot({ tick: this.tick, ack: r.lastSeq, msLeft: this.msLeft(), wave: d.wave, flags, players, zombies: zs, vehicles });
       this.s.sendTo(r.id, 'unrel', buf);
@@ -1115,7 +1119,7 @@ export class Client {
         if (killed && spin) g.zombies.netFling(nid, spin, ax, az);
         g.effects.bloodBurst(p, new THREE.Vector3(dx, dy, dz));
         const v = g.vehicles.byVid(vid);
-        if (v) g.vehicles.hitFx(v, p, spd, !!killed); else g.audio.play('roadkill', { pos: p, vol: 1 });
+        if (v) g.vehicles.hitFx(v, p, spd, !!killed); else g.vehicles.thud(p, spd, !!killed);
       } else if (e[0] === 'u') {
         const [, vid, px, py, pz, spd] = e, v = g.vehicles.byVid(vid);
         if (v) g.vehicles.bumped(v, new THREE.Vector3(px, py, pz), spd);

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
+import { uglyDog } from './dogs.js';
 
 // The horde. Human zombies come in six kinds (walker, runner, crawler, brute, screamer, bloater),
 // plus zombie animals: stray dogs that hunt in packs and crows that dive at your head. Humans and
@@ -19,8 +20,8 @@ export const TYPES = {
   screamer: { hp: 0.8, speed: [1.7, 2.1], dmg: 0.8, scale: [0.95, 1.0], models: ['office', 'city'], tint: [1.12, 1.18, 1.08], emissive: 0x161c16, scream: true },
   bloater: { hp: 1.5, speed: [0.95, 1.2], dmg: 1, scale: [1.06, 1.12], models: ['hazmat'], emissive: 0x3cff22, emissiveI: 0.3, wide: 1.2, explode: true, walkClip: /waddle/i },
   // animals nip rather than maul: a dog bite is under a fifth of a zombie's, a crow's a tenth
-  dog: { species: 'dog', hp: 0.45, speed: [5.3, 6.3], dmg: 0.18, scale: [0.95, 1.1], tint: [0.66, 0.56, 0.52], emissive: 0x2a0000, emissiveI: 0.5 },
-  wolf: { species: 'dog', model: 'wolf', hp: 1.1, speed: [5.0, 5.8], dmg: 0.3, scale: [0.95, 1.05], tint: [0.6, 0.55, 0.52], emissive: 0x2a0000, emissiveI: 0.5 },
+  dog: { species: 'dog', hp: 0.45, speed: [5.3, 6.3], dmg: 0.18, scale: [0.95, 1.1] },   // (made ugly in dogs.js)
+  wolf: { species: 'dog', model: 'wolf', hp: 1.1, speed: [5.0, 5.8], dmg: 0.3, scale: [0.95, 1.05] },
   crow: { species: 'crow', hp: 0.2, speed: [10, 12.5], dmg: 0.11, scale: [0.9, 1.1] },
   // (new kinds go on the end: their index is what goes over the wire)
   // wave 4 on: crouches, then leaps at you from a few metres off
@@ -190,7 +191,8 @@ function fromModel(model, type, def, cache) {
   inst.scale.setScalar(model.scale || 1);
   inst.rotation.y = model.yaw || 0;
   inst.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
-  if (def.tint || def.emissive) restyle(inst, type, def, cache);
+  if (def.species === 'dog') uglyDog(inst, model, def.model || 'dog');
+  else if (def.tint || def.emissive) restyle(inst, type, def, cache);
   root.add(inst);
   const mixer = new THREE.AnimationMixer(inst);
   const bones = [];
@@ -311,6 +313,9 @@ export class Zombies {
     this.groundFn = null;      // (x, z, y) -> floor height, car-park aware
     this.tmpA = new THREE.Vector3(); this.tmpB = new THREE.Vector3(); this.tmpC = new THREE.Vector3();
     this.tmpQ = new THREE.Quaternion();
+    // (what the players can see: our camera's view, worked out once a frame)
+    this.view = new THREE.Frustum(); this.viewM = new THREE.Matrix4(); this.viewAt = new THREE.Vector3(); this.tmpS = new THREE.Sphere();
+    this.maxBodies = 20; this.tidyT = 0;
     this.dir = { x: 0, z: 0 };
     // co-op: the players the horde can go for (null: just this.player). Each zombie takes the
     // nearest one. Hits and kills carry the shooter's slot (by).
@@ -349,6 +354,24 @@ export class Zombies {
 
   poolKey(type, variant) { return `${type}:${variant}`; }
 
+  // One of each kind (each model of it), made now and put out of sight, so the renderer can build
+  // their shaders before any are needed (a stall mid-fight otherwise, the first time a kind turns
+  // up); then they wait in the pools.
+  prebuild() {
+    const made = [];
+    for (const [type, def] of Object.entries(TYPES)) {
+      for (let v = 0; v < Math.max(1, def.models ? def.models.length : 1); v++) {
+        const zb = Object.assign(this.build(type, v), { type });
+        zb.root.position.set(0, -500, 0);
+        zb.root.visible = true;
+        this.scene.add(zb.root);
+        made.push(zb);
+      }
+    }
+    return made;
+  }
+  shelve(made) { for (const zb of made) this.release(zb); }
+
   spawn(x, z, { type = 'walker', hp = 100, speed = null, speedMul = 1, damage = 40, roof = null, stair = null, y = null } = {}) {
     const def = TYPES[type] || TYPES.walker;
     let zb = null;
@@ -367,6 +390,7 @@ export class Zombies {
       state: 'chase', t: 0, phase: Math.random() * 10, attackT: 0, attackCd: 0, hitT: 0, hitAnim: 0, deadT: 0, buffT: 0,
       screamed: false, exploding: false, fuse: 0, gasT: Math.random(),
       stuckT: 0, forceField: 0, lastPath: Infinity, progT: 0, direct: false, losT: 0, hiddenT: 0, climbT: 0, fling: null, bumpT: 0,
+      sinkT: null, gone: false, settled: false,
       groanT: 2 + Math.random() * 6, lean: 0.1 + Math.random() * 0.2, tilt: (Math.random() - 0.5) * 0.5, armAsym: (Math.random() - 0.5) * 0.5,
       pos: new THREE.Vector3(x, y ?? ground, z), vel: new THREE.Vector3(), heading: Math.random() * Math.PI * 2,
       dealt: false, small: def.species === 'dog' || def.species === 'crow' || !!def.crawl, fallDir: 1, fallV: 0,
@@ -560,6 +584,46 @@ export class Zombies {
     this.globs.length = 0; this.acid.length = 0;
   }
 
+  // Bodies stay where they fell till no one's looking, then go (unseen, so nobody sees them go);
+  // too many to keep, or one left a long while in full view, and the oldest sinks into the ground
+  // where it lies. (Lying still, a body costs little: its pose isn't worked out again.)
+  tidyBodies(dt) {
+    if ((this.tidyT -= dt) > 0) return;
+    this.tidyT = 0.25;
+    const bodies = this.list.filter((z) => z.state === 'dead' && !z.gone && z.sinkT == null).sort((a, b) => b.deadT - a.deadT);
+    let over = bodies.length - this.maxBodies;
+    for (const zb of bodies) {   // (oldest first: the ones out of sight go)
+      if (!zb.root.visible && !zb.exploding) { zb.gone = true; over--; continue; }   // (a bloater's blast)
+      if (zb.fling || zb.deadT < 4) continue;
+      if ((over > 0 || zb.deadT > 20) && !this.seen(zb.pos, 0.4)) { zb.gone = true; over--; }
+    }
+    for (const zb of bodies) {   // (still too many, or one there for ages: the oldest in sight sink)
+      if (zb.gone || zb.fling || zb.deadT < 4) continue;
+      if (over > 0 || zb.deadT > 120) { zb.sinkT = 0; over--; }
+    }
+  }
+
+  // could a player see this spot now? (us: in view, not behind a wall; the others: in front of
+  // them, within about 60 degrees, or close by)
+  viewCheck() {
+    const cam = this.player.camera;
+    if (!cam) return;
+    cam.updateMatrixWorld();
+    this.view.setFromProjectionMatrix(this.viewM.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse));
+    this.viewAt.setFromMatrixPosition(cam.matrixWorld);
+  }
+  seen(p, up = 0.5) {
+    const c = this.viewAt, s = this.tmpS.set(this.tmpC.set(p.x, p.y + up, p.z), 1.6);
+    if (this.player.camera && c.distanceTo(s.center) < 90 && this.view.intersectsSphere(s) && this.col.clear(c.x, c.y, c.z, p.x, p.y + up + 0.3, p.z)) return true;
+    for (const q of this.targets || []) {
+      if (q === this.player || q.dead) continue;
+      const dx = p.x - q.pos.x, dz = p.z - q.pos.z, d = Math.hypot(dx, dz);
+      if (d < 12) return true;
+      if (d < 90 && (-Math.sin(q.yaw) * dx - Math.cos(q.yaw) * dz) / d > 0.45 && this.col.clear(q.pos.x, q.pos.y + 1.6, q.pos.z, p.x, p.y + up + 0.3, p.z)) return true;
+    }
+    return false;
+  }
+
   release(zb) {
     this.scene.remove(zb.root);
     if (this.byNid.get(zb.nid) === zb) this.byNid.delete(zb.nid);
@@ -638,6 +702,8 @@ export class Zombies {
   update(dt) {
     const targets = this.targetList();
     if (!this.frozen) this.updateAcid(dt);
+    this.viewCheck();
+    this.tidyBodies(dt);
     // where each player is: down in a car park, up on a roof with stairs
     for (const t of targets) {
       t.zLevel = this.underground ? this.underground.at(t.pos.x, t.pos.z, t.pos.y + 0.1) : null;
@@ -668,7 +734,7 @@ export class Zombies {
           }
         }
         this.animateDeath(zb, dt);
-        if (zb.deadT > 8) { this.list.splice(i, 1); this.release(zb); }
+        if (zb.gone || zb.sinkT > 3) { this.list.splice(i, 1); this.release(zb); }
         continue;
       }
       if (this.frozen) { this.animate(zb, dt, 0); continue; }
@@ -864,7 +930,11 @@ export class Zombies {
         }
         if (!seePlayer && pathD > 40 && !dog) speed *= zb.def.move === 'run' ? 1.3 : zb.def.crawl ? 2.6 : 2.1;
         zb.hiddenT = seePlayer ? 0 : zb.hiddenT + dt;
-        if (this.relocate && ((zb.hiddenT > 9 && (pathD > 85 || zb.stuckT > 5)) || (this.hurry && zb.hiddenT > 4 && pathD > 40))) { zb.hiddenT = 0; zb.stuckT = 0; this.relocate(zb); }
+        // (never in front of anyone: it'd vanish before their eyes; asked twice a second)
+        if (this.relocate && ((zb.hiddenT > 9 && (pathD > 85 || zb.stuckT > 5)) || (this.hurry && zb.hiddenT > 4 && pathD > 40)) && (zb.relocT = (zb.relocT || 0) - dt) <= 0) {
+          zb.relocT = 0.5;
+          if (!this.seen(zb.pos, 1)) { zb.hiddenT = 0; zb.stuckT = 0; this.relocate(zb); }
+        }
       }
       if (zb.hitT > 0) { zb.hitT -= dt; speed *= 0.35; }
       if (zb.hitAnim > 0) { zb.hitAnim -= dt; if (zb.hitAnim <= 0) this.play(zb, this.moveClip(zb)); }
@@ -1147,7 +1217,7 @@ export class Zombies {
       rate: zb.current ? zb.current.timeScale : 1,
       extra: zb.species === 'crow' ? -Math.atan2(zb.vel.y, hs) * 0.7 : zb.def.boss ? Math.max(0, zb.hp / zb.maxHp) : zb.leap || 0,
       scale: zb.scale,
-      flags: (!zb.root.visible && zb.state !== 'climb' ? 1 : 0) | (zb.hitAnim > 0 || zb.hitT > 0 ? 2 : 0) | (zb.buffT > 0 ? 4 : 0) | (zb.exploding ? 8 : 0),
+      flags: (!zb.root.visible && zb.state !== 'climb' ? 1 : 0) | (zb.hitAnim > 0 || zb.hitT > 0 ? 2 : 0) | (zb.buffT > 0 ? 4 : 0) | (zb.exploding ? 8 : 0) | (zb.sinkT != null ? 16 : 0),
     };
   }
 
@@ -1181,7 +1251,7 @@ export class Zombies {
       small: def.species === 'dog' || def.species === 'crow' || !!def.crawl, crowState: 'circle', exploding: false,
       lean: 0.1 + Math.random() * 0.2, tilt: (Math.random() - 0.5) * 0.5, armAsym: (Math.random() - 0.5) * 0.5,
       pos: new THREE.Vector3(s.x, s.y, s.z), vel: new THREE.Vector3(), heading: s.heading, buf: [], groanT: 2 + Math.random() * 6,
-      crouchK: 0, pitch: 0, stepN: 0, bossHp: 1, fling: null,
+      crouchK: 0, pitch: 0, stepN: 0, bossHp: 1, fling: null, sinkT: null, gone: false, settled: false,
     });
     const w = def.wide || 1;
     zb.root.scale.set(zb.scale * w, zb.scale, zb.scale * w);
@@ -1235,6 +1305,7 @@ export class Zombies {
       if (zb.state === 'dead') {
         zb.deadT += dt;
         if (fl & 1) zb.root.visible = false;
+        if ((fl & 16) && zb.sinkT == null) zb.sinkT = 0;   // (the host's sinking it)
         if (zb.species === 'crow') {
           zb.root.position.copy(zb.pos);
           if (zb.vel.y < -0.5) zb.root.rotation.z += dt * 7;
@@ -1470,9 +1541,11 @@ export class Zombies {
       if (falling) zb.root.rotation.z += dt * 7;
       if (zb.anim === 'crow') { zb.wings[0].rotation.z = 0.9; zb.wings[1].rotation.z = -0.9; }
       else zb.mixer.update(0);
-      if (zb.deadT > 6) zb.root.visible = false;
+      if (zb.sinkT != null) { zb.sinkT += dt; zb.root.position.y -= zb.sinkT * 0.2; }
       return;
     }
+    // (lying still: nothing to work out)
+    if (zb.settled && zb.sinkT == null) return;
     // thrown by a car: in the air (or rolling to a stop) the pose is worked out as usual, then
     // turned over about the hips
     if (zb.fling) { this.flight(zb, dt); zb.root.rotation.set(0, zb.heading, 0, 'YXZ'); }
@@ -1491,13 +1564,15 @@ export class Zombies {
     }
     const lift = zb.anim === 'dog' || (zb.species === 'dog') ? 0.16 : zb.anim === 'model' ? 0 : 0.12;
     zb.root.position.x = zb.pos.x; zb.root.position.z = zb.pos.z;
-    zb.root.position.y = zb.deadT > 6 ? g + lift - (zb.deadT - 6) * 0.25 : g + lift * Math.min(1, zb.deadT * 2.6);
+    if (zb.sinkT != null) zb.sinkT += dt;
+    zb.root.position.y = zb.sinkT != null ? g + lift - zb.sinkT * 0.2 : g + lift * Math.min(1, zb.deadT * 2.6);
     if (zb.fling && zb.fling.angle) {
       const f = zb.fling, r = zb.root, q = this.tmpQ.setFromAxisAngle(this.tmpA.set(f.ax, 0, f.az), f.angle);
       const pv = this.tmpB.set(zb.pos.x, g + (zb.species === 'dog' ? 0.35 : 0.9) * zb.scale, zb.pos.z);
       r.position.sub(pv).applyQuaternion(q).add(pv);
       r.quaternion.premultiply(q);
     }
+    if (zb.deadT > 4 && !zb.fling && zb.sinkT == null) zb.settled = true;
   }
 
   // a thrown body's way through the air, its bounce and its slide (the host's; a co-op client's
@@ -1515,14 +1590,18 @@ export class Zombies {
       const gy = this.floorAt(zb.pos.x, zb.pos.z, zb.pos.y);
       if (zb.pos.y <= gy) {
         zb.pos.y = gy;
+        // (the body hitting the ground, and again, softer, off the bounce)
+        if (!f.ground) this.audio.play('bodyFall', { pos: zb.pos, vol: Math.min(1.2, 0.25 - f.vy / 10), rate: 0.9 + Math.random() * 0.2 });
         if (f.vy < -3.5 && !f.bounced) {
           f.bounced = true; f.vy *= -0.28; f.vx *= 0.55; f.vz *= 0.55; f.spin *= 0.6;
-          this.audio.play('bump', { pos: zb.pos, vol: 0.7, rate: 1.2 });
           this.fx.blood.add(this.tmpC.set(zb.pos.x, gy + 0.03, zb.pos.z), UP, 1.1);
         } else { f.vy = 0; f.ground = true; }
       }
       if (f.ground) { const k = Math.exp(-5 * dt); f.vx *= k; f.vz *= k; }
-    } else f.ground = f.t > 0.25 && zb.pos.y <= this.floorAt(zb.pos.x, zb.pos.z, zb.pos.y) + 0.06;
+    } else {
+      f.ground = f.t > 0.25 && zb.pos.y <= this.floorAt(zb.pos.x, zb.pos.z, zb.pos.y) + 0.06;
+      if (f.ground && !f.thud) { f.thud = true; this.audio.play('bodyFall', { pos: zb.pos, vol: 0.8, rate: 0.9 + Math.random() * 0.2 }); }
+    }
     if (!f.ground) f.angle += f.spin * dt;
     else {
       const whole = Math.round(f.angle / (Math.PI * 2)) * Math.PI * 2;

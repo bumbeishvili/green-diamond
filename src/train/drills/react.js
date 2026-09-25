@@ -44,9 +44,9 @@ export default {
         #train .d-react .res.no .msg { font-size: 40px; } }`);
     ctx.stage.classList.add('d-react');
     const lv = ctx.level, mode = lv <= 3 ? 'plain' : lv <= 6 ? 'choice' : 'nogo';
-    const n = 10, limit = Math.round(1500 - (lv - 1) * 800 / 9), hold = 900;
+    const n = ctx.items, limit = Math.round(1500 - (lv - 1) * 800 / 9), hold = 900;
     const dirs = shuffle([...'LLLLLRRRRR']);
-    const reds = new Set(mode === 'nogo' ? shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9]).slice(0, 3) : []);   // (never the first)
+    const reds = new Set(mode === 'nogo' ? [...Array(n).keys()].filter(() => Math.random() < 0.3) : []);   // (a red one, now and then)
     const count = ctx.el('div', 't-score');
     const panel = ctx.el('div', 'panel');
     const msg = ctx.el('div', 'msg', panel), sub = ctx.el('div', 'sub', panel);

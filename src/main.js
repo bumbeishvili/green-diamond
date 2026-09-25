@@ -145,6 +145,7 @@ class Game {
     this.hud = new HUD(this.level);
     this.hud.touch = !!this.touch;   // (on a phone the prompts name the buttons, not the keys)
     this.zombies = new Zombies(this.scene, { colliders: this.colliders, hm: this.hm, nav: this.nav, effects: this.effects, audio: this.audio, player: this.player, models: this.models });
+    this.zombies.maxBodies = { low: 10, medium: 16 }[settings.quality] ?? 22;   // (bodies left lying about)
     this.zombies.stairs = this.stairs.list;
     this.zombies.underground = this.underground;
     this.zombies.unav = this.unav || null;
@@ -191,6 +192,12 @@ class Game {
     this.flashOn = false;
 
     this.spawnPlayer();
+    // every shader now, not the first time each thing comes into view (a stall mid-fight, as you
+    // turn round or a new kind of zombie turns up): one of each zombie stood out of sight meanwhile
+    this.progress(0.97, 'Waking the dead…');
+    const made = this.zombies.prebuild();
+    try { await this.renderer.compileAsync(this.scene, this.camera); } catch (e) { console.warn('shader warm-up', e); }
+    this.zombies.shelve(made);
     this.credits();
     this.progress(1, 'Ready');
     this.ready = true;
@@ -338,7 +345,7 @@ class Game {
     const q = new URLSearchParams(location.search);
     if (q.get('weapon') && q.get('weapon') !== 'pistol') this.weapons.give(q.get('weapon'));
     if (q.has('ads')) this.forceAds = true;
-    if (URLFLAGS.drill) setTimeout(() => this.training.test(URLFLAGS.drill, URLFLAGS.drilllevel), 600);
+    if (URLFLAGS.drill) setTimeout(() => this.training.test(URLFLAGS.drill, URLFLAGS.drilllevel, URLFLAGS.drillitems), 600);
     try { await this.audio.init(); this.audio.resume(); this.audio.play('ambience', { vol: 0.35, loop: true, jitter: 0 }); } catch (e) { /* audio is optional */ }
   }
 

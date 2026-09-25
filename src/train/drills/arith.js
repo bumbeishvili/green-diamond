@@ -55,7 +55,7 @@ export default {
         #train .d-arith .why { font-size: 16px; min-height: 21px; }
         #train .d-arith .answers button { min-height: 54px; font-size: 21px; } }`);
     ctx.stage.classList.add('d-arith');
-    const lv = ctx.level, n = 6, each = 14 - ((lv - 1) * 7) / 9;   // (14 s for each at level 1, 7 at 10)
+    const lv = ctx.level, n = ctx.items, each = 14 - ((lv - 1) * 7) / 9;   // (14 s for each at level 1, 7 at 10)
     const count = ctx.el('div', 't-score');
     const sum = ctx.el('div', 't-big sum');
     const why = ctx.el('div', 'why');

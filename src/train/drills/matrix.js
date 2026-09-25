@@ -87,7 +87,7 @@ export default {
     const k = lv <= 2 ? 1 : lv <= 5 ? 2 : lv <= 7 ? 3 : 4;
     const nOpts = lv <= 3 ? 4 : 6;
     const each = lv <= 3 ? 30 : lv <= 7 ? 40 : 45;
-    const n = 3;
+    const n = ctx.items;
     let right = 0;
     for (let q = 0; q < n && !ctx.aborted; q++) {
       const m = make(k, nOpts);

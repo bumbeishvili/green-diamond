@@ -88,7 +88,7 @@ export default {
       #train .d-rotate .answers button { min-height: 58px; font-size: 19px; }
       @media (max-height: 520px) { #train .d-rotate .pair { height: 178px; margin-top: 12px; } #train .d-rotate .answers button { min-height: 50px; } }`);
     ctx.stage.classList.add('d-rotate');
-    const lv = ctx.level, n = 8;
+    const lv = ctx.level, n = ctx.items;
     const [kind, a0, a1] = TURN[lv - 1];
     const secs = Math.round((10 - (lv - 1) * 5 / 9) * 10) / 10;
     const count = ctx.el('div', 't-score');
@@ -150,7 +150,7 @@ export default {
     };
 
     const F = new THREE.Matrix4().makeScale(-1, 1, 1);
-    const same = shuffle(Array.from({ length: n }, (_, i) => i % 2 === 0));
+    const same = Array.from({ length: n }, () => Math.random() < 0.5);   // (each a toss: no telling the second from the first)
     let right = 0;
     const times = [];
     try {

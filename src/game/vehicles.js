@@ -1263,18 +1263,31 @@ export class Vehicles {
     v.tilt.set(THREE.MathUtils.damp(v.tilt.x, -lf * 0.25, 5, dt), THREE.MathUtils.damp(v.tilt.y, lr * 0.25, 5, dt));
   }
 
-  // A zombie hit (for whoever is driving: a jolt through the car, and the thump) and a body driven
-  // over (a bump); the host's own, or told by the host (co-op)
+  // A zombie hit (for whoever is driving: a jolt through the car, and the sound of it) and a body
+  // driven over (a bump); the host's own, or told by the host (co-op)
   hitFx(v, p, spd, killed) {
     const g = this.g;
-    g.audio.play('roadkill', { pos: p, vol: Math.min(1.4, 0.55 + spd / 18), rate: killed ? 1 : 1.15 });
+    this.thud(p, spd, killed);
     v.rock = Math.min(0.12, (v.rock || 0) + 0.03 + spd * 0.003);
     if (v === this.active) g.player.shake = Math.min(1, g.player.shake + 0.2 + spd * 0.02);
   }
 
+  // a car into a body: the bonnet taking it, the body against it, bones going (if it's hard enough)
+  // and a squelch; recorded foley, or the synth if the samples didn't load
+  thud(p, spd, killed) {
+    const a = this.g.audio, vol = Math.min(1.4, 0.55 + spd / 18);
+    if (!a.has('carBody')) { a.play('roadkill', { pos: p, vol, rate: killed ? 1 : 1.15 }); return; }
+    a.play('carHood', { pos: p, vol: vol * 0.75, rate: (killed ? 0.8 : 0.9) + Math.random() * 0.15 });
+    a.play('carBody', { pos: p, vol: vol * 1.1, rate: killed ? 0.92 : 1.05 });
+    if (killed || spd > 9) a.play('bone', { pos: p, vol: vol * 0.8, delay: 0.02 + Math.random() * 0.03 });
+    a.play('flesh', { pos: p, vol: vol * 0.4, rate: 0.75, delay: 0.01 });
+  }
+
   bumped(v, p, spd) {
-    const g = this.g;
-    g.audio.play('bump', { pos: p, vol: Math.min(1.1, 0.5 + spd / 20) });
+    const g = this.g, a = g.audio;
+    a.play('bump', { pos: p, vol: Math.min(1.1, 0.5 + spd / 20) });   // (the suspension taking it)
+    a.play('bone', { pos: p, vol: Math.min(1, 0.45 + spd / 25), rate: 0.85 + Math.random() * 0.2 });   // and what's under the wheel
+    a.play('flesh', { pos: p, vol: 0.45, rate: 0.7 });
     v.rock = Math.min(0.12, (v.rock || 0) + 0.05);
     if (v === this.active) g.player.shake = Math.min(1, g.player.shake + 0.18);
   }

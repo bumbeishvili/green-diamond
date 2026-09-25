@@ -1,6 +1,6 @@
-// Mini crossword: a small crossword of English words, clued in Georgian (and a sentence each word
-// fits, with the word left out). Vocabulary: the English for a Georgian word, spelt right, with the
-// crossings to help. Harder levels: rarer words, more of them, a little more time.
+// Mini crossword: an English word to fill in from its Georgian clue (and a sentence it fits, with the
+// word left out); from a puzzle crate, two that cross. Vocabulary: the English for a Georgian word,
+// spelt right. Harder levels: rarer words.
 
 import { rand, shuffle, style, esc } from '../util.js';
 
@@ -143,8 +143,8 @@ export default {
         #train.touch .d-cross .cbar { display: flex; }
         #train .d-cross .kb { gap: 5px; } #train .d-cross .kb button { height: 40px; font-size: 17px; } }`);
     ctx.stage.classList.add('d-cross');
-    const lv = ctx.level, [b0, b1] = BANDS[lv - 1], n = lv <= 3 ? 4 : lv <= 7 ? 5 : 6;
-    const secs = lv <= 3 ? 100 : lv <= 7 ? 120 : 140;
+    const lv = ctx.level, [b0, b1] = BANDS[lv - 1], n = ctx.items;
+    const secs = n > 1 ? 70 : 40;
     const all = await ctx.words();
     if (ctx.aborted) return null;
     const pool = all.filter((q) => /^[a-z]{3,7}$/.test(q.w) && POS.has(q.p) && !(q.t === 'grammar' && q.p === 'v') && q.b >= b0 && q.b <= b1);

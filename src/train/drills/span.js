@@ -1,8 +1,8 @@
-// Digit span: digits shown one at a time, then typed back, in order or (from level 4, every other
-// sequence) backwards. How many you can hold is working memory; turning them round works it harder.
+// Digit span: digits shown one at a time, then typed back, in order or (from level 4, half the time)
+// backwards. How many you can hold is working memory; turning them round works it harder.
 // Harder levels: longer sequences, shown faster.
 
-import { rand, style, esc } from '../util.js';
+import { rand, shuffle, style, esc } from '../util.js';
 
 export default {
   how: 'Digits show one at a time. Then type them back: in the same order, or <b>backwards</b> when it says so.',
@@ -24,7 +24,8 @@ export default {
     ctx.stage.classList.add('d-span');
     const lv = ctx.level;
     const len = Math.min(11, 3 + Math.ceil(lv * 0.8)), show = lv >= 6 ? 600 : 750;
-    const seqs = lv < 4 ? [false, false, false] : [false, true, false];   // (backwards?)
+    // (backwards? from level 4: a single one half the time, of two, one each way)
+    const seqs = lv < 4 ? Array(ctx.items).fill(false) : ctx.items > 1 ? shuffle([false, true]) : [Math.random() < 0.5];
     let score = 0, right = 0;
     for (let k = 0; k < seqs.length && !ctx.aborted; k++) {
       const back = seqs[k], n = back ? len - 1 : len;

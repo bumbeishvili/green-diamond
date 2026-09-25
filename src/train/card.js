@@ -6,6 +6,8 @@
 // does everything through its context:
 //   ctx.stage            where it draws (empty to start with); ctx.el(tag, cls, parent, html) makes things in it
 //   ctx.level            1..10, how hard (the puzzle decides what that means)
+//   ctx.items            how many questions this round asks: 1 (between waves) or 2 (a puzzle crate,
+//                        practice); what a question is, the puzzle decides (a sum, a matrix, a square)
 //   ctx.touch            a phone or tablet: bigger targets, no keys shown
 //   ctx.game             the game (its level data, for a puzzle set in Green Diamond itself)
 //   ctx.aborted          true once the card is closed: stop at the next await and return
@@ -65,8 +67,9 @@ export class Card {
 
   // Shows `meta` ({id, name, skill}) at `level`: how to play, then the puzzle. Resolves with its
   // result, or null if the card was closed (or the puzzle wouldn't load).
-  async play(meta, level, { index = 0, count = 1 } = {}) {
+  async play(meta, level, { index = 0, count = 1, items = 1 } = {}) {
     this.show();
+    this.items = items;
     this.closedP = this.closedP || new Promise((r) => { this.onClosed = r; });
     this.$('.title').textContent = meta.name;
     this.$('.skill').textContent = meta.skill;
@@ -100,7 +103,7 @@ export class Card {
     if (!go || !this.open) return null;
     this.clearStage();
     this.phase = 'run';
-    const ctx = this.context(level);
+    const ctx = this.context(level, items);
     let res = null;
     try { res = await Promise.race([drill.run(ctx), this.closedP.then(() => null)]); } catch (e) { console.error(e); res = null; }
     this.keyFn = null; this.expectFn = null;
@@ -162,10 +165,10 @@ export class Card {
 
   // ---- what a puzzle gets ----
 
-  context(level) {
+  context(level, items = 1) {
     const card = this, g = this.g, stage = this.stage;
     return {
-      stage, level, touch: !!g.touch, game: g,
+      stage, level, items, touch: !!g.touch, game: g,
       get aborted() { return !card.open; },
       el: (tag, cls = '', parent = null, html = null) => el(tag, cls, parent || stage, html),
       sleep: (ms) => card.pause(ms),

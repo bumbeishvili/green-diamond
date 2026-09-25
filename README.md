@@ -147,7 +147,7 @@ Drone: WASD to move where you look, Space to climb, Ctrl or Shift to descend, an
 ### How it plays
 
 - Zombies come in waves: out of the lobbies, up the ramps from the underground car parks, through the Bob Walsh Street gates, over the courtyard railing, and through broken fence panels on the construction side.
-- Kinds of zombie: walkers; runners; crawlers (low, hard to hit); brutes (big, soak up bullets, knock you back); screamers (stop and scream, which speeds up everything nearby and brings more); bloaters (glowing hazmat suits that burst when they reach you or die, taking out anything close). From wave 3, packs of stray dogs (a wolf leads them from wave 6); from wave 4, crows that dive at your head. The animals nip rather than maul, but they're fast. Crows find you on the roofs and in the drone too.
+- Kinds of zombie: walkers; runners; crawlers (low, hard to hit); brutes (big, soak up bullets, knock you back); screamers (stop and scream, which speeds up everything nearby and brings more); bloaters (glowing hazmat suits that burst when they reach you or die, taking out anything close). From wave 3, packs of zombie dogs, mangy and rotting, ribs through a torn flank, eyes burning (a wolf leads them from wave 6); from wave 4, crows that dive at your head. The animals nip rather than maul, but they're fast. Crows find you on the roofs and in the drone too.
 - And newer ones: **leapers** (wave 4 on) crouch a few metres off and pounce, knocking you down; **spitters** (wave 5 on) keep their distance and spit acid in an arc, and the puddle burns while you stand in it; **riot police** (wave 6 on) carry a helmet and a პოლიცია shield that stops most bullets from the front: shoot their legs, catch them mid-swing, get round them or blow them up; and every fifth wave a **giant** twice your height, with its health bar across the top. It shrugs off a magazine or three, flings you, stops a car dead and smashes the one you're sitting in.
 - Sitting in a car doesn't save you for long: zombies claw at it, dent it and break the windows, then reach in, and when it's a wreck they drag you out.
 - Under each courtyard (and under the pool court between Spar and Nikora) is an underground car park, a whole parking level with rows of parked cars, columns and strip lights. The ramps the zombies come up lead down into it: walk or drive down. Zombies come up out of it, follow you down into it, and take the nearest ramp back out when you leave.
@@ -174,12 +174,13 @@ Drone: WASD to move where you look, Space to climb, Ctrl or Shift to descend, an
 | Cache on the next highest roof | Remington MSR (semi-automatic .338 sniper) |
 | Crate down in the car park | RPG-7 mini-missile launcher (one in the tube, a quick reload; they burst on whatever they hit, or as they pass close by a zombie) |
 | Crate down in the south car park (the ramp between Spar and Nikora) | Helios laser rifle, 7500 (hold the trigger: a beam that burns through two at once; no magazine, a battery that drains while it fires and charges itself back up) |
-| Ammo crate by the pool house (middle courtyard) | ammo, fuel and grenades for everything (750): the only place to buy ammo |
+| Ammo crates: by the pool house (middle courtyard), at both gate booths, by the two other round courts, and down in each car park | ammo, fuel and grenades for everything (750) |
+| Any gun shop or crate, for the gun you bought there | that gun filled up again (a fifth of its price, 150–600) |
 
 Aim down the sights (E or right-click) and every gun hits twice as hard.
 
 - Weapons behave like the real ones: recoil climbs and drifts, spread blooms when you hold the trigger, tactical reloads keep a round in the chamber, the shotgun loads shell by shell. Rifle rounds go through car bodies and through a zombie or two. Arrows drop with distance and stick where they land; walk over them to pick them up.
-- Every parked car can be driven, and there are motorbikes and one-person drones around the complex. Cars and bikes run zombies down: a hit at speed throws them up over the bonnet, turning over, and they come down a few metres on with a thud; a slow one knocks them aside. You feel each one through the car, and the bodies bump under the wheels. They can still reach you through the door.
+- Every parked car can be driven, and there are motorbikes and one-person drones around the complex. Cars and bikes run zombies down: a hit at speed throws them up over the bonnet, turning over, and they come down a few metres on with a thud; a slow one knocks them aside. You feel and hear each one (the bonnet, the body, bones going: recorded foley), and the bodies crunch under the wheels. Bodies stay where they fell while anyone can see them and go once no one's looking. They can still reach you through the door.
 - Some cars are special: Tatia's blue Prius by Gate 1 (the plate says თათიას მანქანა), Beka's grey 2018 Civic next to it (ბექას მანქანა), the light-blue დაცვა security Leaf by the booth, and a green Lamborghini Huracán in the bay by the pool courtyard, which goes like nothing else in the complex.
 - Power-ups sometimes drop from kills: Max Ammo, Insta-Kill, Double Points, Nuke.
 - Falling more than a couple of storeys hurts. If you fall into a pool, walk out up the steps (by the chrome rails), or jump at any edge.
@@ -187,11 +188,12 @@ Aim down the sights (E or right-click) and every gun hits twice as hard.
 ### Brain training
 
 Puzzles for the mind between waves, and lari for doing them. They never get in the way: each is an
-offer you can take or leave. On from the start; in **Settings**, **Brain training** sets how often
-(every third wave, every wave, every wave two at a time, or off). Not in PvP matches.
+offer you can take or leave, and quick. On from the start; in **Settings**, **Brain training** sets
+how often (every third wave, every wave, or off). Not in PvP matches.
 
-- **After a wave** a small card offers a puzzle. Press **B** or tap the card; leave it and it goes.
-  **Puzzle crates** (violet, with a ?) round the complex hold one too.
+- **After a wave** a small card offers a puzzle: one question (a sum, a matrix, a sudoku square, a
+  chess position...). Press **B** or tap the card; leave it and it goes. **Puzzle crates** (violet,
+  with a ?) round the complex hold one with two questions.
 - **Fourteen kinds**, dealt in a shuffled round so each comes up before any comes again:
   - working memory: **dual n-back** (a square and a sound, n steps back) and **digit span** (digits
     typed back, in order or backwards)
@@ -201,7 +203,8 @@ offer you can take or leave. On from the start; in **Settings**, **Brain trainin
     the odd one out)
   - flexibility: **task switching** (sort by shape or by colour, as the cue says)
   - reasoning and logic: **matrix reasoning** (Raven-style pattern puzzles), **mini sudoku** (4x4 and
-    6x6) and **chess tactics** (mate in one or two, real puzzles from Lichess)
+    6x6: which number goes in the marked square) and **chess tactics** (mate in one or two, real
+    puzzles from Lichess)
   - spatial: **mental rotation** (the same shape turned, or its mirror image?)
   - memory: a **memory palace**, English words placed along a route through Green Diamond itself
   - calculation: **mental arithmetic**
@@ -209,11 +212,11 @@ offer you can take or leave. On from the start; in **Settings**, **Brain trainin
 - **Each has a level of its own**, 1 to 10: a good round moves it up, a poor one down.
 - **Nothing can hurt you while you're at a puzzle**, in any mode: alone, the game waits; in co-op the
   match goes on around you, but the zombies can't hurt you until you're done.
-- **What it pays**: a round pays by its score, up to 300 lari at first and more as the waves get
-  tougher, up to 600. Three good rounds running, a gun you haven't got (or a power-up if you have them
-  all); every ten good rounds, the gun in your hands a level up for free.
+- **What it pays**: each question up to 300 lari at first, more as the waves get tougher, up to 600.
+  Five good rounds running, a gun you haven't got (or a power-up if you have them all); every fifteen
+  good rounds, the gun in your hands a level up for free.
 - **My training** in Settings shows every puzzle's level and your best, and any of them can be played
-  from there for practice. Progress stays in your browser.
+  from there for practice (two questions). Progress stays in your browser.
 
 ### Graphics
 

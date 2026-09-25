@@ -1,7 +1,8 @@
 // Task switching: a circle or a square, orange or blue, and over it the rule for this one: go by its
-// shape, or by its colour. The rule changes on about half of them, at random; changing tack without
-// slowing down or slipping is the exercise (flexibility). Harder levels: less time for each, from
-// level 6 the rule shown only for a moment, and from level 8 a third rule, its size.
+// shape, or by its colour; from a puzzle crate, two in a row, the rule changed for the second. Going
+// by the rule and not the habit, and changing tack without slowing down, is the exercise
+// (flexibility). Harder levels: less time for each, from level 6 the rule shown only for a moment,
+// and from level 8 a third rule, its size.
 
 import { rand, pick, shuffle, speedScore, style } from '../util.js';
 
@@ -58,17 +59,14 @@ export default {
         #train .d-switch .pic .lg { width: 86px; height: 86px; }
         #train .d-switch .t-row, #train .d-switch .answers button { min-height: 62px; } }`);
     ctx.stage.classList.add('d-switch');
-    const lv = ctx.level, n = 20;
+    const lv = ctx.level, n = ctx.items;
     const limit = Math.round(3000 - ((lv - 1) * 1900) / 9);   // (3 s for each at level 1, 1.1 s at 10)
     const rules = lv >= 8 ? ['shape', 'colour', 'size'] : ['shape', 'colour'];
     const brief = lv >= 6;                                    // (the rule up only for the first 600 ms)
     const against = (lv - 1) * 0.066;                         // (more cards where another rule says the other side)
-    // the rule for each: a change on ten of the nineteen steps, in no set pattern
+    // the rule for each: any to start with, then a change every time (the switch is the point)
     const seq = [pick(rules)];
-    for (const change of shuffle([...Array(10).fill(true), ...Array(9).fill(false)])) {
-      const last = seq[seq.length - 1];
-      seq.push(change ? pick(rules.filter((r) => r !== last)) : last);
-    }
+    for (let i = 1; i < n; i++) seq.push(pick(rules.filter((r) => r !== seq[i - 1])));
     const count = ctx.el('div', 't-score');
     const cue = ctx.el('div', 'cue gone');
     const pic = ctx.el('div', 'pic');

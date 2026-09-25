@@ -283,7 +283,7 @@ export default {
         #train .d-chess .who img { width: 28px; height: 28px; }
         #train .d-chess .msg { font-size: 15px; min-height: 40px; } }`);
     ctx.stage.classList.add('d-chess');
-    const lv = ctx.level, two = lv > 5, n = two ? 1 : 2, secs = two ? 90 : 45;
+    const lv = ctx.level, two = lv > 5, n = ctx.items, secs = two ? 90 : 45;
     // (the pieces fetched before the first board, so it doesn't come up empty)
     const imgs = [...'wb'].flatMap((c) => [...'kqrbnp'].map((t) => { const i = new Image(); i.src = src(c, t); return i.decode().catch(() => null); }));
     const [data] = await Promise.all([ctx.data('chess'), Promise.race([Promise.all(imgs), ctx.sleep(2500)])]);

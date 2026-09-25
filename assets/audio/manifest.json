@@ -10,7 +10,7 @@
     "ui": 0.5,
     "ambience": 0.35
   },
-  "total_bytes": 2307377,
+  "total_bytes": 2399767,
   "files": [
     {
       "file": "assets/audio/ambience/distant_siren_loop.ogg",
@@ -274,6 +274,138 @@
       "license_evidence": "OGA page \"License(s):\" field = CC0 (links to http://creativecommons.org/publicdomain/zero/1.0/). Page body quotes the library homepage: \"Our team holds CC0 NO RIGHTS RESERVED for this library. It may be used without royalty or credit (though we would love to hear how you've used our sounds) for any application, personal or professional. Have at it!\" Attribution Instructions (optional under CC0): \"These sounds were created and recorded by Ben Jaszczak, Brian Nelson, Kevin Heras, and Matthew Nanney\"."
     },
     {
+      "file": "assets/audio/impacts/body_fall_01.ogg",
+      "source_url": "https://bigsoundbank.com/body-fall-2-s2453.html",
+      "download_url": "https://bigsoundbank.com/UPLOAD/bwf-en/2453.wav",
+      "author": "Joseph SARDIN (BigSoundBank.com)",
+      "license": "CC0 1.0",
+      "notes": "\"Body fall #2\". A zombie thrown by a car hitting the ground (and again, softer, off the bounce). Mono, resampled to 44.1 kHz, 35 Hz high-pass, trimmed to where it falls below -50 dB, 3 ms fade-in and 25 ms fade-out, peak-normalised to -1.5 dBFS, Ogg Vorbis.",
+      "category": "impacts",
+      "duration_s": 0.788,
+      "channels": 1,
+      "codec": "vorbis",
+      "sample_rate": 44100,
+      "bytes": 11075,
+      "peak_dbfs": -2.0,
+      "mean_dbfs": -20.2,
+      "loop": false,
+      "source_segment_s": [
+        0.16,
+        0.95
+      ],
+      "license_evidence": "Sound page License box: \"CC0 (public domain): Free and royalty-free\"; https://bigsoundbank.com/licenses.html: \"Creative Commons CC0 1.0 Universal ... Public Domain Dedication\"."
+    },
+    {
+      "file": "assets/audio/impacts/body_fall_02.ogg",
+      "source_url": "https://bigsoundbank.com/body-fall-5-s2456.html",
+      "download_url": "https://bigsoundbank.com/UPLOAD/bwf-en/2456.wav",
+      "author": "Joseph SARDIN (BigSoundBank.com)",
+      "license": "CC0 1.0",
+      "notes": "\"Body fall #5\". A zombie thrown by a car hitting the ground (as body_fall_01). Mono, resampled to 44.1 kHz, 35 Hz high-pass, trimmed to where it falls below -50 dB, 3 ms fade-in and 25 ms fade-out, peak-normalised to -1.5 dBFS, Ogg Vorbis.",
+      "category": "impacts",
+      "duration_s": 0.823,
+      "channels": 1,
+      "codec": "vorbis",
+      "sample_rate": 44100,
+      "bytes": 11088,
+      "peak_dbfs": -1.5,
+      "mean_dbfs": -20.5,
+      "loop": false,
+      "source_segment_s": [
+        0.73,
+        1.6
+      ],
+      "license_evidence": "Sound page License box: \"CC0 (public domain): Free and royalty-free\"; https://bigsoundbank.com/licenses.html: \"Creative Commons CC0 1.0 Universal ... Public Domain Dedication\"."
+    },
+    {
+      "file": "assets/audio/impacts/bone_crack_01.ogg",
+      "source_url": "https://bigsoundbank.com/bones-cracking-2-s1408.html",
+      "download_url": "https://bigsoundbank.com/UPLOAD/bwf-en/1408.wav",
+      "author": "Joseph SARDIN (BigSoundBank.com)",
+      "license": "CC0 1.0",
+      "notes": "\"Bones cracking #2 (celery)\". Bones going when a car hits a zombie hard, and under the wheels: celery snapped (classic bone-break foley). Mono, resampled to 44.1 kHz, 35 Hz high-pass, trimmed to where it falls below -50 dB, 3 ms fade-in and 25 ms fade-out, peak-normalised to -1.5 dBFS, Ogg Vorbis.",
+      "category": "impacts",
+      "duration_s": 0.399,
+      "channels": 1,
+      "codec": "vorbis",
+      "sample_rate": 44100,
+      "bytes": 8572,
+      "peak_dbfs": -1.6,
+      "mean_dbfs": -26.8,
+      "loop": false,
+      "source_segment_s": [
+        0.24,
+        0.7
+      ],
+      "license_evidence": "Sound page License box: \"CC0 (public domain): Free and royalty-free\"; https://bigsoundbank.com/licenses.html: \"Creative Commons CC0 1.0 Universal ... Public Domain Dedication\"."
+    },
+    {
+      "file": "assets/audio/impacts/bone_crack_02.ogg",
+      "source_url": "https://bigsoundbank.com/detail-1409-bones-cracking-3.html",
+      "download_url": "https://bigsoundbank.com/UPLOAD/bwf-en/1409.wav",
+      "author": "Joseph SARDIN (BigSoundBank.com)",
+      "license": "CC0 1.0",
+      "notes": "\"Bones cracking #3 (celery)\". Bones going (as bone_crack_01): a run of cracks. Mono, resampled to 44.1 kHz, 35 Hz high-pass, trimmed to where it falls below -50 dB, 3 ms fade-in and 25 ms fade-out, peak-normalised to -1.5 dBFS, Ogg Vorbis.",
+      "category": "impacts",
+      "duration_s": 0.529,
+      "channels": 1,
+      "codec": "vorbis",
+      "sample_rate": 44100,
+      "bytes": 11615,
+      "peak_dbfs": -2.4,
+      "mean_dbfs": -28.8,
+      "loop": false,
+      "source_segment_s": [
+        0.09,
+        0.62
+      ],
+      "license_evidence": "Sound page License box: \"CC0 (public domain): Free and royalty-free\"; https://bigsoundbank.com/licenses.html: \"Creative Commons CC0 1.0 Universal ... Public Domain Dedication\"."
+    },
+    {
+      "file": "assets/audio/impacts/bone_crack_03.ogg",
+      "source_url": "https://bigsoundbank.com/detail-0596-bones-cracking.html",
+      "download_url": "https://bigsoundbank.com/UPLOAD/bwf-en/0596.wav",
+      "author": "Joseph SARDIN (BigSoundBank.com)",
+      "license": "CC0 1.0",
+      "notes": "\"Bones cracking #1 (celery)\". Bones going (as bone_crack_01): one crack from the long take. Mono, resampled to 44.1 kHz, 35 Hz high-pass, trimmed to where it falls below -50 dB, 3 ms fade-in and 25 ms fade-out, peak-normalised to -1.5 dBFS, Ogg Vorbis.",
+      "category": "impacts",
+      "duration_s": 0.399,
+      "channels": 1,
+      "codec": "vorbis",
+      "sample_rate": 44100,
+      "bytes": 8098,
+      "peak_dbfs": -2.1,
+      "mean_dbfs": -30.4,
+      "loop": false,
+      "source_segment_s": [
+        2.31,
+        2.8
+      ],
+      "license_evidence": "Sound page License box: \"CC0 (public domain): Free and royalty-free\"; https://bigsoundbank.com/licenses.html: \"Creative Commons CC0 1.0 Universal ... Public Domain Dedication\"."
+    },
+    {
+      "file": "assets/audio/impacts/bone_crack_04.ogg",
+      "source_url": "https://bigsoundbank.com/detail-0596-bones-cracking.html",
+      "download_url": "https://bigsoundbank.com/UPLOAD/bwf-en/0596.wav",
+      "author": "Joseph SARDIN (BigSoundBank.com)",
+      "license": "CC0 1.0",
+      "notes": "\"Bones cracking #1 (celery)\". Bones going (as bone_crack_01): one short crack from the long take. Mono, resampled to 44.1 kHz, 35 Hz high-pass, trimmed to where it falls below -50 dB, 3 ms fade-in and 25 ms fade-out, peak-normalised to -1.5 dBFS, Ogg Vorbis.",
+      "category": "impacts",
+      "duration_s": 0.15,
+      "channels": 1,
+      "codec": "vorbis",
+      "sample_rate": 44100,
+      "bytes": 5537,
+      "peak_dbfs": -2.0,
+      "mean_dbfs": -27.1,
+      "loop": false,
+      "source_segment_s": [
+        5.48,
+        5.95
+      ],
+      "license_evidence": "Sound page License box: \"CC0 (public domain): Free and royalty-free\"; https://bigsoundbank.com/licenses.html: \"Creative Commons CC0 1.0 Universal ... Public Domain Dedication\"."
+    },
+    {
       "file": "assets/audio/impacts/bullet_concrete_01.ogg",
       "source_url": "https://freesound.org/people/deleted_user_1371021/sounds/161001/",
       "download_url": "https://cdn.freesound.org/previews/161/161001_1371021-hq.mp3",
@@ -450,6 +582,94 @@
         0.53
       ],
       "license_evidence": "Freesound sound page https://freesound.org/people/aust_paul/sounds/30932/ license box reads \"Creative Commons 0 - You can copy, modify, distribute and perform the sound, even for commercial purposes...\" and links https://creativecommons.org/publicdomain/zero/1.0/. Freesound originals need login, so this is the public HQ preview MP3 (~128 kbps) per the last-resort rule."
+    },
+    {
+      "file": "assets/audio/impacts/car_body_01.ogg",
+      "source_url": "https://bigsoundbank.com/body-fall-3-s2454.html",
+      "download_url": "https://bigsoundbank.com/UPLOAD/bwf-en/2454.wav",
+      "author": "Joseph SARDIN (BigSoundBank.com)",
+      "license": "CC0 1.0",
+      "notes": "\"Body fall #3\". The body against the car: a man falling on a tiled floor (a heavy thud and a slap), layered with car_hood when a car hits a zombie. Mono, resampled to 44.1 kHz, 35 Hz high-pass, trimmed to where it falls below -50 dB, 3 ms fade-in and 25 ms fade-out, peak-normalised to -1.5 dBFS, Ogg Vorbis.",
+      "category": "impacts",
+      "duration_s": 0.788,
+      "channels": 1,
+      "codec": "vorbis",
+      "sample_rate": 44100,
+      "bytes": 10793,
+      "peak_dbfs": -1.6,
+      "mean_dbfs": -21.9,
+      "loop": false,
+      "source_segment_s": [
+        0.16,
+        0.95
+      ],
+      "license_evidence": "Sound page License box: \"CC0 (public domain): Free and royalty-free\"; https://bigsoundbank.com/licenses.html: \"Creative Commons CC0 1.0 Universal ... Public Domain Dedication\"."
+    },
+    {
+      "file": "assets/audio/impacts/car_body_02.ogg",
+      "source_url": "https://bigsoundbank.com/body-fall-4-s2455.html",
+      "download_url": "https://bigsoundbank.com/UPLOAD/bwf-en/2455.wav",
+      "author": "Joseph SARDIN (BigSoundBank.com)",
+      "license": "CC0 1.0",
+      "notes": "\"Body fall #4\". The body against the car (as car_body_01). Mono, resampled to 44.1 kHz, 35 Hz high-pass, trimmed to where it falls below -50 dB, 3 ms fade-in and 25 ms fade-out, peak-normalised to -1.5 dBFS, Ogg Vorbis.",
+      "category": "impacts",
+      "duration_s": 0.644,
+      "channels": 1,
+      "codec": "vorbis",
+      "sample_rate": 44100,
+      "bytes": 9428,
+      "peak_dbfs": -1.2,
+      "mean_dbfs": -20.1,
+      "loop": false,
+      "source_segment_s": [
+        0.13,
+        0.95
+      ],
+      "license_evidence": "Sound page License box: \"CC0 (public domain): Free and royalty-free\"; https://bigsoundbank.com/licenses.html: \"Creative Commons CC0 1.0 Universal ... Public Domain Dedication\"."
+    },
+    {
+      "file": "assets/audio/impacts/car_body_03.ogg",
+      "source_url": "https://bigsoundbank.com/body-fall-1-s2452.html",
+      "download_url": "https://bigsoundbank.com/UPLOAD/bwf-en/2452.wav",
+      "author": "Joseph SARDIN (BigSoundBank.com)",
+      "license": "CC0 1.0",
+      "notes": "\"Body fall #1\". The body against the car (as car_body_01), cut before the second fall. Mono, resampled to 44.1 kHz, 35 Hz high-pass, trimmed to where it falls below -50 dB, 3 ms fade-in and 25 ms fade-out, peak-normalised to -1.5 dBFS, Ogg Vorbis.",
+      "category": "impacts",
+      "duration_s": 0.668,
+      "channels": 1,
+      "codec": "vorbis",
+      "sample_rate": 44100,
+      "bytes": 9620,
+      "peak_dbfs": -1.3,
+      "mean_dbfs": -22.5,
+      "loop": false,
+      "source_segment_s": [
+        0.11,
+        0.78
+      ],
+      "license_evidence": "Sound page License box: \"CC0 (public domain): Free and royalty-free\"; https://bigsoundbank.com/licenses.html: \"Creative Commons CC0 1.0 Universal ... Public Domain Dedication\"."
+    },
+    {
+      "file": "assets/audio/impacts/car_hood.ogg",
+      "source_url": "https://bigsoundbank.com/car-hood-closing-s0119.html",
+      "download_url": "https://bigsoundbank.com/UPLOAD/bwf-en/0119.wav",
+      "author": "Joseph SARDIN (BigSoundBank.com)",
+      "license": "CC0 1.0",
+      "notes": "\"Car hood (Closing)\". The bonnet taking a body: a car hood slammed shut, played pitched down (0.8-1.05) under car_body. Mono, resampled to 44.1 kHz, 35 Hz high-pass, trimmed to where it falls below -50 dB, 3 ms fade-in and 25 ms fade-out, peak-normalised to -1.5 dBFS, Ogg Vorbis.",
+      "category": "impacts",
+      "duration_s": 0.319,
+      "channels": 1,
+      "codec": "vorbis",
+      "sample_rate": 44100,
+      "bytes": 6564,
+      "peak_dbfs": -2.0,
+      "mean_dbfs": -18.2,
+      "loop": false,
+      "source_segment_s": [
+        0.0,
+        0.35
+      ],
+      "license_evidence": "Sound page License box: \"CC0 (public domain): Free and royalty-free\"; https://bigsoundbank.com/licenses.html: \"Creative Commons CC0 1.0 Universal ... Public Domain Dedication\"."
     },
     {
       "file": "assets/audio/player/footstep_concrete_01.ogg",
