@@ -12,3 +12,4 @@ start.command
 vercel.json
 assets/previews
 assets/hdri
+.claude

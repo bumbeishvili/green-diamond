@@ -62,7 +62,8 @@ class Game {
     // phones and tablets: touch controls over the game
     if (URLFLAGS.touch) { this.input.touch = true; this.touch = new Touch(this); document.body.classList.add('touch'); }
     this.audio = new Audio();
-    this.stats = { fps: 0, frames: 0, acc: 0 };
+    this.stats = { fps: 0, frames: 0, acc: 0, raw: [] };
+    this.dpr = { smooth: 0, slow: 0, wait: 5, raisedAt: -1e9, changedAt: -1e9, holdUntil: -1e9, tried: null, playT: 0 };   // (adaptResolution)
     this.hour = URLFLAGS.time ?? START_HOUR;
     this.frozen = URLFLAGS.freeze;
     // co-op: 'solo', or 'host' / 'client' of a match (net: the Host or Client from net/netgame.js)
@@ -607,21 +608,46 @@ class Game {
     return true;
   }
 
-  // Keep the frame rate up on laptops: trade render resolution for smoothness.
+  // Keep the frame rate up on laptops: trade render resolution for smoothness. Judged on the
+  // typical frame (the median over half a second, so a hitch while something is drawn for the first
+  // time doesn't count) and not in the first seconds of play (shaders compiling, textures going up).
+  // Down after a second of it being slow, and only if that helps: when the frame rate doesn't pick up
+  // (it's slow for some other reason than the pixels) it goes back and leaves it for half a minute.
+  // Back up only after a spell of smooth frames, and if going up just made it slow again, a longer
+  // spell next time (so it settles instead of going up and down). The change itself waits for the
+  // next frame's drawing (see frame()).
   adaptResolution(fps) {
-    if (this.state !== 'playing' || URLFLAGS.cam) return;
-    const cap = Math.min(devicePixelRatio, this.quality.pixelRatio);
-    const cur = this.renderer.getPixelRatio();
-    let next = cur;
-    if (fps < 50) next = Math.max(0.6, cur - 0.1);
-    else if (fps > 58 && cur < cap) next = Math.min(cap, cur + 0.05);
-    if (Math.abs(next - cur) > 0.001) this.renderer.setPixelRatio(next);
+    const r = this.dpr;
+    if (this.state !== 'playing' || URLFLAGS.cam || r.playT < 6) { r.slow = 0; r.smooth = 0; return; }
+    const cap = Math.min(devicePixelRatio, this.quality.pixelRatio), cur = this.wantDpr || this.renderer.getPixelRatio(), now = this.time;
+    // did the last step down help?
+    if (r.tried && now - r.tried.at > 1) {
+      if (fps < r.tried.fps * 1.08) { this.wantDpr = r.tried.from; r.holdUntil = now + 30; r.changedAt = now; }
+      r.tried = null;
+      return;
+    }
+    if (fps < 50) {
+      r.smooth = 0;
+      if (++r.slow >= 2 && cur > 0.6 && now - r.changedAt > 1 && now > r.holdUntil) {
+        if (now - r.raisedAt < 4) r.wait = Math.min(60, r.wait * 2);
+        this.wantDpr = Math.max(0.6, cur - 0.1);
+        r.tried = { from: cur, fps, at: now };
+        r.changedAt = now; r.slow = 0;
+      }
+    } else {
+      r.slow = 0;
+      if (fps > 58) {
+        r.smooth += 0.5;
+        if (r.smooth >= r.wait && cur < cap) { this.wantDpr = Math.min(cap, cur + 0.1); r.smooth = 0; r.raisedAt = r.changedAt = now; }
+      } else r.smooth = 0;
+    }
   }
 
   frame() {
     this.timer.update();
-    const dt = Math.min(0.05, this.timer.getDelta());
+    const raw = this.timer.getDelta(), dt = Math.min(0.05, raw);
     this.time += dt;
+    if (this.state === 'playing') this.dpr.playT += dt;
     // (answering an English question: no moving or shooting; alone, the world waits too)
     const playing = this.state === 'playing' && !this.practice?.open;
     if (this.practice?.open && this.player.dead) this.practice.quiz.finish(true);
@@ -679,15 +705,20 @@ class Game {
 
     // (screenshot tests: a spectator's view of the world going on, {pos: [x,y,z], look: [x,y,z]})
     if (this.specCam) { this.camera.position.fromArray(this.specCam.pos); this.camera.up.set(0, 1, 0); this.camera.lookAt(...this.specCam.look); }
+    // a new resolution goes in just before drawing: resizing the canvas clears it, and cleared
+    // after the frame was drawn, that frame would show black
+    if (this.wantDpr) { this.renderer.setPixelRatio(this.wantDpr); this.wantDpr = 0; }
     this.renderer.render(this.scene, this.camera);
     if (!debugCam && !this.specCam && !this.vehicles.hidesWeapons && !this.player.dead) this.weapons.render(this.renderer, this.atmo);
     this.input.endFrame();
 
     const st = this.stats;
-    st.frames++; st.acc += dt;
+    st.frames++; st.acc += dt; st.raw.push(raw);
     if (st.acc > 0.5) {
       st.fps = st.frames / st.acc; st.frames = 0; st.acc = 0;
-      this.adaptResolution(st.fps);
+      const med = st.raw.sort((a, b) => a - b)[st.raw.length >> 1];
+      st.raw.length = 0;
+      this.adaptResolution(1 / Math.max(0.001, med));
       if (URLFLAGS.debug) {
         const info = this.renderer.info.render;
         this.hud.setStats(`${st.fps.toFixed(0)} fps  ${info.calls} calls  ${(info.triangles / 1000).toFixed(0)}k tris\nzombies ${this.zombies.alive}  wave ${this.director.wave}  ${this.hour.toFixed(2)}h  dpr ${this.renderer.getPixelRatio().toFixed(2)}`);

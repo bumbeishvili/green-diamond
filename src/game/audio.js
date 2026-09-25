@@ -276,6 +276,20 @@ export class Audio {
         }
         break;
       }
+      // a car into a body: a dull heavy thump, the bonnet's hollow knock and ring, a wet crunch just after
+      case 'roadkill': {
+        env(tone('sine', 88, 32, 0.32), 0.002, 1.3, 0.32);
+        env(noise(360, 0.8), 0.002, 1.1, 0.22);
+        env(noise(720 + Math.random() * 160, 3.5, 'bandpass'), 0.003, 0.6, 0.32);
+        env(tone('triangle', 200, 150, 0.26), 0.003, 0.28, 0.26);
+        const f = noise(1600 + Math.random() * 500, 1.6, 'bandpass'), g = c.createGain(), t0 = t + 0.03 + Math.random() * 0.02;
+        g.gain.setValueAtTime(0.0001, t); g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(0.55, t0 + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.16);
+        f.connect(g).connect(out);
+        break;
+      }
+      // a body under the wheels: a soft low thud and a squelch
+      case 'bump': env(tone('sine', 62, 30, 0.22), 0.004, 1.0, 0.22); env(noise(480, 1.1), 0.004, 0.55, 0.14); env(noise(1300, 2, 'bandpass'), 0.02, 0.2, 0.12); break;
       // glass going: a burst, then tinkling bits
       case 'glass': {
         env(noise(5200, 0.9, 'highpass'), 0.001, 0.8, 0.25);

@@ -149,6 +149,8 @@ export class PvP {
       if (!pointInPoly(mx, my, poly)) continue;
       const x = mx, z = -my;
       if (!g.nav.walkable(x, z) || !g.nav.walkable(x + 1.2, z) || !g.nav.walkable(x - 1.2, z) || !g.nav.walkable(x, z + 1.2) || !g.nav.walkable(x, z - 1.2)) continue;
+      // (the walls alone don't keep you out of a building: inside them is free space too)
+      if (!g.nav.onLand(x, z) || g.player.roofObj(x, z) || g.level.buildings.some((b) => pointInPoly(mx, my, b.poly.outer))) continue;
       if (g.underground.at(x, z, g.hm.atWorld(x, z) + 0.1)) continue;
       const y = g.hm.atWorld(x, z);
       if (g.colliders.resolve({ x, z }, 0.5, y + 0.3, y + 1.7, 1)) continue;
@@ -196,6 +198,7 @@ export class PvP {
       const a = i * 1.9 + k * 2.39, d = i === 0 && k === 0 ? 0 : 1.6 + ((k + i) % 6) * 0.5;
       const x = base.x + Math.cos(a) * d, z = base.z + Math.sin(a) * d, y = g.groundAt(x, z, base.y + 0.5);
       if (Math.abs(y - base.y) > 0.6 || g.colliders.resolve({ x, z }, 0.4, y + 0.3, y + 1.7, 1)) continue;
+      if (!g.colliders.clear(base.x, base.y + 1.2, base.z, x, y + 1.2, z)) continue;   // (not through a wall)
       return { x, y, z };
     }
     return base;

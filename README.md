@@ -150,7 +150,7 @@ Drone: WASD to move where you look, Space to climb, Ctrl or Shift to descend, an
 - Kinds of zombie: walkers; runners; crawlers (low, hard to hit); brutes (big, soak up bullets, knock you back); screamers (stop and scream, which speeds up everything nearby and brings more); bloaters (glowing hazmat suits that burst when they reach you or die, taking out anything close). From wave 3, packs of stray dogs (a wolf leads them from wave 6); from wave 4, crows that dive at your head. The animals nip rather than maul, but they're fast. Crows find you on the roofs and in the drone too.
 - And newer ones: **leapers** (wave 4 on) crouch a few metres off and pounce, knocking you down; **spitters** (wave 5 on) keep their distance and spit acid in an arc, and the puddle burns while you stand in it; **riot police** (wave 6 on) carry a helmet and a პოლიცია shield that stops most bullets from the front: shoot their legs, catch them mid-swing, get round them or blow them up; and every fifth wave a **giant** twice your height, with its health bar across the top. It shrugs off a magazine or three, flings you, stops a car dead and smashes the one you're sitting in.
 - Sitting in a car doesn't save you for long: zombies claw at it, dent it and break the windows, then reach in, and when it's a wreck they drag you out.
-- Under each courtyard is an underground car park, a whole parking level with rows of parked cars, columns and strip lights. The ramps the zombies come up lead down into it: walk or drive down. Zombies come up out of it, follow you down into it, and take the nearest ramp back out when you leave.
+- Under each courtyard (and under the pool court between Spar and Nikora) is an underground car park, a whole parking level with rows of parked cars, columns and strip lights. The ramps the zombies come up lead down into it: walk or drive down. Zombies come up out of it, follow you down into it, and take the nearest ramp back out when you leave.
 - The clock is real Tbilisi sun: wave 1 starts at 17:15, sunset comes around wave 8, and it's night after that.
 - Every block with a roof housing has stairs. Press F at a lobby door to go up and at the roof door to come down. The zombies use the stairs too, so a roof is a choke point, not a safe room.
 - Ammo cans, first-aid kits, bundles of lari and now and then a gun lie around the complex, some of them up on the roofs. More turn up every wave and during it (they show on the minimap). A gun you don't have is yours; one you have, its ammo.
@@ -178,7 +178,7 @@ Drone: WASD to move where you look, Space to climb, Ctrl or Shift to descend, an
 Aim down the sights (E or right-click) and every gun hits twice as hard.
 
 - Weapons behave like the real ones: recoil climbs and drifts, spread blooms when you hold the trigger, tactical reloads keep a round in the chamber, the shotgun loads shell by shell. Rifle rounds go through car bodies and through a zombie or two. Arrows drop with distance and stick where they land; walk over them to pick them up.
-- Every parked car can be driven, and there are motorbikes and one-person drones around the complex. Cars and bikes run zombies down, but they can still reach you through the door.
+- Every parked car can be driven, and there are motorbikes and one-person drones around the complex. Cars and bikes run zombies down: a hit at speed throws them up over the bonnet, turning over, and they come down a few metres on with a thud; a slow one knocks them aside. You feel each one through the car, and the bodies bump under the wheels. They can still reach you through the door.
 - Some cars are special: Tatia's blue Prius by Gate 1 (the plate says თათიას მანქანა), Beka's grey 2018 Civic next to it (ბექას მანქანა), the light-blue დაცვა security Leaf by the booth, and a green Lamborghini Huracán in the bay by the pool courtyard, which goes like nothing else in the complex.
 - Power-ups sometimes drop from kills: Max Ammo, Insta-Kill, Double Points, Nuke.
 - Falling more than a couple of storeys hurts. If you fall into a pool, walk out up the steps (by the chrome rails), or jump at any edge.
@@ -210,7 +210,7 @@ questions** sets how often (every third wave, every wave, or every wave two at a
 
 ### Graphics
 
-The game picks Low, Medium or High from your GPU on the first run. You can change it in Settings (from the menu or the pause screen). It also lowers the render resolution by itself whenever the frame rate drops below about 50 fps, so it stays smooth on laptops.
+The game picks Low, Medium or High from your GPU on the first run. You can change it in Settings (from the menu or the pause screen). It also lowers the render resolution by itself whenever the frame rate drops below about 50 fps, so it stays smooth on laptops, and raises it again only once it's been smooth for a while.
 
 ## What is real
 
@@ -239,7 +239,7 @@ The game picks Low, Medium or High from your GPU on the first run. You can chang
   for sale, Format Fit at the end) above a concrete retaining wall with a green mesh fence, a grass strip and the dirt road.
 - **Gates:** the slatted portals with GATE 1 / GATE 2 on the beam, the security booths under their canopies with the Green
   Diamond sign, the barriers, and the blue diamond at Gate 1.
-- **Underground parking:** the eight ramps from OpenStreetMap, starting at the kerb as the real ones do, lead down into the parking levels under the middle and northern courtyards; the layout down there (aisles, stalls, columns) is a standard one, not surveyed.
+- **Underground parking:** the eight ramps from OpenStreetMap, starting at the kerb as the real ones do, lead down into the parking levels under the middle and northern courtyards. The ninth, between Spar and Nikora, runs down beside the pool court to the level under the south block (OpenStreetMap only has its walls; `tools/south_parking.py` adds it). The layout down there (aisles, stalls, columns) is a standard one, not surveyed.
 - **Pool houses:** teal rendered rooms with an open timber veranda on the pool side under hipped roofs; the one by the sand court is a plain white pavilion.
 - **Courts and courtyards:** three round terracotta courts with green chain-link fences and a triple hoop in the middle (the west end of the middle courtyard, its east end, and the north-west courtyard), the playground pads, gazebos, and the cabanas on the pool terrace, placed from satellite and aerial imagery and the developer's photos.
 - **Surroundings:** across Bob Walsh Street, the sandy lot with the parked lorries (the TEXTAR one opposite Gate 1), the lawns, saplings and car park opposite Gate 2, the Ice Palace's rust-brown cladding and the arenas; the forest and construction sites to the west. Matched to the gates' photospheres. The hills around Tbilisi use real elevation data draped with Sentinel-2 imagery, and 900 real high-rises form the skyline.

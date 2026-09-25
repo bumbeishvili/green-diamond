@@ -1263,6 +1263,22 @@ export class Vehicles {
     v.tilt.set(THREE.MathUtils.damp(v.tilt.x, -lf * 0.25, 5, dt), THREE.MathUtils.damp(v.tilt.y, lr * 0.25, 5, dt));
   }
 
+  // A zombie hit (for whoever is driving: a jolt through the car, and the thump) and a body driven
+  // over (a bump); the host's own, or told by the host (co-op)
+  hitFx(v, p, spd, killed) {
+    const g = this.g;
+    g.audio.play('roadkill', { pos: p, vol: Math.min(1.4, 0.55 + spd / 18), rate: killed ? 1 : 1.15 });
+    v.rock = Math.min(0.12, (v.rock || 0) + 0.03 + spd * 0.003);
+    if (v === this.active) g.player.shake = Math.min(1, g.player.shake + 0.2 + spd * 0.02);
+  }
+
+  bumped(v, p, spd) {
+    const g = this.g;
+    g.audio.play('bump', { pos: p, vol: Math.min(1.1, 0.5 + spd / 20) });
+    v.rock = Math.min(0.12, (v.rock || 0) + 0.05);
+    if (v === this.active) g.player.shake = Math.min(1, g.player.shake + 0.18);
+  }
+
   // Cars and bikes knock zombies down; slow ones just shove them aside.
   runOver(v) {
     if (v.type === 'drone' || this.g.mode === 'client') return;
@@ -1283,24 +1299,48 @@ export class Vehicles {
         v.speed *= 0.85;
       }
     }
+    const bike = v.type === 'bike';
     for (const zb of g.zombies.list) {
-      if (zb.state === 'dead' || zb.state === 'climb' || zb.species === 'crow' || zb.def.boss) continue;   // (a giant stops the car instead)
+      if (zb.state === 'climb' || zb.species === 'crow' || zb.def.boss) continue;   // (a giant stops the car instead)
       const dx = zb.pos.x - v.pos.x, dz = zb.pos.z - v.pos.z;
       if (Math.abs(dx) > 4 || Math.abs(dz) > 4 || Math.abs(zb.pos.y - v.pos.y) > 1.5) continue;
       const lx = dx * c - dz * sn, lz = dx * sn + dz * c;   // into the vehicle's frame (x forward, z right)
+      // over a body lying there: a bump under the wheels
+      if (zb.state === 'dead') {
+        if (spd > 2 && !zb.fling && zb.deadT > 0.3 && !(zb.bumpT > g.time) && Math.abs(lx) < s.hw && Math.abs(lz) < s.hd) {
+          zb.bumpT = g.time + 0.5;
+          this.bumped(v, zb.pos, spd);
+          g.net?.carFx?.(['u', v.vid, +zb.pos.x.toFixed(2), +zb.pos.y.toFixed(2), +zb.pos.z.toFixed(2), +spd.toFixed(1)]);
+        }
+        continue;
+      }
       const ex = s.hw + 0.35, ez = s.hd + 0.35;
       if (Math.abs(lx) > ex || Math.abs(lz) > ez) continue;
       if (spd > 3) {
-        const dmg = spd * spd * 3.2 * (v.type === 'bike' ? 0.6 : 1);
+        const dmg = spd * spd * 3.2 * (bike ? 0.6 : 1);
         const dir = new THREE.Vector3(v.vel.x, 0.3, v.vel.z).normalize();
         const hitPoint = zb.pos.clone(); hitPoint.y += 1;
         const killed = g.zombies.damage(zb, dmg, hitPoint, dir, false, 'vehicle', by);
         if (g.weapons.onHit) g.weapons.onHit(zb, killed, false, by);
         g.weapons.credit(by, killed, false);
-        g.audio.play('flesh', { pos: zb.pos, vol: 1 });
-        v.speed *= v.type === 'bike' ? 0.75 : 0.9;
-        if (!killed) { zb.pos.x += v.vel.x * 0.12; zb.pos.z += v.vel.z * 0.12; zb.hitT = 0.8; }
-        if (v.type === 'bike' && spd > 12) { who.damage(5, zb.pos.x, zb.pos.z); if (who !== g.player) g.net?.hurt?.(who, 5, zb.pos.x, zb.pos.z); }
+        v.speed *= bike ? 0.75 : 0.9;
+        // killed: thrown up and along, off to the side it was hit on, turning over; still up:
+        // knocked aside out of the way, reeling
+        const side = THREE.MathUtils.clamp(lz / ez, -1, 1), rx = sn, rz = c;
+        let spin = 0;
+        if (killed) {
+          const k = bike ? 0.6 : 0.85;
+          spin = Math.min(13, spd * (bike ? 0.5 : 0.75));
+          g.zombies.fling(zb, v.vel.x * k + rx * side * spd * 0.22, THREE.MathUtils.clamp(spd * (bike ? 0.28 : 0.42), 2, 7.5), v.vel.z * k + rz * side * spd * 0.22, spin);
+        } else {
+          const push = 0.5 + spd * 0.05;
+          zb.pos.x += v.vel.x * 0.1 + rx * Math.sign(side || 1) * push; zb.pos.z += v.vel.z * 0.1 + rz * Math.sign(side || 1) * push;
+          zb.hitT = 1.1;
+        }
+        this.hitFx(v, zb.pos, spd, killed);
+        g.net?.carFx?.(['r', zb.nid, killed ? 1 : 0, +spin.toFixed(2), zb.fling ? +zb.fling.ax.toFixed(3) : 0, zb.fling ? +zb.fling.az.toFixed(3) : 0,
+          v.vid, +hitPoint.x.toFixed(2), +hitPoint.y.toFixed(2), +hitPoint.z.toFixed(2), +dir.x.toFixed(2), +dir.y.toFixed(2), +dir.z.toFixed(2), +spd.toFixed(1)]);
+        if (bike && spd > 12) { who.damage(5, zb.pos.x, zb.pos.z); if (who !== g.player) g.net?.hurt?.(who, 5, zb.pos.x, zb.pos.z); }
       } else {
         // push out of the body along the shallow axis
         const px = ex - Math.abs(lx), pz = ez - Math.abs(lz);

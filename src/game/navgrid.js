@@ -13,6 +13,9 @@ export class NavGrid {
     this.minX = minX; this.minZ = minZ; this.cell = cell;
     this.n = Math.ceil(size / cell);
     this.filter = filter; this.inside = inside; this.pad = pad;
+    // (the ground is one stretch of land: goals off it are met at its edge; see request(). The car
+    // parks are islands of their own, none of them any more the land than the others)
+    this.oneLand = !inside;
     const N = this.n * this.n;
     this.blocked = new Uint8Array(N);
     if (inside) for (let i = 0; i < N; i++) { const c = this.center(i, {}); if (!inside(c.x, c.z)) this.blocked[i] = 1; }
@@ -49,6 +52,7 @@ export class NavGrid {
     const items = [];
     col.forEachNear(x0 - 2, z0 - 2, x1 + 2, z1 + 2, (o) => { items.push(o); });
     this.rasterize({ items }, [ix0, iz0, ix1, iz1]);
+    this.landDirty = true;
   }
 
   rasterize(col, clip = null) {
@@ -95,13 +99,69 @@ export class NavGrid {
     this.hs = 0;
     const goals = [t];
     if (extra) for (const p of extra) { const j = this.idx(p.x, p.z); if (j >= 0) goals.push(j); }
-    // a goal in a blocked cell (player next to a wall) seeds from its free neighbours
-    const seeds = [];
+    // A goal the horde can't walk to (a player up on a car or on a roof with no stairs, or in a
+    // walled-in corner) starts from the nearest cells it can reach instead: they gather round
+    // underneath. (Seeded from the goal alone, the field would stop at the car or the walls, and
+    // with nobody else to go for the whole horde would stand about.)
+    const land = this.oneLand ? this.mainland() : null, id = this.landId, seeds = [];
     for (const g of goals) {
-      seeds.push(g);
-      if (this.blocked[g]) for (const [dx, dz] of DIRS) { const j = g + dx + dz * this.n; if (j >= 0 && j < this.work.length && !this.blocked[j]) seeds.push(j); }
+      if (land ? land[g] === id : !this.blocked[g]) seeds.push(g, 0);
+      else this.nearestLand(g, seeds);
     }
-    for (const s of seeds) { this.work[s] = 0; this.push(s, 0); }
+    for (let k = 0; k < seeds.length; k += 2) {
+      const s = seeds[k], c = seeds[k + 1];
+      if (c < this.work[s]) { this.work[s] = c; this.push(s, c); }
+    }
+  }
+
+  // The biggest stretch of walkable cells joined together: the ground the horde can get about on
+  // (worked out again after a car parks or drives off). Returns each cell's patch; landId is its.
+  mainland() {
+    if (this.land && !this.landDirty) return this.land;
+    const n = this.n, N = n * n, b = this.blocked;
+    const comp = this.land || (this.land = new Int32Array(N));
+    const stack = this.landStack || (this.landStack = new Int32Array(N));
+    comp.fill(0);
+    let id = 0, best = 0, bestN = 0;
+    for (let s = 0; s < N; s++) {
+      if (b[s] || comp[s]) continue;
+      id++;
+      let sp = 0, cnt = 0;
+      stack[sp++] = s; comp[s] = id;
+      while (sp) {
+        const i = stack[--sp], ix = i % n;
+        cnt++;
+        if (ix > 0 && !b[i - 1] && !comp[i - 1]) { comp[i - 1] = id; stack[sp++] = i - 1; }
+        if (ix < n - 1 && !b[i + 1] && !comp[i + 1]) { comp[i + 1] = id; stack[sp++] = i + 1; }
+        if (i >= n && !b[i - n] && !comp[i - n]) { comp[i - n] = id; stack[sp++] = i - n; }
+        if (i < N - n && !b[i + n] && !comp[i + n]) { comp[i + n] = id; stack[sp++] = i + n; }
+      }
+      if (cnt > bestN) { bestN = cnt; best = id; }
+    }
+    this.landId = best;
+    this.landDirty = false;
+    return comp;
+  }
+
+  // the mainland cells nearest to cell g (out to 40 m; in a car park, the nearest free ones), onto
+  // seeds as [cell, cost] pairs (all at 0: a zombie's distance on the field is then how far it is
+  // from getting as close as it can)
+  nearestLand(g, seeds) {
+    const n = this.n, land = this.oneLand ? this.land : null, id = this.landId, b = this.blocked, gx = g % n, gz = (g / n) | 0;
+    let found = -1;
+    for (let r = 1; r <= 40 && (found < 0 || r <= found + 1); r++) {
+      for (let dz = -r; dz <= r; dz++) {
+        const edge = dz === -r || dz === r;
+        for (let dx = -r; dx <= r; dx += edge ? 1 : 2 * r) {
+          const jx = gx + dx, jz = gz + dz;
+          if (jx < 0 || jz < 0 || jx >= n || jz >= n) continue;
+          const j = jz * n + jx;
+          if (land ? land[j] !== id : b[j]) continue;
+          seeds.push(j, 0);
+          if (found < 0) found = r;
+        }
+      }
+    }
   }
 
   push(i, k) {
@@ -186,6 +246,21 @@ export class NavGrid {
     return i < 0 ? Infinity : this.dist[i] === 0xffffffff ? Infinity : this.dist[i] / ONE;
   }
 
+  // distanceAt, or in a blocked cell (a zombie pressed up against a wall) the best of its neighbours'
+  distanceNear(x, z) {
+    const i = this.idx(x, z);
+    if (i < 0) return Infinity;
+    let d = this.dist[i];
+    if (d === 0xffffffff) {
+      const n = this.n, ix = i % n, iz = (i / n) | 0;
+      for (const [dx, dz] of DIRS) {
+        const jx = ix + dx, jz = iz + dz;
+        if (jx >= 0 && jz >= 0 && jx < n && jz < n) d = Math.min(d, this.dist[jz * n + jx]);
+      }
+    }
+    return d === 0xffffffff ? Infinity : d / ONE;
+  }
+
   // Is the straight line between two points free of walk-blocking cells (fences, walls, cars)?
   lineWalkable(x1, z1, x2, z2) {
     const d = Math.hypot(x2 - x1, z2 - z1), n = Math.ceil(d / 0.5);
@@ -199,5 +274,12 @@ export class NavGrid {
   walkable(x, z) {
     const i = this.idx(x, z);
     return i >= 0 && !this.blocked[i];
+  }
+
+  // on the ground the horde (and everyone) can get about on: not inside a building's walls, not in
+  // a walled-in corner
+  onLand(x, z) {
+    const i = this.idx(x, z);
+    return i >= 0 && this.mainland()[i] === this.landId;
   }
 }

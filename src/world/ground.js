@@ -198,10 +198,12 @@ export async function buildGround(level, scene, colliders) {
   }
   // The land out there is layers a few centimetres apart (this base, construction dirt, lots,
   // streets). Far off, the depth buffer can't tell them apart and they flicker through each other,
-  // so each is drawn a fixed step further back than what lies on it (the base furthest).
-  const layer = (m, steps) => { m.polygonOffset = true; m.polygonOffsetFactor = steps / 2; m.polygonOffsetUnits = steps; };
-  layer(mats.wild, 6);
-  layer(mats.soil, 3);
+  // so each is drawn a fixed step further back than what lies on it, two steps at least: the base
+  // 16, the dirt 13, the sports grounds 10, lots and sand 8, lawns 6 (see surroundings.js), gravel
+  // roads 4, the side roads 2 and Bob Walsh Street, which they all join, 0.
+  const layer = (m, steps) => { m.polygonOffset = true; m.polygonOffsetFactor = steps / 3; m.polygonOffsetUnits = steps; };
+  layer(mats.wild, 16);
+  layer(mats.soil, 13);
   const base = new THREE.Mesh(new THREE.ShapeGeometry(disc, 48), mats.wild);
   base.rotation.x = -Math.PI / 2;
   base.position.y = -0.03;
@@ -221,13 +223,16 @@ export async function buildGround(level, scene, colliders) {
   for (const s of level.surroundings.streets) {
     roadsOut[s.surface].push(ribbonGeometry(s.line, s.w, s.surface === 'gravel' ? 0.008 : 0.022, uv.asphalt));
   }
+  // (the complex's own materials, a step back: copies, with their shader tweak)
+  const behind = (m, steps) => { const c = m.clone(); c.onBeforeCompile = m.onBeforeCompile; layer(c, steps); return c; };
+  layer(mats.gravel, 4);
   if (roadsOut.asphalt.length) {
-    const m = new THREE.Mesh(mergeGeometries(roadsOut.asphalt), mats.asphalt);
+    const m = new THREE.Mesh(mergeGeometries(roadsOut.asphalt), behind(mats.asphalt, 2));
     m.receiveShadow = true;
     group.add(m);
   }
   if (roadsOut.paving.length) {
-    const m = new THREE.Mesh(mergeGeometries(roadsOut.paving), mats.pavers);
+    const m = new THREE.Mesh(mergeGeometries(roadsOut.paving), behind(mats.pavers, 2));
     m.receiveShadow = true;
     group.add(m);
   }

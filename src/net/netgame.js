@@ -37,6 +37,7 @@ const r4 = (v) => [+v.x.toFixed(4), +v.y.toFixed(4), +v.z.toFixed(4)];
 // a spot to (re)spawn: next to a teammate if one is standing, else the courtyard by the pool
 export function spawnSpot(g, near, i = 0) {
   const base = near ? { x: near.pos.x, z: near.pos.z, y: near.pos.y } : { x: 4, z: 10, y: null };
+  const onLand = !near || g.nav.onLand(base.x, base.z);
   for (let k = 0; k < 40; k++) {
     // the first player on the spot itself, the rest in a ring around it
     const a = i * 1.9 + k * 2.39, d = !near && i === 0 && k === 0 ? 0 : 1.7 + ((k + i) % 8) * 0.45;
@@ -45,6 +46,8 @@ export function spawnSpot(g, near, i = 0) {
     if (near && Math.abs(y - base.y) > 0.6) continue;
     if (g.colliders.resolve({ x, z }, 0.4, y + 0.3, y + 1.7, 1)) continue;
     if (!near && !g.nav.walkable(x, z)) continue;
+    // on the teammate's side of any wall (not inside the building they're standing by)
+    if (near && (!g.colliders.clear(base.x, base.y + 1.2, base.z, x, y + 1.2, z) || (onLand && !g.nav.onLand(x, z)))) continue;
     return { x, y, z };
   }
   return { x: base.x, y: near ? base.y : g.hm.atWorld(base.x, base.z), z: base.z };
@@ -618,6 +621,9 @@ export class Host {
     this.g.hud.scores?.(s);
   }
 
+  // a car hit a zombie ('r') or went over a body ('u'): the others see and hear it too
+  carFx(e) { this.fx.push(e); }
+
   // effects the clients should see
   blood(kind, p, dir) {
     this.fx.push([kind === 'feathers' ? 'f' : kind === 'bile' ? 'g' : kind === 'spark' ? 'p' : 'b', +p.x.toFixed(2), +p.y.toFixed(2), +p.z.toFixed(2), dir ? +dir.x.toFixed(2) : 0, dir ? +dir.y.toFixed(2) : 0, dir ? +dir.z.toFixed(2) : 0]);
@@ -1096,6 +1102,16 @@ export class Client {
       } else if (e[0] === 'w') {
         const av = e[1] !== this.slot && this.avatars.list.get(e[1]);
         if (av) g.audio.play('saw', { pos: av.pos, vol: 0.8 });
+      } else if (e[0] === 'r') {
+        // a zombie hit by a car: thrown (the host flies it; the tumble's ours), blood, the thump
+        const [, nid, killed, spin, ax, az, vid, px, py, pz, dx, dy, dz, spd] = e, p = new THREE.Vector3(px, py, pz);
+        if (killed && spin) g.zombies.netFling(nid, spin, ax, az);
+        g.effects.bloodBurst(p, new THREE.Vector3(dx, dy, dz));
+        const v = g.vehicles.byVid(vid);
+        if (v) g.vehicles.hitFx(v, p, spd, !!killed); else g.audio.play('roadkill', { pos: p, vol: 1 });
+      } else if (e[0] === 'u') {
+        const [, vid, px, py, pz, spd] = e, v = g.vehicles.byVid(vid);
+        if (v) g.vehicles.bumped(v, new THREE.Vector3(px, py, pz), spd);
       } else {
         const p = new THREE.Vector3(e[1], e[2], e[3]), d = new THREE.Vector3(e[4], e[5], e[6]);
         if (e[0] === 'p') { g.effects.emit(p, 8, { color: [1, 0.85, 0.5], speed: 4, spread: 0.9, up: 0.6, life: 0.25, size: 0.04, gravity: 6 }); g.audio.play('metal', { pos: p, vol: 0.7 }); continue; }

@@ -308,10 +308,18 @@ export class HUD {
       ctx.restore();
     }
     ctx.restore();
-    // you: always pointing up (the map turns instead)
+    // you: always pointing up (the map turns instead), rings pulsing out from under the arrow
     ctx.save();
     ctx.translate(W / 2, H / 2);
     ctx.scale(u, u);
+    const now = performance.now() / 1600;
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.4;
+    for (const off of [0, 0.5]) {
+      const k = (now + off) % 1;
+      ctx.globalAlpha = 0.8 * (1 - k);
+      ctx.beginPath(); ctx.arc(0, 0, 5 + k * 17, 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
     ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = 'rgba(0,0,0,0.6)'; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(0, -9); ctx.lineTo(6, 7); ctx.lineTo(0, 3.5); ctx.lineTo(-6, 7); ctx.closePath(); ctx.fill(); ctx.stroke();
@@ -414,7 +422,16 @@ export class HUD {
     svg('text', { x: 25, y: -3 }, sG).textContent = '50 m';
     // (the parts that move, filled in while it's open: dots under tags under arrows)
     const dyn = svg('g', { class: 'dyn' }, root);
-    this.big2 = { g: { dot: svg('g', {}, dyn), tag: svg('g', { class: 'tags' }, dyn), arrow: svg('g', {}, dyn) }, pool: { dot: [], sq: [], tag: [], arrow: [] } };
+    const dotG = svg('g', {}, dyn), tagG = svg('g', { class: 'tags' }, dyn);
+    // where you are: rings pulsing out from under your arrow, one after the other
+    const me = svg('g', { class: 'me' }, dyn);
+    svg('circle', { r: 3.4, class: 'halo' }, me);
+    for (const begin of ['0s', '0.8s']) {
+      const ring = svg('circle', { r: 2.5, class: 'ring' }, me);
+      svg('animate', { attributeName: 'r', values: '2.5;12', dur: '1.6s', begin, repeatCount: 'indefinite' }, ring);
+      svg('animate', { attributeName: 'opacity', values: '0.95;0', dur: '1.6s', begin, repeatCount: 'indefinite' }, ring);
+    }
+    this.big2 = { g: { dot: dotG, tag: tagG, arrow: svg('g', {}, dyn) }, me, pool: { dot: [], sq: [], tag: [], arrow: [] } };
     const legend = document.createElement('div');
     legend.className = 'legend';
     const item = (swatch, text) => `<span>${swatch}${text}</span>`;
@@ -525,6 +542,7 @@ export class HUD {
       dot(z.pos.x, z.pos.z, 1.15 * (z.species === 'crow' ? 0.8 : z.def && z.def.shove ? 1.4 : 1), zc[z.species] || zc.human, 'z');
     }
     for (const m of mates) if (!m.me) arrow(m.pos.x, m.pos.z, m.yaw, SLOT_CSS[m.slot % 4], 1.3, m.dead ? 0.45 : 1);
+    this.big2.me.setAttribute('transform', `translate(${f(player.pos.x)} ${f(player.pos.z)})`);
     arrow(player.pos.x, player.pos.z, player.mapYaw ?? player.yaw, '#ffffff', 1.6);
     for (const kind of Object.keys(pool)) for (let i = used[kind]; i < pool[kind].length; i++) pool[kind][i].style.display = 'none';
   }

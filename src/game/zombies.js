@@ -309,6 +309,7 @@ export class Zombies {
     this.unav = null;          // flow field on the car-park level (around parked cars and columns)
     this.groundFn = null;      // (x, z, y) -> floor height, car-park aware
     this.tmpA = new THREE.Vector3(); this.tmpB = new THREE.Vector3(); this.tmpC = new THREE.Vector3();
+    this.tmpQ = new THREE.Quaternion();
     this.dir = { x: 0, z: 0 };
     // co-op: the players the horde can go for (null: just this.player). Each zombie takes the
     // nearest one. Hits and kills carry the shooter's slot (by).
@@ -364,7 +365,7 @@ export class Zombies {
       speed: (speed ?? rnd(...def.speed)) * speedMul, damage: damage * def.dmg, scale, roof, stair,
       state: 'chase', t: 0, phase: Math.random() * 10, attackT: 0, attackCd: 0, hitT: 0, hitAnim: 0, deadT: 0, buffT: 0,
       screamed: false, exploding: false, fuse: 0, gasT: Math.random(),
-      stuckT: 0, forceField: 0, lastPath: Infinity, progT: 0, direct: false, losT: 0, hiddenT: 0, climbT: 0,
+      stuckT: 0, forceField: 0, lastPath: Infinity, progT: 0, direct: false, losT: 0, hiddenT: 0, climbT: 0, fling: null, bumpT: 0,
       groanT: 2 + Math.random() * 6, lean: 0.1 + Math.random() * 0.2, tilt: (Math.random() - 0.5) * 0.5, armAsym: (Math.random() - 0.5) * 0.5,
       pos: new THREE.Vector3(x, y ?? ground, z), vel: new THREE.Vector3(), heading: Math.random() * Math.PI * 2,
       dealt: false, small: def.species === 'dog' || def.species === 'crow' || !!def.crawl, fallDir: 1, fallV: 0,
@@ -485,11 +486,12 @@ export class Zombies {
       }
     }
     zb.hp -= amount;
-    this.onFx?.(zb.species === 'crow' ? 'feathers' : zb.def.explode ? 'bile' : 'blood', point, dir);
+    const car = weapon === 'vehicle';   // (a car's hit has a sound and a message of its own: vehicles.runOver)
+    if (!car) this.onFx?.(zb.species === 'crow' ? 'feathers' : zb.def.explode ? 'bile' : 'blood', point, dir);
     if (zb.species === 'crow') this.fx.emit(point, 10, { color: [0.05, 0.05, 0.06], speed: 2.2, spread: 1.6, up: 1, life: 1.4, size: 0.07, gravity: 1.5 });
     else if (zb.def.explode) this.fx.emit(point, 12, { color: [0.35, 0.75, 0.15], speed: 2.5, spread: 1.2, up: 1, life: 0.8, size: 0.09, dir });
     else this.fx.bloodBurst(point, dir);
-    this.audio.play('flesh', { pos: point, vol: 0.7 });
+    if (!car) this.audio.play('flesh', { pos: point, vol: 0.7 });
     if (zb.hp <= 0) { this.kill(zb, dir, head, weapon, by); return true; }
     zb.hitT = zb.def.shove ? 0.08 : 0.25;
     if (zb.species === 'dog') zb.hitT = 0.15;
@@ -520,6 +522,21 @@ export class Zombies {
     if (zb.def.explode && !wasClimbing) { zb.exploding = true; zb.fuse = weapon === 'fuse' ? 0.7 : 0.15; }
     if (wasClimbing) zb.deadT = 8;
     if (this.onKill && weapon !== 'fuse') this.onKill(zb, head, weapon, by);
+  }
+
+  // Hit by a car: the body goes up and along the car's way, tumbling (legs swept on, head back
+  // towards the car), comes down, bounces once and slides and rolls to a stop. v: its velocity
+  // (m/s), spin: how fast it turns over (rad/s). On a co-op client (client: true) the host's
+  // snapshots carry it through the air and only the tumble is worked out here.
+  fling(zb, vx, vy, vz, spin, client = false) {
+    const h = Math.hypot(vx, vz) || 1;
+    zb.fling = { vx, vy, vz, spin, ax: -vz / h, az: vx / h, angle: 0, t: 0, ground: false, bounced: false, client };
+  }
+
+  // (a co-op client: the host says one of its zombies was hit by a car)
+  netFling(nid, spin, ax, az) {
+    const zb = this.byNid.get(nid);
+    if (zb) zb.fling = { vx: 0, vy: 0, vz: 0, spin, ax, az, angle: 0, t: 0, ground: false, bounced: false, client: true };
   }
 
   killAll() { for (const zb of this.list) if (zb.state !== 'dead') this.kill(zb, null, false, 'nuke'); }
@@ -797,8 +814,9 @@ export class Zombies {
       else if (zU && zU !== pU) {
         // leave the car park: along its flow field to a ramp door, then up the ramp
         const d = this.underground.nearestDoor(zU, zb.pos.x, zb.pos.z);
-        // at the doorway (anywhere between just inside and the ramp): carry on up the ramp
-        if (Math.hypot(d.in.x - zb.pos.x, d.in.z - zb.pos.z) < 3 || Math.hypot(d.out.x - zb.pos.x, d.out.z - zb.pos.z) < 5.6) toward(d.out);
+        // at the doorway (anywhere between just inside and the ramp): carry on up the ramp (not from
+        // the other side of the ramp's wall, where a car park runs alongside it)
+        if (Math.hypot(d.in.x - zb.pos.x, d.in.z - zb.pos.z) < 3 || (Math.hypot(d.out.x - zb.pos.x, d.out.z - zb.pos.z) < 5.6 && this.col.clear(zb.pos.x, zb.pos.y + 1, zb.pos.z, d.out.x, zb.pos.y + 1, d.out.z))) toward(d.out);
         else if (this.unav && !pU && this.unav.direction(zb.pos.x, zb.pos.z, this.dir)) { wx = this.dir.x; wz = this.dir.z; }
         else toward(d.in);
       } else if (!zU && pU && zb.pos.y < pU.floor + 1.6 && (door = pU.doors.find((q) => Math.hypot(q.out.x - zb.pos.x, q.out.z - zb.pos.z) < 4))) toward(door.in); // at the bottom of the ramp: in
@@ -824,10 +842,12 @@ export class Zombies {
       let speed = zb.speed * (zb.buffT > 0 || this.hurry ? 1.35 : 1);
       // far away and out of sight: hurry up (so waves never stall), or get moved closer
       if (!offNav) {
-        const pathD = nav.distanceAt(zb.pos.x, zb.pos.z);
+        const pathD = nav.distanceNear(zb.pos.x, zb.pos.z);
         zb.progT += dt;
         if (zb.progT > 3) {
-          if (isFinite(pathD) && isFinite(zb.lastPath) && pathD > zb.lastPath - 1.0 && dist > 3) { zb.forceField = 3; zb.stuckT += 3; }
+          // (a few metres from as close as it can get: waiting under a player up on a roof, or queueing
+          // behind the others, not stuck)
+          if (isFinite(pathD) && isFinite(zb.lastPath) && pathD > zb.lastPath - 1.0 && dist > 3) { zb.forceField = 3; zb.stuckT = pathD > 6 ? zb.stuckT + 3 : 0; }
           else zb.stuckT = 0;
           zb.lastPath = pathD; zb.progT = 0;
         }
@@ -1150,7 +1170,7 @@ export class Zombies {
       small: def.species === 'dog' || def.species === 'crow' || !!def.crawl, crowState: 'circle', exploding: false,
       lean: 0.1 + Math.random() * 0.2, tilt: (Math.random() - 0.5) * 0.5, armAsym: (Math.random() - 0.5) * 0.5,
       pos: new THREE.Vector3(s.x, s.y, s.z), vel: new THREE.Vector3(), heading: s.heading, buf: [], groanT: 2 + Math.random() * 6,
-      crouchK: 0, pitch: 0, stepN: 0, bossHp: 1,
+      crouchK: 0, pitch: 0, stepN: 0, bossHp: 1, fling: null,
     });
     const w = def.wide || 1;
     zb.root.scale.set(zb.scale * w, zb.scale, zb.scale * w);
@@ -1442,7 +1462,10 @@ export class Zombies {
       if (zb.deadT > 6) zb.root.visible = false;
       return;
     }
-    const g = this.groundOf(zb);
+    // thrown by a car: in the air (or rolling to a stop) the pose is worked out as usual, then
+    // turned over about the hips
+    if (zb.fling) { this.flight(zb, dt); zb.root.rotation.set(0, zb.heading, 0, 'YXZ'); }
+    const g = zb.fling ? zb.pos.y : this.groundOf(zb);
     if (zb.anim === 'model') {
       zb.mixer.update(dt);
       if (!zb.actions.death && !zb.def.crawl) zb.root.rotation.x = -Math.min(1, zb.deadT * 2.5) * (Math.PI / 2) * zb.fallDir;
@@ -1458,6 +1481,43 @@ export class Zombies {
     const lift = zb.anim === 'dog' || (zb.species === 'dog') ? 0.16 : zb.anim === 'model' ? 0 : 0.12;
     zb.root.position.x = zb.pos.x; zb.root.position.z = zb.pos.z;
     zb.root.position.y = zb.deadT > 6 ? g + lift - (zb.deadT - 6) * 0.25 : g + lift * Math.min(1, zb.deadT * 2.6);
+    if (zb.fling && zb.fling.angle) {
+      const f = zb.fling, r = zb.root, q = this.tmpQ.setFromAxisAngle(this.tmpA.set(f.ax, 0, f.az), f.angle);
+      const pv = this.tmpB.set(zb.pos.x, g + (zb.species === 'dog' ? 0.35 : 0.9) * zb.scale, zb.pos.z);
+      r.position.sub(pv).applyQuaternion(q).add(pv);
+      r.quaternion.premultiply(q);
+    }
+  }
+
+  // a thrown body's way through the air, its bounce and its slide (the host's; a co-op client's
+  // comes in the snapshots), and its turning over, rolled to a stop on a whole turn
+  flight(zb, dt) {
+    const f = zb.fling;
+    f.t += dt;
+    zb.deadT = Math.min(zb.deadT, 1);   // (lying there starts once it's down)
+    if (!f.client) {
+      f.vy -= 14 * dt;
+      const p = { x: zb.pos.x + f.vx * dt, z: zb.pos.z + f.vz * dt };
+      // (into a wall or a car: it stops dead and drops)
+      if (this.col.resolve(p, 0.3, zb.pos.y + 0.25, zb.pos.y + 1.5, 1, SKIP)) { f.vx *= -0.15; f.vz *= -0.15; f.spin *= 0.4; }
+      zb.pos.x = p.x; zb.pos.z = p.z; zb.pos.y += f.vy * dt;
+      const gy = this.floorAt(zb.pos.x, zb.pos.z, zb.pos.y);
+      if (zb.pos.y <= gy) {
+        zb.pos.y = gy;
+        if (f.vy < -3.5 && !f.bounced) {
+          f.bounced = true; f.vy *= -0.28; f.vx *= 0.55; f.vz *= 0.55; f.spin *= 0.6;
+          this.audio.play('bump', { pos: zb.pos, vol: 0.7, rate: 1.2 });
+          this.fx.blood.add(this.tmpC.set(zb.pos.x, gy + 0.03, zb.pos.z), UP, 1.1);
+        } else { f.vy = 0; f.ground = true; }
+      }
+      if (f.ground) { const k = Math.exp(-5 * dt); f.vx *= k; f.vz *= k; }
+    } else f.ground = f.t > 0.25 && zb.pos.y <= this.floorAt(zb.pos.x, zb.pos.z, zb.pos.y) + 0.06;
+    if (!f.ground) f.angle += f.spin * dt;
+    else {
+      const whole = Math.round(f.angle / (Math.PI * 2)) * Math.PI * 2;
+      f.angle += (whole - f.angle) * (1 - Math.exp(-7 * dt));
+      if (Math.abs(whole - f.angle) < 0.03 && Math.hypot(f.vx, f.vz) < 0.4) zb.fling = null;
+    }
   }
 }
 

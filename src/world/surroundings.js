@@ -169,14 +169,15 @@ export async function buildSurroundings(level, scene, atmo, backdropSites) {
     const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
   })();
   const turfMat = new THREE.MeshStandardMaterial({ map: turf, roughness: 0.95 });
-  // (these lie centimetres over the ground and the streets: each drawn a fixed step behind what's
-  // on top of it, or far off they flicker through each other)
+  // (these lie centimetres over the ground and under the streets: each drawn a fixed step behind
+  // what's on top of it, or far off they flicker through each other; the whole stack is in ground.js)
   const lineMat = new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: 0.8, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -3 });
+  const back = (steps) => ({ polygonOffset: true, polygonOffsetFactor: steps / 3, polygonOffsetUnits: steps });
   // (the lots are pale concrete with white bays; the ground between the venues mostly grass - satellite)
-  const lotMat = new THREE.MeshStandardMaterial({ map: lotTexture(), roughness: 0.95, polygonOffset: true, polygonOffsetFactor: 0.5, polygonOffsetUnits: 1 });
-  const sportsMat = new THREE.MeshStandardMaterial({ map: lawnTexture(), color: 0xc9d1b4, roughness: 1, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 2 });
-  const sandMat = new THREE.MeshStandardMaterial({ map: sandTexture(), roughness: 1, polygonOffset: true, polygonOffsetFactor: 0.5, polygonOffsetUnits: 1 });
-  const lawnMat = new THREE.MeshStandardMaterial({ map: lawnTexture(), roughness: 1, polygonOffset: true, polygonOffsetFactor: 0.25, polygonOffsetUnits: 0.5 });
+  const lotMat = new THREE.MeshStandardMaterial({ map: lotTexture(), roughness: 0.95, ...back(8) });
+  const sportsMat = new THREE.MeshStandardMaterial({ map: lawnTexture(), color: 0xc9d1b4, roughness: 1, ...back(10) });
+  const sandMat = new THREE.MeshStandardMaterial({ map: sandTexture(), roughness: 1, ...back(8) });
+  const lawnMat = new THREE.MeshStandardMaterial({ map: lawnTexture(), roughness: 1, ...back(6) });
   const fieldG = { turf: [], line: [], lot: [], sports: [], dirt: [], lawn: [] };
   const poles = [];
   for (const f of level.surroundings.features) {
@@ -286,12 +287,13 @@ function buildTrucks(list, group) {
     };
     at(-1.6, 0, 2.45, 13.4, 2.8, 2.5, t.trailer);          // the trailer body
     at(-1.6, 0, 0.95, 13.2, 0.25, 2.2, 0x2a2b2d);          // its chassis
-    at(-8.2, 0, 2.45, 0.08, 2.8, 2.48, 0x9a9da0);          // the rear doors
+    // (nothing flush with anything else: faces that share a plane flicker through each other)
+    at(-8.33, 0, 2.45, 0.06, 2.7, 2.4, 0x9a9da0);          // the rear doors, on the back
     at(6.5, 0, 2.05, 2.3, 2.3, 2.45, t.cab);               // the cab
-    at(7.62, 0, 2.35, 0.06, 0.95, 2.1, 0x1c2328);          // the windscreen
+    at(7.68, 0, 2.35, 0.06, 0.95, 2.1, 0x1c2328);          // the windscreen, standing proud of it
     at(6.5, 0, 3.5, 2.0, 0.55, 2.2, t.cab);                // the roof fairing
     at(7.7, 0, 0.75, 0.12, 0.5, 2.4, 0x3a3c3f);            // the bumper
-    at(5.2, 0, 0.8, 4.0, 0.3, 2.2, 0x2a2b2d);              // the tractor's frame
+    at(5.2, 0, 0.8, 4.0, 0.3, 2.0, 0x2a2b2d);              // the tractor's frame
     at(5.6, 1.2, 0.8, 1.2, 0.55, 0.5, 0xb8bcc0);           // the fuel tank
     for (const along of [7.0, 4.6, 3.3, -5.4, -6.5, -7.6]) for (const across of [-1.05, 1.05]) {
       wheels.push({ x: t.x + c * along - s * across, z: -(t.y + s * along + c * across), ry: t.h });
@@ -317,12 +319,12 @@ function buildTrucks(list, group) {
     x.font = 'italic 900 118px "Arial Black", Arial, sans-serif'; x.fillText(t.label, 150, 82);
     x.font = 'italic 600 30px Arial, sans-serif'; x.fillText('So sicher bremst nur das Original', 330, 160);
     const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
-    const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6, metalness: 0.1, polygonOffset: true, polygonOffsetFactor: -1 });
+    const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6, metalness: 0.1, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 });
     const holder = new THREE.Group();
     holder.position.set(t.x, 0, -t.y); holder.rotation.y = t.h;
     for (const side of [1, -1]) {
       const pl = new THREE.Mesh(new THREE.PlaneGeometry(13.2, 2.48), mat);
-      pl.position.set(-1.6, 2.45, side * 1.252);
+      pl.position.set(-1.6, 2.45, side * 1.27);
       if (side < 0) pl.rotation.y = Math.PI;
       holder.add(pl);
     }

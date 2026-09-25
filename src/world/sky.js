@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { Sky } from 'three/addons/objects/Sky.js';
 
 const LAT = 41.7958, LON = 44.7798, TZ = 4; // Tbilisi, UTC+4, no DST
+const UP = new THREE.Vector3(0, 1, 0), NIGHT_DIR = new THREE.Vector3(-0.3, 0.8, 0.2).normalize();
+const _off = new THREE.Vector3(), _x = new THREE.Vector3(), _y = new THREE.Vector3(), _z = new THREE.Vector3(), _p = new THREE.Vector3();
 
 // NOAA solar position. hour = local clock time (e.g. 18.5). Returns radians.
 export function solarPosition(date, hour) {
@@ -64,7 +66,8 @@ export class Atmosphere {
     Object.assign(s.camera, { left: -r, right: r, top: r, bottom: -r, near: 1, far: 900 });
     s.camera.updateProjectionMatrix();
     s.bias = -0.00025;
-    s.normalBias = 0.045;
+    // (a texel's worth or near it: less, and surfaces the sun grazes get striped with their own shadow)
+    s.normalBias = Math.max(0.045, (2 * r / quality.shadowMap) * 0.8);
     scene.add(this.sun, this.sun.target);
 
     this.hemi = new THREE.HemisphereLight(0xbcd2ff, 0x5b5040, 0.6);
@@ -147,14 +150,20 @@ export class Atmosphere {
     this.scene.environmentIntensity = lerp(TUNE.env * this.quality.envIntensity, 0.06, this.night);
   }
 
-  // Keep the shadow camera centred on the player, snapped to texels to avoid shimmer.
+  // Keep the shadow camera centred on the player, moved in whole shadow-map texels as the light
+  // sees them: then the texels stay put on the ground as you walk. (Snapped along the world's own
+  // axes they don't, with the sun at an angle, and every shadow edge crawls and shimmers.)
   follow(target) {
     const r = this.quality.shadowRange;
     const texel = (2 * r) / this.quality.shadowMap;
-    const cx = Math.round(target.x / texel) * texel, cz = Math.round(target.z / texel) * texel;
-    const dir = this.night > 0.9 ? new THREE.Vector3(-0.3, 0.8, 0.2).normalize() : this.sunDir;
-    this.sun.target.position.set(cx, 0, cz);
-    this.sun.position.set(cx + dir.x * 400, Math.max(40, dir.y * 400), cz + dir.z * 400);
+    const dir = this.night > 0.9 ? NIGHT_DIR : this.sunDir;
+    const off = _off.set(dir.x * 400, Math.max(40, dir.y * 400), dir.z * 400);
+    // the shadow camera's axes: it looks back along off, with the world's up for its up
+    const z = _z.copy(off).normalize(), x = _x.crossVectors(UP, z).normalize(), y = _y.crossVectors(z, x);
+    const p = _p.set(target.x, 0, target.z), u = p.dot(x), v = p.dot(y);
+    p.addScaledVector(x, Math.round(u / texel) * texel - u).addScaledVector(y, Math.round(v / texel) * texel - v);
+    this.sun.target.position.copy(p);
+    this.sun.position.copy(p).add(off);
     this.sun.target.updateMatrixWorld();
   }
 }

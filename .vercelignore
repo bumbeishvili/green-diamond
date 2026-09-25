@@ -13,3 +13,4 @@ wrangler.jsonc
 .assetsignore
 .wrangler
 .dev.vars
+.claude
