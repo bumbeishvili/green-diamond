@@ -75,6 +75,8 @@ Include these lines in the game credits:
 - Joseph SARDIN (BigSoundBank.com): https://bigsoundbank.com/body-fall-2-s2453.html, https://bigsoundbank.com/body-fall-5-s2456.html (CC0 1.0), used for `impacts/body_fall_01.ogg`, `impacts/body_fall_02.ogg`
 - Joseph SARDIN (BigSoundBank.com): https://bigsoundbank.com/car-hood-closing-s0119.html (CC0 1.0), used for `impacts/car_hood.ogg`
 - Joseph SARDIN (BigSoundBank.com): https://bigsoundbank.com/detail-0596-bones-cracking.html, https://bigsoundbank.com/bones-cracking-2-s1408.html, https://bigsoundbank.com/detail-1409-bones-cracking-3.html (CC0 1.0), used for `impacts/bone_crack_01.ogg`...`04.ogg`
+- Independent.nu (Ljudbank; submitted by qubodup): https://opengameart.org/content/2-wooden-squish-splatter-sequences (CC0 1.0), used for `impacts/gore_splat_01.ogg`...`04.ogg`
+- EZduzziteh: https://opengameart.org/content/squish-sounds-effects (CC0 1.0), used for `impacts/squish_01.ogg`...`05.ogg`
 - zer0_sol: https://opengameart.org/content/shotgun-reload-sound-effects (CC0 1.0), used for `guns/shotgun_pump.ogg`, `guns/shotgun_shell_insert.ogg`
 - deleted_user_1371021 (freesound account since deleted; CC0 so no attribution needed): https://freesound.org/people/deleted_user_1371021/sounds/161001/ (CC0 1.0), used for `impacts/bullet_concrete_01.ogg`
 - Iwan 'qubodup' Gabovitch: https://opengameart.org/content/impact (CC0 1.0), used for `impacts/bullet_concrete_02.ogg`, `impacts/bullet_flesh_03.ogg`, `impacts/bullet_metal_02.ogg`

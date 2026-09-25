@@ -544,7 +544,7 @@ export class Zombies {
     zb.fallV = 0;
     zb.leap = 0;
     const dog = zb.species === 'dog', crow = zb.species === 'crow';
-    this.audio.play(crow ? 'caw' : dog ? 'yelp' : 'zdeath', { pos: zb.pos, vol: 0.8, rate: zb.def.shove ? 0.75 : 1 });
+    if (weapon !== 'vehicle') this.audio.play(crow ? 'caw' : dog ? 'yelp' : 'zdeath', { pos: zb.pos, vol: 0.8, rate: zb.def.shove ? 0.75 : 1 });
     if (zb.anim === 'model') {
       if (zb.def.crawl || !zb.actions.death) { if (zb.current) zb.current.timeScale = 0; }
       else this.play(zb, 'death', 0.1);
@@ -567,6 +567,9 @@ export class Zombies {
     const h = Math.hypot(vx, vz) || 1;
     zb.fling = { vx, vy, vz, spin, ax: -vz / h, az: vx / h, angle: 0, t: 0, ground: false, bounced: false, client };
   }
+
+  // (a co-op client: one of the host's zombies killed by a car dies without a groan)
+  hush(nid) { const zb = this.byNid.get(nid); if (zb) zb.hush = true; }
 
   // (a co-op client: the host says one of its zombies was hit by a car)
   netFling(nid, spin, ax, az) {
@@ -1251,7 +1254,7 @@ export class Zombies {
       small: def.species === 'dog' || def.species === 'crow' || !!def.crawl, crowState: 'circle', exploding: false,
       lean: 0.1 + Math.random() * 0.2, tilt: (Math.random() - 0.5) * 0.5, armAsym: (Math.random() - 0.5) * 0.5,
       pos: new THREE.Vector3(s.x, s.y, s.z), vel: new THREE.Vector3(), heading: s.heading, buf: [], groanT: 2 + Math.random() * 6,
-      crouchK: 0, pitch: 0, stepN: 0, bossHp: 1, fling: null, sinkT: null, gone: false, settled: false,
+      crouchK: 0, pitch: 0, stepN: 0, bossHp: 1, fling: null, sinkT: null, gone: false, settled: false, hush: false,
     });
     const w = def.wide || 1;
     zb.root.scale.set(zb.scale * w, zb.scale, zb.scale * w);
@@ -1358,7 +1361,7 @@ export class Zombies {
     if (prev === 'climb') zb.root.visible = true;
     if (st === 'dead') {
       zb.deadT = 0; zb.fallDir = Math.random() < 0.65 ? 1 : -1; zb.fallV = 0; zb.leap = 0;
-      if (prev) this.audio.play(crow ? 'caw' : dog ? 'yelp' : 'zdeath', { pos: zb.pos, vol: 0.8, rate: zb.def.shove ? 0.75 : 1 });
+      if (prev && !zb.hush) this.audio.play(crow ? 'caw' : dog ? 'yelp' : 'zdeath', { pos: zb.pos, vol: 0.8, rate: zb.def.shove ? 0.75 : 1 });
       if (zb.anim === 'model') {
         if (zb.def.crawl || !zb.actions.death) { if (zb.current) zb.current.timeScale = 0; }
         else this.play(zb, 'death', 0.1);

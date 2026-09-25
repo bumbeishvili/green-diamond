@@ -1840,14 +1840,15 @@ export class Weapons {
     if (loud || Math.random() < 0.3) this.g.audio.play(res.surface === 'metal' ? 'metal' : 'concrete', { pos: res.point, vol: 0.5 });
   }
 
-  // hit marker + stats for whoever landed the hit (on the host: tell a client)
-  credit(slot, killed, head) {
+  // hit marker + stats for whoever landed the hit (on the host: tell a client); quiet: no click (a
+  // car's hits have their own sound)
+  credit(slot, killed, head, quiet = false) {
     const g = this.g;
     if (slot === (g.localSlot ?? 0)) {
       this.stats.hits++; if (head) this.stats.heads++;
       g.hud?.hitmarker(killed, head);
-      g.audio.play('hit', { vol: 0.45, jitter: 0 });
-    } else if (g.mode === 'host') g.net.hitFeedback(slot, killed, head);
+      if (!quiet) g.audio.play('hit', { vol: 0.45, jitter: 0 });
+    } else if (g.mode === 'host') g.net.hitFeedback(slot, killed, head, quiet);
   }
 
   // Hitscan: zombies vs static world vs ground.

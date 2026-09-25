@@ -811,7 +811,7 @@ export class Vehicles {
         const at = zb.pos.clone(); at.y += 1.2;
         const killed = g.zombies.damage(zb, J * J * 4, at, new THREE.Vector3(-hit.nx, 0.2, -hit.nz).normalize(), false, 'vehicle', by);
         if (g.weapons.onHit) g.weapons.onHit(zb, killed, false, by);
-        g.weapons.credit(by, killed, false);
+        g.weapons.credit(by, killed, false, true);
       }
     }
 
@@ -1272,22 +1272,27 @@ export class Vehicles {
     if (v === this.active) g.player.shake = Math.min(1, g.player.shake + 0.2 + spd * 0.02);
   }
 
-  // a car into a body: the bonnet taking it, the body against it, bones going (if it's hard enough)
-  // and a squelch; recorded foley, or the synth if the samples didn't load
+  // a car into a body: the bonnet taking it, the body against it and a wet squish; hard enough, a
+  // gory splat and bones going, crack after crack. Recorded foley (the synth if the samples didn't
+  // load), and nothing else: no death groan, no gun's hit click (that's the sound of a zombie shot)
   thud(p, spd, killed) {
     const a = this.g.audio, vol = Math.min(1.4, 0.55 + spd / 18);
     if (!a.has('carBody')) { a.play('roadkill', { pos: p, vol, rate: killed ? 1 : 1.15 }); return; }
-    a.play('carHood', { pos: p, vol: vol * 0.75, rate: (killed ? 0.8 : 0.9) + Math.random() * 0.15 });
-    a.play('carBody', { pos: p, vol: vol * 1.1, rate: killed ? 0.92 : 1.05 });
-    if (killed || spd > 9) a.play('bone', { pos: p, vol: vol * 0.8, delay: 0.02 + Math.random() * 0.03 });
-    a.play('flesh', { pos: p, vol: vol * 0.4, rate: 0.75, delay: 0.01 });
+    a.play('carHood', { pos: p, vol: vol * 0.85, rate: (killed ? 0.8 : 0.9) + Math.random() * 0.15 });
+    a.play('carBody', { pos: p, vol: vol * 0.8, rate: killed ? 0.92 : 1.05 });
+    a.play('squish', { pos: p, vol: vol * 0.9, delay: 0.012 });
+    if (killed || spd > 9) {
+      a.play('gore', { pos: p, vol: vol * 0.7, delay: 0.02 + Math.random() * 0.02 });
+      a.play('bone', { pos: p, vol: vol * 1.5, delay: 0.03 + Math.random() * 0.02 });
+      a.play('bone', { pos: p, vol: vol * 1.25, delay: 0.1 + Math.random() * 0.05, rate: 0.85 });
+    }
   }
 
   bumped(v, p, spd) {
     const g = this.g, a = g.audio;
     a.play('bump', { pos: p, vol: Math.min(1.1, 0.5 + spd / 20) });   // (the suspension taking it)
-    a.play('bone', { pos: p, vol: Math.min(1, 0.45 + spd / 25), rate: 0.85 + Math.random() * 0.2 });   // and what's under the wheel
-    a.play('flesh', { pos: p, vol: 0.45, rate: 0.7 });
+    a.play('bone', { pos: p, vol: Math.min(1.8, 0.9 + spd / 15), rate: 0.85 + Math.random() * 0.2 });   // and what's under the wheel
+    a.play('squish', { pos: p, vol: 0.9, rate: 0.8 + Math.random() * 0.2 });
     v.rock = Math.min(0.12, (v.rock || 0) + 0.05);
     if (v === this.active) g.player.shake = Math.min(1, g.player.shake + 0.18);
   }
@@ -1307,7 +1312,7 @@ export class Vehicles {
         q.runT = g.time + 0.6;
         const dir = new THREE.Vector3(v.vel.x, 0.3, v.vel.z).normalize(), at = q.pos.clone(); at.y += 1;
         const killed = g.pvp.hurt(q, spd * spd * 1.2 * (v.type === 'bike' ? 0.6 : 1), by, v.type === 'bike' ? 'bike' : 'car', at, dir);
-        g.weapons.credit(by, killed, false);
+        g.weapons.credit(by, killed, false, true);
         q.vel.x += v.vel.x * 0.6; q.vel.z += v.vel.z * 0.6; q.vel.y += 3; q.onGround = false;
         v.speed *= 0.85;
       }
@@ -1335,7 +1340,7 @@ export class Vehicles {
         const hitPoint = zb.pos.clone(); hitPoint.y += 1;
         const killed = g.zombies.damage(zb, dmg, hitPoint, dir, false, 'vehicle', by);
         if (g.weapons.onHit) g.weapons.onHit(zb, killed, false, by);
-        g.weapons.credit(by, killed, false);
+        g.weapons.credit(by, killed, false, true);
         v.speed *= bike ? 0.75 : 0.9;
         // killed: thrown up and along, off to the side it was hit on, turning over; still up:
         // knocked aside out of the way, reeling

@@ -14,6 +14,7 @@ const BANK = {
   heartbeat: ['player/heartbeat_fast_loop'],
   flesh: n('impacts/bullet_flesh', 3), concrete: n('impacts/bullet_concrete', 3), metal: n('impacts/bullet_metal', 3),
   carBody: n('impacts/car_body', 3), carHood: ['impacts/car_hood'], bone: n('impacts/bone_crack', 4), bodyFall: n('impacts/body_fall', 2),
+  gore: n('impacts/gore_splat', 4), squish: n('impacts/squish', 5),
   waveStart: ['ui/wave_start_siren'], waveEnd: ['ui/wave_complete'], pickup: ['ui/pickup'], hit: ['ui/hit_marker'], buy: ['ui/buy'],
   ambience: ['ambience/suburb_distant_traffic_loop'], sirens: ['ambience/distant_siren_loop'],
 };

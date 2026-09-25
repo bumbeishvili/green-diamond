@@ -659,7 +659,7 @@ export class Host {
   }
   nadeFx(id, p, v) { this.s.sendAll('rel', { t: 'nade', id, p: r3(p), v: r3(v) }); }
   boom(x, y, z, r, src) { this.s.sendAll('rel', { t: 'boom', x: +x.toFixed(2), y: +y.toFixed(2), z: +z.toFixed(2), r, src }); }
-  hitFeedback(slot, killed, head) { const r = this.bySlot(slot); if (r) this.s.sendTo(r.id, 'rel', { t: 'hit', k: killed, h: head }); }
+  hitFeedback(slot, killed, head, quiet = false) { const r = this.bySlot(slot); if (r) this.s.sendTo(r.id, 'rel', { t: 'hit', k: killed, h: head, q: quiet ? 1 : 0 }); }
   pointsFeed(slot, n) { const r = this.bySlot(slot); if (r) this.s.sendTo(r.id, 'rel', { t: 'pts', n }); }
   hurt(p, amount, x, z) { const r = p.remote; if (r) this.s.sendTo(r.id, 'rel', { t: 'hurt', a: +amount.toFixed(1), x: +x.toFixed(2), z: +z.toFixed(2) }); }
   wave(w, note) { this.say({ t: 'wave', w, note }); }
@@ -732,7 +732,7 @@ export class Client {
       case 'who': this.s.sendTo(this.s.hostId, 'rel', { t: 'hello', name: this.g.playerName || '' }); break;
       case 'team': this.team = m.team; g.hud.team?.(m.team); break;
       case 'fx': if (this.match) this.effects(m.l); break;
-      case 'hit': g.hud.hitmarker(m.k, m.h); g.audio.play('hit', { vol: 0.45, jitter: 0 }); g.weapons.stats.hits++; if (m.h) g.weapons.stats.heads++; break;
+      case 'hit': g.hud.hitmarker(m.k, m.h); if (!m.q) g.audio.play('hit', { vol: 0.45, jitter: 0 }); g.weapons.stats.hits++; if (m.h) g.weapons.stats.heads++; break;
       case 'pts': g.hud.feed(m.n); break;
       case 'score': this.scores(m.s); break;
       case 'hurt': {
@@ -1117,6 +1117,7 @@ export class Client {
         // a zombie hit by a car: thrown (the host flies it; the tumble's ours), blood, the thump
         const [, nid, killed, spin, ax, az, vid, px, py, pz, dx, dy, dz, spd] = e, p = new THREE.Vector3(px, py, pz);
         if (killed && spin) g.zombies.netFling(nid, spin, ax, az);
+        if (killed) g.zombies.hush(nid);   // (no death groan: the car's the sound of it)
         g.effects.bloodBurst(p, new THREE.Vector3(dx, dy, dz));
         const v = g.vehicles.byVid(vid);
         if (v) g.vehicles.hitFx(v, p, spd, !!killed); else g.vehicles.thud(p, spd, !!killed);
