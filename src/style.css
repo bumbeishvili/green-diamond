@@ -199,7 +199,7 @@ body.touch #bigmap { pointer-events: auto; }
   background: rgba(8, 10, 12, .84); box-shadow: 0 0 0 1px rgba(255, 255, 255, .08); font: 13px var(--body); color: #ddd6c8; }
 #bigmap .legend span { display: inline-flex; align-items: center; gap: 5px; }
 #bigmap .legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; box-shadow: 0 0 0 1px rgba(0, 0, 0, .5); }
-#bigmap .legend i.sq { border-radius: 1px; background: #eef3f6; }
+#bigmap .legend svg.ic { width: 16px; height: 16px; flex: none; }
 #bigmap .legend i.arrow { width: 0; height: 0; border-radius: 0; box-shadow: none; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 11px solid #fff; }
 #bigmap .legend b { background: #2f6db3; color: #fff; font-size: 10px; padding: 0 4px; border-radius: 2px; }
 #bigmap .legend em { margin-top: 4px; font-style: normal; color: #8f897f; font-size: 12px; }

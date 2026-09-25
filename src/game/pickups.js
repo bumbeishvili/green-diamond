@@ -378,5 +378,5 @@ export class Pickups {
     if (this.rings.instanceColor) this.rings.instanceColor.needsUpdate = true;
   }
 
-  markers() { return this.list.map((it) => ({ x: it.x, z: it.z, color: PICKUP_COLORS[it.kind], size: 0.8 })); }
+  markers() { return this.list.map((it) => ({ x: it.x, z: it.z, color: PICKUP_COLORS[it.kind], size: 0.8, icon: it.kind })); }
 }

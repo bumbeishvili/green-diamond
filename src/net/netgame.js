@@ -354,6 +354,8 @@ export class Host {
         break;
       case 'buy': this.buy(r, m); break;
       case 'learn': this.learnReward(r, m); break;
+      // (answering a question: no harm to them for a while; two questions of 20 s at most, then it lapses)
+      case 'ans': p.answering = m.on ? performance.now() / 1000 + 45 : 0; break;
       case 'enter': this.vehicleEnter(r, m.vid); break;
       case 'exit': this.vehicleExit(r); break;
       default: break;
@@ -1110,6 +1112,7 @@ export class Client {
   melee(heavy) { this.s.sendTo(this.s.hostId, 'rel', { t: 'melee', heavy }); }
   saw() { this.s.sendTo(this.s.hostId, 'rel', { t: 'saw' }); }
   learnReward(m) { this.s.sendTo(this.s.hostId, 'rel', { t: 'learn', ...m }); }
+  answering(on) { this.s.sendTo(this.s.hostId, 'rel', { t: 'ans', on: on ? 1 : 0 }); }
   missile(id, p, v) { this.s.sendTo(this.s.hostId, 'rel', { t: 'msl', id, p: r3(p), v: r3(v) }); }
   grenade(p, v) { this.s.sendTo(this.s.hostId, 'rel', { t: 'nade', p: r3(p), v: r3(v) }); }
   arrow(id, p, v, dmg, pierce, aimed) { this.s.sendTo(this.s.hostId, 'rel', { t: 'arrow', id, p: r3(p), v: r3(v), dmg, pierce, a: aimed ? 1 : 0 }); }

@@ -1,6 +1,7 @@
 import { DEFS, CATS, UPGRADES } from './weapons.js';
 import { isPvp, teamOf, TEAM_CSS, TEAM_NAMES } from './pvp.js';
 import { blockName } from '../world/buildings.js';
+import { ICONS, badge, badgeImages } from './mapicons.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const svg = (tag, attrs = {}, parent = null) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); if (parent) parent.appendChild(e); return e; };
@@ -269,12 +270,20 @@ export class HUD {
     const k = scale / this.mapScale;
     ctx.drawImage(this.mapCanvas, -(px + this.mapR) * this.mapScale * k, -(this.mapR - py) * this.mapScale * k, this.mapCanvas.width * k, this.mapCanvas.height * k);
     const toMap = (x, z) => [(x - px) * scale, (z + py) * scale];
+    const bpx = Math.round(11 * u);
+    if (this.badgePx !== bpx) { this.badgePx = bpx; this.badges = badgeImages(bpx); }
     for (const m of markers) {
       if (m.bigOnly) continue;
       const [mx, mz] = toMap(m.x, m.z);
+      const img = m.icon && this.badges[m.icon];
+      if (img && img.complete && img.naturalWidth) {
+        // (the badge stays upright while the map turns)
+        const s = bpx * (m.station ? 1.08 : 0.92);
+        ctx.save(); ctx.translate(mx, mz); ctx.rotate(-yaw); ctx.drawImage(img, -s / 2, -s / 2, s, s); ctx.restore();
+        continue;
+      }
       const r = 3.5 * u * (m.size || 1);
       ctx.fillStyle = m.color;
-      if (m.shape === 'square') { ctx.fillRect(mx - r * 0.6, mz - r * 0.6, r * 1.2, r * 1.2); continue; }
       ctx.beginPath(); ctx.arc(mx, mz, r, 0, Math.PI * 2); ctx.fill();
     }
     const zc = { human: '#ff3b30', dog: '#ff9a3a', crow: '#c77dff' };
@@ -384,6 +393,7 @@ export class HUD {
       flush();
     }
     const defs = svg('defs', {}, root);
+    for (const kind of Object.keys(ICONS)) { const sym = svg('symbol', { id: `ic-${kind}`, viewBox: '0 0 24 24' }, defs); sym.innerHTML = badge(kind); }
     let si = 0;
     for (const [name, { pts }] of best) {
       const a = pts[0], z = pts[pts.length - 1];
@@ -408,10 +418,11 @@ export class HUD {
     const legend = document.createElement('div');
     legend.className = 'legend';
     const item = (swatch, text) => `<span>${swatch}${text}</span>`;
+    const ic = (kind) => `<svg class="ic" viewBox="0 0 24 24">${badge(kind)}</svg>`;
     legend.innerHTML = [
-      item('<i class="arrow"></i>', 'you'), item('<i style="background:#ff3b30"></i>', 'zombies'), item('<i style="background:#ffb347"></i>', 'shops and weapons'),
-      item('<i style="background:#9bd35a"></i>', 'ammo'), item('<i style="background:#ff6b6b"></i>', 'first aid'), item('<i style="background:#ffe066"></i>', 'lari'),
-      item('<i style="background:#ff9f43"></i>', 'a gun'), item('<i style="background:#b98cff"></i>', 'word crate'), item('<i class="sq"></i>', 'stairs'), item('<b>P</b>', 'car park'),
+      item('<i class="arrow"></i>', 'you'), item('<i style="background:#ff3b30"></i>', 'zombies'), item(ic('giant'), 'a giant'),
+      item(ic('shop-gun'), 'shops and weapons'), item(ic('ammo'), 'ammo'), item(ic('health'), 'first aid'), item(ic('cash'), 'lari'),
+      item(ic('gun'), 'a gun'), item(ic('word'), 'question crate'), item(ic('powerup'), 'power-up'), item(ic('stairs'), 'stairs'), item('<b>P</b>', 'car park'),
     ].join('') + `<em>${'ontouchstart' in window ? 'tap to close' : 'M to close'}</em>`;
     wrap.appendChild(legend);
     const close = (e) => { e.preventDefault(); e.stopPropagation(); if (this.big) this.toggleMap(); };
@@ -441,9 +452,10 @@ export class HUD {
       return false;
     };
     const around = (r) => [[0, 0], [0, -r], [0, r], [-r * 1.6, 0], [r * 1.6, 0], [0, -2 * r], [0, 2 * r], [-r * 1.6, -r], [r * 1.6, -r], [-r * 1.6, r], [r * 1.6, r], [0, -3 * r], [0, 3 * r]];
-    const beside = (r) => around(r).slice(1);   // (never on top of the dot it names)
-    // the station dots and the car parks' P signs: nothing written over them
-    for (const m of stations) placed.push([m.x - 1.9, m.z - 1.9, m.x + 1.9, m.z + 1.9]);
+    // (never on top of the icon it names; further out if it's crowded there)
+    const beside = (r) => [...around(r).slice(1), ...[[0, -4], [0, 4], [-2.6, 0], [2.6, 0], [-2.6, -2], [2.6, -2], [-2.6, 2], [2.6, 2], [0, -5], [0, 5]].map(([a, b]) => [a * r, b * r])];
+    // the stations' icons and the car parks' P signs: nothing written over them
+    for (const m of stations) placed.push([m.x - 2.7, m.z - 2.7, m.x + 2.7, m.z + 2.7]);
     for (const u of level.underground || []) for (const dr of u.doors) { const x = (dr.a[0] + dr.b[0]) / 2, z = -(dr.a[1] + dr.b[1]) / 2; placed.push([x - 2.8, z - 2.8, x + 2.8, z + 2.8]); }
     // the blocks (a building with two lobbies: a name by each)
     const byB = new Map();
@@ -482,7 +494,8 @@ export class HUD {
   // the big map's moving parts (pooled SVG elements)
   drawBigMap(player, zombies, markers, mates) {
     if (!this.big2Placed) { this.big2Placed = true; this.placeLabels(markers.filter((m) => m.station)); }
-    const { g, pool } = this.big2, used = { dot: 0, sq: 0, tag: 0, arrow: 0 };
+    const { g, pool } = this.big2, used = { dot: 0, sq: 0, tag: 0, arrow: 0, icon: 0 };
+    if (!pool.icon) pool.icon = [];
     const get = (kind, tag, parent) => { let e = pool[kind][used[kind]++]; if (!e) { e = svg(tag, {}, parent); pool[kind].push(e); } e.style.display = ''; return e; };
     const f = (v) => v.toFixed(1);
     const dot = (x, z, r, fill, cls = '') => { const e = get('dot', 'circle', g.dot); e.setAttribute('cx', f(x)); e.setAttribute('cy', f(z)); e.setAttribute('r', r); e.setAttribute('fill', fill); e.setAttribute('class', cls); };
@@ -493,15 +506,23 @@ export class HUD {
       e.setAttribute('fill', fill); e.setAttribute('opacity', alpha);
     };
     for (const m of markers) {
-      if (m.shape === 'square') {
-        const e = get('sq', 'rect', g.dot);
-        e.setAttribute('x', f(m.x - 1.1)); e.setAttribute('y', f(m.z - 1.1)); e.setAttribute('width', 2.2); e.setAttribute('height', 2.2); e.setAttribute('class', 'stairs');
+      if (m.icon && ICONS[m.icon]) {
+        const e = get('icon', 'use', g.dot), s = m.station ? 5.2 : m.icon === 'stairs' ? 3.4 : 4.2;
+        const href = `#ic-${m.icon}`;
+        if (e.getAttribute('href') !== href) e.setAttribute('href', href);
+        e.setAttribute('x', f(m.x - s / 2)); e.setAttribute('y', f(m.z - s / 2)); e.setAttribute('width', s); e.setAttribute('height', s);
       } else dot(m.x, m.z, m.station ? 1.8 : 1.35 * (m.size || 1), m.color, m.station ? 'st' : 'pk');
     }
     const zc = { human: '#ff3b30', dog: '#ff9a3a', crow: '#c77dff' };
     for (const z of zombies) {
       if (z.state === 'dead' || z.state === 'climb') continue;
-      dot(z.pos.x, z.pos.z, 1.15 * (z.species === 'crow' ? 0.8 : z.def && z.def.boss ? 2.4 : z.def && z.def.shove ? 1.4 : 1), zc[z.species] || zc.human, 'z');
+      if (z.def && z.def.boss) {
+        const e = get('icon', 'use', g.arrow);
+        if (e.getAttribute('href') !== '#ic-giant') e.setAttribute('href', '#ic-giant');
+        e.setAttribute('x', f(z.pos.x - 3.6)); e.setAttribute('y', f(z.pos.z - 3.6)); e.setAttribute('width', 7.2); e.setAttribute('height', 7.2);
+        continue;
+      }
+      dot(z.pos.x, z.pos.z, 1.15 * (z.species === 'crow' ? 0.8 : z.def && z.def.shove ? 1.4 : 1), zc[z.species] || zc.human, 'z');
     }
     for (const m of mates) if (!m.me) arrow(m.pos.x, m.pos.z, m.yaw, SLOT_CSS[m.slot % 4], 1.3, m.dead ? 0.45 : 1);
     arrow(player.pos.x, player.pos.z, player.mapYaw ?? player.yaw, '#ffffff', 1.6);

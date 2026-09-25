@@ -273,6 +273,8 @@ export class Player {
 
   damage(amount, fromX, fromZ) {
     if (this.dead) return false;
+    // (answering a bonus question: nothing hurts you till you're done; a co-op host gives it a time limit)
+    if (this.answering && (this.answering === true || this.answering > performance.now() / 1000)) return false;
     amount *= this.armourTake;
     this.health -= amount;
     this.regenDelay = 4.0;

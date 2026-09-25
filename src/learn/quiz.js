@@ -3,7 +3,8 @@
 // Wrong: the right answer, what it means in Georgian, a sentence and its sound, until you go on.
 // A round ends with its rewards; the game hands them out (money, ammo, health, a gun...).
 
-const TITLES = { meaning: 'What does it mean?', word: 'Which English word?', gap: 'Which word fits?', listen: 'Which word did you hear?' };
+const TITLES = { meaning: 'What does it mean?', word: 'Which English word?', gap: 'Which word fits?', listen: 'Which word did you hear?', math: 'Work it out' };
+const LIMIT = 20;   // seconds for a question: then it's over (unanswered: no harm done)
 
 export class Quiz {
   constructor(learn) {
@@ -60,7 +61,7 @@ export class Quiz {
     this.$('.kind').textContent = TITLES[it.kind];
     const p = this.$('.prompt');
     p.className = `prompt ${it.kind}`;
-    p.innerHTML = it.kind === 'listen' ? '<span class="play">🔊</span>' : esc(it.prompt).replace('_____', '<u>_____</u>')
+    p.innerHTML = it.kind === 'listen' ? '<span class="play">🔊</span>' : it.kind === 'math' ? esc(it.prompt) : esc(it.prompt).replace('_____', '<u>_____</u>')
       + (it.kind === 'meaning' && it.q.e ? ` <span class="emo">${it.q.e}</span>` : '') + (it.kind === 'meaning' ? ' <span class="play small">🔊</span>' : '');
     this.$('.opts').innerHTML = it.options.map((o, i) => `<button type="button" data-i="${i}"><b>${i + 1}</b>${esc(o)}</button>`).join('');
     for (const b of this.el.querySelectorAll('.opts button')) b.onclick = () => this.pick?.(+b.dataset.i);
@@ -73,7 +74,9 @@ export class Quiz {
     else if (it.kind === 'meaning') L.say(it.q.w);
     const bar = this.$('.bar i');
     bar.style.transition = 'none'; bar.style.width = '100%';
-    requestAnimationFrame(() => { bar.style.transition = 'width 10s linear'; bar.style.width = '0%'; });
+    requestAnimationFrame(() => { bar.style.transition = `width ${LIMIT}s linear`; bar.style.width = '0%'; });
+    clearTimeout(this.limitT);
+    this.limitT = setTimeout(() => { if (this.open && this.pick) this.finish(true); }, LIMIT * 1000);
     this.t0 = performance.now();
     this.go = null;
     this.pick = (i) => this.answer(i);
@@ -82,9 +85,10 @@ export class Quiz {
   answer(i) {
     const it = this.cur, L = this.learn;
     this.pick = null;
+    clearTimeout(this.limitT);
     const secs = (performance.now() - this.t0) / 1000;
     const right = it.options[i] === it.answer;
-    const r = this.placement ? { fresh: true, learned: false, band: it.q.b } : L.answer(it, right, secs);
+    const r = this.placement ? { fresh: true, learned: false, band: it.q.b } : it.kind === 'math' ? L.answerMath(it, right, secs) : L.answer(it, right, secs);
     const res = { band: it.q.b, right, fresh: r.fresh, learned: r.learned, secs, word: it.q.w };
     this.results.push(res);
     const gain = this.placement ? 0 : this.onAnswer ? this.onAnswer(res) || 0 : 0;
@@ -107,9 +111,15 @@ export class Quiz {
       this.autoT = setTimeout(() => { if (this.go === next) next(); }, r.learned ? 1100 : 650);
       return;
     }
-    // missed: what it is, what it means, how it's used and how it sounds (the learning bit)
+    // missed: how it's worked out (a sum); what it is, what it means, how it's used and how it sounds (a word)
     const q = it.q, fb = this.$('.fb');
     fb.className = 'fb no';
+    if (it.kind === 'math') {
+      fb.innerHTML = `<div class="w"><b>${esc(it.explain)}</b></div>`;
+      this.$('.next').classList.remove('hidden');
+      this.go = next;
+      return;
+    }
     fb.innerHTML = `<div class="w"><b>${esc(q.w)}</b> <span class="play small">🔊</span> <span class="pos">${POS[q.p] || ''}</span>${L.hints !== false ? ` <span class="ka">${esc(q.ka)}</span>` : ''}${q.e ? ` <span class="emo">${q.e}</span>` : ''}</div>`
       + (q.ex ? `<div class="ex">${esc(q.ex).replace(new RegExp(`\\b(${reEsc(q.w)})\\b`, 'i'), '<b>$1</b>')}</div>` : '');
     fb.querySelector('.play').onclick = () => L.say(q.w);
@@ -119,7 +129,7 @@ export class Quiz {
   }
 
   finish(closed) {
-    clearTimeout(this.autoT);
+    clearTimeout(this.autoT); clearTimeout(this.limitT);
     this.open = false;
     this.pick = null; this.go = null;
     this.el.classList.add('hidden');

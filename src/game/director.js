@@ -1,3 +1,4 @@
+import { stationIcon } from './mapicons.js';
 import * as THREE from 'three';
 import { DEFS, UPGRADES } from './weapons.js';
 import { ARMOUR } from './player.js';
@@ -578,8 +579,8 @@ export class Director {
 
   markers() {
     const TAG = { upgrade: 'Upgrade', armour: 'Armour', stamina: 'Speed', double: '2× points', ammo: 'Ammo' };
-    const m = this.stations.map((s) => ({ x: s.x, z: s.z, color: '#ffb347', station: true, tag: (TAG[s.item] || DEFS[s.item]?.short || '') + (s.roof ? ' (roof)' : s.y < -1 ? ' (car park)' : '') }));
-    for (const d of this.drops) m.push({ x: d.mesh.position.x, z: d.mesh.position.z, color: '#e0e6ff' });
+    const m = this.stations.map((s) => ({ x: s.x, z: s.z, color: '#ffb347', station: true, icon: stationIcon(s.item), tag: (TAG[s.item] || DEFS[s.item]?.short || '') + (s.roof ? ' (roof)' : s.y < -1 ? ' (car park)' : '') }));
+    for (const d of this.drops) m.push({ x: d.mesh.position.x, z: d.mesh.position.z, color: '#e0e6ff', icon: 'powerup' });
     return m;
   }
 }

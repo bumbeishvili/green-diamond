@@ -22,7 +22,7 @@ export class Learn {
     this.words = [];
     this.byWord = new Map();
     this.ready = false;
-    this.s = { level: 1, placed: false, w: {}, streak: 0, best: 0, answered: 0, right: 0, learned: 0, milestone: 0, days: {} };
+    this.s = { level: 1, mlevel: 2, placed: false, w: {}, streak: 0, best: 0, answered: 0, right: 0, learned: 0, milestone: 0, days: {} };
     try { Object.assign(this.s, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch { /* no storage */ }
     this.canSpeak = typeof speechSynthesis !== 'undefined';
   }
@@ -135,6 +135,23 @@ export class Learn {
     return { fresh, learned, band: q.b };
   }
 
+  // a sum: the streak and the counts; three quick right answers running, harder sums; two wrong, easier
+  answerMath(it, right, secs) {
+    const s = this.s;
+    s.answered++;
+    if (right) { s.right++; s.streak++; s.best = Math.max(s.best, s.streak); } else s.streak = 0;
+    s.mlevel = s.mlevel || 2;
+    if (right && secs <= 10) {
+      s.mmiss = 0; s.mclimb = (s.mclimb || 0) + 1;
+      if (s.mclimb >= 3 && s.mlevel < 6) { s.mlevel++; s.mclimb = 0; }
+    } else if (!right) {
+      s.mclimb = 0; s.mmiss = (s.mmiss || 0) + 1;
+      if (s.mmiss >= 2 && s.mlevel > 1) { s.mlevel--; s.mmiss = 0; }
+    }
+    this.save();
+    return { fresh: true, learned: false, band: it.q.b };
+  }
+
   // ---- placement: a word or two per band, up while you're right ----
   placementItems() {
     const out = [];
@@ -164,7 +181,7 @@ export class Learn {
     return { level: this.s.level, known: this.known, due: this.due, streak: this.s.streak, best: this.s.best, answered: this.s.answered, right: this.s.right, learned: this.s.learned, total: this.words.length, placed: this.s.placed };
   }
 
-  reset() { this.s = { level: 1, placed: false, w: {}, streak: 0, best: 0, answered: 0, right: 0, learned: 0, milestone: 0, days: {} }; this.save(); }
+  reset() { this.s = { level: 1, mlevel: 2, placed: false, w: {}, streak: 0, best: 0, answered: 0, right: 0, learned: 0, milestone: 0, days: {} }; this.save(); }
 
   say(text) {
     if (!this.canSpeak || !text) return;

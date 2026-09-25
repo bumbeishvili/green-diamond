@@ -183,27 +183,30 @@ Aim down the sights (E or right-click) and every gun hits twice as hard.
 - Power-ups sometimes drop from kills: Max Ammo, Insta-Kill, Double Points, Nuke.
 - Falling more than a couple of storeys hurts. If you fall into a pool, walk out up the steps (by the chrome rails), or jump at any edge.
 
-### Learn English as you play
+### Bonus questions: English and maths
 
-For adults learning English (Georgian hints). It never gets in the way: it's an offer you can take
-or leave. On from the start at Light; **Settings** sets Light, Normal, Intense or Off. Not in PvP matches.
+For adults brushing up their English (with Georgian hints) and their mental arithmetic. They never get
+in the way: each is an offer you can take or leave. On from the start; in **Settings**, **Bonus
+questions** sets how often (every third wave, every wave, or every wave two at a time, or off) and
+**Subjects** sets English, maths or both. Not in PvP matches.
 
-- **A word for a bonus.** After a wave (every third on Light, every wave on Normal and Intense) a
-  small card offers one word for extra lari. Press **B** or tap the card and one question comes up:
-  what a word means, which English word fits a Georgian one, which word fills a gap, or which word
-  you heard. Keys 1–4 or a tap answer. Alone, the game waits; in co-op the next wave doesn't. Leave
-  the card and it goes after a few seconds.
-- **Word crates.** Violet ABC crates round the complex (in multiplayer, when the host has practice
-  on) hold one question each.
-- **What it pays.** A right answer is worth 150 lari and more: more at a higher level, half as much
-  again for a word you once missed, more as the waves get tougher. Five right in a row, a gun you
-  haven't got (or a power-up if you have them all); every 50 new words learned, the gun in your
-  hands a level up for free.
-- **Fast if you know it, thorough if you don't.** There's no test to sit: three quick right answers
-  running move you up a level. A word you miss is shown with its Georgian, a sentence and its sound,
-  and comes back a few minutes later, then later that session, the next day and so on until it
-  sticks (spaced repetition). **My English** in Settings shows your level, the words you know and
-  what's due, finds your level in one go if you like, or starts over. Progress stays in your browser.
+- **After a wave** a small card offers a question or two for lari. Press **B** or tap the card.
+  English: what a word means, which English word fits a Georgian one, which word fills a gap, or
+  which word you heard. Maths: sums, times tables, division, percentages and fractions, the order of
+  operations, squares, negatives, averages. Keys 1–4 or a tap answer. Leave the card and it goes.
+- **Nothing can hurt you while you answer**, in any mode: alone, the game waits; in co-op the match
+  goes on around you, but the zombies can't hurt you until you're done (20 seconds a question at
+  most).
+- **Question crates** (violet, ABC) round the complex (in multiplayer, when the host has them on)
+  hold one question each.
+- **What it pays**: 300 lari for a right answer at first, more as the waves get tougher, up to 600
+  (a word you once missed: more). Five right in a row, a gun you haven't got (or a power-up if you
+  have them all); every 50 new words learned, the gun in your hands a level up for free.
+- **No test to sit**: three quick right answers running move you up a level (English and maths each
+  have six); in maths, two wrong running bring it down one. A missed word is shown with its Georgian,
+  a sentence and its sound, and comes back a few minutes later, then later that session, the next day
+  and so on until it sticks; a missed sum shows how it's worked out. **My English** in Settings shows
+  your levels, the words you know and what's due. Progress stays in your browser.
 
 ### Graphics
 
@@ -248,7 +251,7 @@ index.html, src/          the game (ES modules, no build step)
   world/                  ground, buildings, props, sky, surroundings
   game/                   player, weapons, zombies, vehicles, stairs, pickups, pathfinding, waves, HUD, audio
   net/                    multiplayer: WebRTC links, session, network simulator, lobby and overlay
-  learn/                  English practice: the words you know (spaced repetition), the question card, rewards
+  learn/                  bonus questions: English words (spaced repetition), maths, the question card, rewards
 api/                      Vercel Functions for the multiplayer handshake (Vercel Blob storage)
 cloudflare/               the same on Cloudflare: Worker + one Durable Object per room (wrangler.jsonc)
 data/                     generated level, heightmap, terrain, skyline; words.json (English–Georgian words by level)

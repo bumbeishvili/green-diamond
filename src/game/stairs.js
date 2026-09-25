@@ -129,7 +129,7 @@ export class Stairs {
   // lobby doors with stairs, for the big map
   markers() {
     const m = [];
-    for (const s of this.list) for (const d of s.doors) m.push({ x: d.x, z: d.z, color: '#e8eef2', shape: 'square', bigOnly: true });
+    for (const s of this.list) for (const d of s.doors) m.push({ x: d.x, z: d.z, color: '#e8eef2', shape: 'square', bigOnly: true, icon: 'stairs' });
     return m;
   }
 }

@@ -295,6 +295,8 @@ class Game {
     lm.value = this.practice.mode; lk.checked = settings.learnHints !== false;
     lm.onchange = lk.onchange = () => this.practice.setMode(lm.value, lk.checked);
     $('learnme').onclick = () => this.practice.panel();
+    $('subjects').value = this.practice.subjects;
+    $('subjects').onchange = () => this.practice.setSubjects($('subjects').value);
   }
 
   // (touch: the pause button; with a mouse, Esc does it by letting go of the pointer)
