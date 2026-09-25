@@ -17,7 +17,11 @@ const BANK = {
   waveStart: ['ui/wave_start_siren'], waveEnd: ['ui/wave_complete'], pickup: ['ui/pickup'], hit: ['ui/hit_marker'], buy: ['ui/buy'],
   ambience: ['ambience/suburb_distant_traffic_loop'], sirens: ['ambience/distant_siren_loop'],
 };
-const EXT = ['.ogg', '.mp3', '.wav'];
+// Ogg where the browser plays it, else the MP3 copy: Safari, and every browser on an iPhone, can't
+// decode Ogg, and without it every sound there was the synthesized stand-in
+const EXT = (() => {
+  try { return document.createElement('audio').canPlayType('audio/ogg; codecs="vorbis"') ? ['.ogg', '.mp3'] : ['.mp3', '.ogg']; } catch (e) { return ['.mp3', '.ogg']; }
+})();
 
 export class Audio {
   constructor() {
@@ -39,18 +43,21 @@ export class Audio {
     this.master.connect(comp).connect(this.ctx.destination);
     this.noise = this.makeNoise();
     await Promise.all(Object.entries(BANK).map(async ([key, names]) => {
-      const list = (await Promise.all(names.map((nm) => this.load(`assets/audio/${nm}.ogg`)))).filter(Boolean);
+      const list = (await Promise.all(names.map((nm) => this.load(`assets/audio/${nm}`)))).filter(Boolean);
       if (list.length) this.buffers[key] = list;
     }));
     this.ready = true;
   }
 
-  async load(url) {
-    try {
-      const r = await fetch(url);
-      if (!r.ok) return null;
-      return await this.ctx.decodeAudioData(await r.arrayBuffer());
-    } catch (e) { return null; }
+  // a sound, in the first of its formats that decodes here
+  async load(base) {
+    for (const ext of EXT) {
+      try {
+        const r = await fetch(base + ext);
+        if (r.ok) return await this.ctx.decodeAudioData(await r.arrayBuffer());
+      } catch (e) { /* (the other format) */ }
+    }
+    return null;
   }
 
   resume() { if (this.ctx && this.ctx.state !== 'running') this.ctx.resume(); }

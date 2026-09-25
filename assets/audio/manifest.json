@@ -1,7 +1,7 @@
 {
   "generated": "2026-09-23",
-  "description": "Game SFX and ambience as Ogg Vorbis: mono SFX, stereo ambience, all 44.1 kHz. Peaks are normalised to similar levels, so balance categories with per-sound gain in code.",
-  "processing": "Processing: leading and trailing silence trimmed (below -50 dB relative to the clip peak), 3 ms fade-in and 20 ms fade-out (longer where noted). Stereo sources were made mono: L/R averaged when correlated (r >= 0.6), otherwise the louder channel (spaced-pair gun recordings). Resampled to 44.1 kHz, peak-normalised to -1.5 dBFS before encoding, and encoded as Ogg Vorbis (libvorbis q4). Loops (heartbeat, ambience) are not trimmed; the ambience loops are made seamless with a crossfade.",
+  "description": "Game SFX and ambience as Ogg Vorbis: mono SFX, stereo ambience, all 44.1 kHz. Peaks are normalised to similar levels, so balance categories with per-sound gain in code. Each .ogg has an .mp3 copy next to it, for browsers that cannot decode Ogg (Safari, and every browser on iOS); the game picks the format the browser plays.",
+  "processing": "Processing: leading and trailing silence trimmed (below -50 dB relative to the clip peak), 3 ms fade-in and 20 ms fade-out (longer where noted). Stereo sources were made mono: L/R averaged when correlated (r >= 0.6), otherwise the louder channel (spaced-pair gun recordings). Resampled to 44.1 kHz, peak-normalised to -1.5 dBFS before encoding, and encoded as Ogg Vorbis (libvorbis q4). Loops (heartbeat, ambience) are not trimmed; the ambience loops are made seamless with a crossfade. MP3 copies: encoded from the Ogg files with LAME (VBR, libsndfile compression level 0.2), the same length sample for sample.",
   "suggested_start_volumes": {
     "guns": 1.0,
     "impacts": 0.7,
