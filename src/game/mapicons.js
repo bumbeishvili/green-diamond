@@ -6,7 +6,7 @@ const G = {
   health: '<path d="M9.4 4h5.2v5.4H20v5.2h-5.4V20H9.4v-5.4H4V9.4h5.4z"/>',
   cash: '<path fill-rule="evenodd" d="M3 7h18v10H3z M12 9.3a2.7 2.7 0 1 0 0 5.4 2.7 2.7 0 0 0 0-5.4z M5 9v6h1.6V9z M17.4 9v6H19V9z"/>',
   gun: '<path d="M2.5 7.2h16.2l.8-1.2h2v4.8h-2.3l-.6.9h-6.1l-1.3 5.6c-.1.5-.6.9-1.1.9H6.4l1.5-6.5H2.5z"/>',
-  word: '<text x="12" y="16.6" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12.5" font-weight="900" fill="#fff">Aa</text>',
+  word: '<path d="M5 5h5a2.4 2.4 0 1 1 4 0h5v5a2.4 2.4 0 1 0 0 4v5h-5a2.4 2.4 0 1 0-4 0H5v-5a2.4 2.4 0 1 1 0-4z"/>',
   powerup: '<path d="M12 2.6l2.9 6 6.6.9-4.8 4.6 1.2 6.6L12 17.5l-5.9 3.2 1.2-6.6-4.8-4.6 6.6-.9z"/>',
   stairs: '<path d="M3 20v-4h4.5v-4H12V8h4.5V4H21v16z"/>',
   armour: '<path d="M12 3l8 3v6c0 4.6-3.4 7.8-8 9-4.6-1.2-8-4.4-8-9V6z"/>',

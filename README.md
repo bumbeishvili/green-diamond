@@ -130,7 +130,7 @@ npx wrangler deploy                              # then once: npx wrangler secre
 | E (or hold right-click) | aim down the sights / scope |
 | Shift while scoped | hold your breath to steady the scope |
 | R | reload |
-| 1–7 | weapon group: 1 pistols, 2 rifles (AK-74, M4A1, AUG), 3 shotgun, 4 snipers (SVD, SCAR 20S, MSR), 5 heavy (M60, mini-missile launcher), 6 bow, 7 knife and chainsaw (press again for the next in the group) |
+| 1–7 | weapon group: 1 pistols, 2 rifles (AK-74, M4A1, AUG), 3 shotgun, 4 snipers (SVD, SCAR 20S, MSR), 5 heavy (M60, mini-missile launcher, laser rifle), 6 bow, 7 knife and chainsaw (press again for the next in the group) |
 | Q | next weapon |
 | G | throw an F-1 grenade (about 3 s fuse) |
 | V | quick knife |
@@ -173,6 +173,7 @@ Drone: WASD to move where you look, Space to climb, Ctrl or Shift to descend, an
 | Cache on the twin tower roof (take the stairs) | FN SCAR 20S auto sniper |
 | Cache on the next highest roof | Remington MSR (semi-automatic .338 sniper) |
 | Crate down in the car park | RPG-7 mini-missile launcher (one in the tube, a quick reload; they burst on whatever they hit, or as they pass close by a zombie) |
+| Crate down in the south car park (the ramp between Spar and Nikora) | Helios laser rifle, 7500 (hold the trigger: a beam that burns through two at once; no magazine, a battery that drains while it fires and charges itself back up) |
 | Ammo crate by the pool house (middle courtyard) | ammo, fuel and grenades for everything (750): the only place to buy ammo |
 
 Aim down the sights (E or right-click) and every gun hits twice as hard.
@@ -183,30 +184,36 @@ Aim down the sights (E or right-click) and every gun hits twice as hard.
 - Power-ups sometimes drop from kills: Max Ammo, Insta-Kill, Double Points, Nuke.
 - Falling more than a couple of storeys hurts. If you fall into a pool, walk out up the steps (by the chrome rails), or jump at any edge.
 
-### Bonus questions: English and maths
+### Brain training
 
-For adults brushing up their English (with Georgian hints) and their mental arithmetic. They never get
-in the way: each is an offer you can take or leave. On from the start; in **Settings**, **Bonus
-questions** sets how often (every third wave, every wave, or every wave two at a time, or off) and
-**Subjects** sets English, maths or both. Not in PvP matches.
+Puzzles for the mind between waves, and lari for doing them. They never get in the way: each is an
+offer you can take or leave. On from the start; in **Settings**, **Brain training** sets how often
+(every third wave, every wave, every wave two at a time, or off). Not in PvP matches.
 
-- **After a wave** a small card offers a question or two for lari. Press **B** or tap the card.
-  English: what a word means, which English word fits a Georgian one, which word fills a gap, or
-  which word you heard. Maths: sums, times tables, division, percentages and fractions, the order of
-  operations, squares, negatives, averages. Keys 1–4 or a tap answer. Leave the card and it goes.
-- **Nothing can hurt you while you answer**, in any mode: alone, the game waits; in co-op the match
-  goes on around you, but the zombies can't hurt you until you're done (20 seconds a question at
-  most).
-- **Question crates** (violet, ABC) round the complex (in multiplayer, when the host has them on)
-  hold one question each.
-- **What it pays**: 300 lari for a right answer at first, more as the waves get tougher, up to 600
-  (a word you once missed: more). Five right in a row, a gun you haven't got (or a power-up if you
-  have them all); every 50 new words learned, the gun in your hands a level up for free.
-- **No test to sit**: three quick right answers running move you up a level (English and maths each
-  have six); in maths, two wrong running bring it down one. A missed word is shown with its Georgian,
-  a sentence and its sound, and comes back a few minutes later, then later that session, the next day
-  and so on until it sticks; a missed sum shows how it's worked out. **My English** in Settings shows
-  your levels, the words you know and what's due. Progress stays in your browser.
+- **After a wave** a small card offers a puzzle. Press **B** or tap the card; leave it and it goes.
+  **Puzzle crates** (violet, with a ?) round the complex hold one too.
+- **Fourteen kinds**, dealt in a shuffled round so each comes up before any comes again:
+  - working memory: **dual n-back** (a square and a sound, n steps back) and **digit span** (digits
+    typed back, in order or backwards)
+  - speed: **useful field of view** (what flashed in the middle and where, the kind of speed training
+    used in the ACTIVE study) and **reaction time** (simple, choice, go/no-go)
+  - attention and control: **Stroop** (the ink's colour, not the word) and **visual search** (find
+    the odd one out)
+  - flexibility: **task switching** (sort by shape or by colour, as the cue says)
+  - reasoning and logic: **matrix reasoning** (Raven-style pattern puzzles), **mini sudoku** (4x4 and
+    6x6) and **chess tactics** (mate in one or two, real puzzles from Lichess)
+  - spatial: **mental rotation** (the same shape turned, or its mirror image?)
+  - memory: a **memory palace**, English words placed along a route through Green Diamond itself
+  - calculation: **mental arithmetic**
+  - vocabulary: a **mini crossword** in English, with Georgian clues
+- **Each has a level of its own**, 1 to 10: a good round moves it up, a poor one down.
+- **Nothing can hurt you while you're at a puzzle**, in any mode: alone, the game waits; in co-op the
+  match goes on around you, but the zombies can't hurt you until you're done.
+- **What it pays**: a round pays by its score, up to 300 lari at first and more as the waves get
+  tougher, up to 600. Three good rounds running, a gun you haven't got (or a power-up if you have them
+  all); every ten good rounds, the gun in your hands a level up for free.
+- **My training** in Settings shows every puzzle's level and your best, and any of them can be played
+  from there for practice. Progress stays in your browser.
 
 ### Graphics
 
@@ -251,19 +258,20 @@ index.html, src/          the game (ES modules, no build step)
   world/                  ground, buildings, props, sky, surroundings
   game/                   player, weapons, zombies, vehicles, stairs, pickups, pathfinding, waves, HUD, audio
   net/                    multiplayer: WebRTC links, session, network simulator, lobby and overlay
-  learn/                  bonus questions: English words (spaced repetition), maths, the question card, rewards
+  train/                  brain training: the offer, the puzzle card, rewards; drills/ holds the puzzles (one module each, loaded when first played)
 api/                      Vercel Functions for the multiplayer handshake (Vercel Blob storage)
 cloudflare/               the same on Cloudflare: Worker + one Durable Object per room (wrangler.jsonc)
-data/                     generated level, heightmap, terrain, skyline; words.json (English–Georgian words by level)
+data/                     generated level, heightmap, terrain, skyline; words.json (English–Georgian words by level); chess.json (Lichess puzzles)
 assets/                   models, textures, audio (see the CREDITS files)
 tools/build_level.py      OSM -> data/level.json + heightmap (python3, shapely)
 tools/fetch_backdrop.py   terrain, imagery, skyline downloads
 tools/shot.mjs            headless screenshots (Playwright) for testing
 tools/dev.mjs             local server with the multiplayer API (npm run dev)
 tools/make_plates.py      Georgian number plates for the detailed cars
-tools/words/              the English practice words, a text file a level (word|part of speech|topic|Georgian|sentence|emoji);
+tools/words/              the English words (the crossword, the memory palace), a text file a level (word|part of speech|topic|Georgian|sentence|emoji);
                           python3 tools/words/build.py --out data/words.json checks them and writes the game's list
 vendor/three/             three.js r186
+vendor/chess.js/          chess.js 1.4 (BSD-2-Clause), for the chess puzzles
 ```
 
 Debug URL flags: `?debug` (fps overlay), `?time=19.5`, `?wave=5`, `?god`,
@@ -274,8 +282,9 @@ Debug URL flags: `?debug` (fps overlay), `?time=19.5`, `?wave=5`, `?god`,
 - Map data © OpenStreetMap contributors (ODbL).
 - Terrain: AWS Terrain Tiles.
 - Imagery: Sentinel-2 cloudless 2024 by EOX IT Services (CC BY-NC-SA 4.0; personal, non-commercial use).
-- 3D models by Quaternius, Kenney, J-Toastie, Rikindle3D, dogchicken, bachosoftdesign, Benjinsmith (zombie crow, CC-BY 3.0), mightydinosaurcol (M60, CC-BY 4.0), jeremy (motorbike, CC-BY 3.0), SirDraco65, Pichuliru, LonesomeDucky, AdamKokrito, Lucian Pavel, Teh_Bucket and others: see `assets/models/CREDITS.md`. The blue 2010 Toyota Prius is "Toyota Prius" by Isidor Goo (AirplaneChef, CC BY 4.0); the Nissan Leaf security car is built on Franz Albers' Nissan Leaf ZE0 (Apache-2.0) with the Prius wheels; Beka's grey 2018 Honda Civic is "Honda civic" by Aldios (CC BY 4.0); the green Lamborghini Huracán is "Lamborghini Huracan (2020)" by Kirigami (CC BY 4.0). The Steyr AUG is TastyTony's and the Remington MSR Kaan's (both CC BY 4.0); the chainsaw is loafbrr_1's and the RPG-7 Lucian Pavel's (both CC0). Your co-op teammates are Quaternius's SWAT survivor (CC0) with clips from his Universal Animation Library, plus rifle clips made for this project. The compound bow, arrow and personal drone were modelled for this project.
+- 3D models by Quaternius, Kenney, J-Toastie, Rikindle3D, dogchicken, bachosoftdesign, Benjinsmith (zombie crow, CC-BY 3.0), mightydinosaurcol (M60, CC-BY 4.0), jeremy (motorbike, CC-BY 3.0), SirDraco65, Pichuliru, LonesomeDucky, AdamKokrito, Lucian Pavel, Teh_Bucket and others: see `assets/models/CREDITS.md`. The blue 2010 Toyota Prius is "Toyota Prius" by Isidor Goo (AirplaneChef, CC BY 4.0); the Nissan Leaf security car is built on Franz Albers' Nissan Leaf ZE0 (Apache-2.0) with the Prius wheels; Beka's grey 2018 Honda Civic is "Honda civic" by Aldios (CC BY 4.0); the green Lamborghini Huracán is "Lamborghini Huracan (2020)" by Kirigami (CC BY 4.0). The Steyr AUG is TastyTony's and the Remington MSR Kaan's (both CC BY 4.0); the chainsaw is loafbrr_1's and the RPG-7 Lucian Pavel's (both CC0). Your co-op teammates are Quaternius's SWAT survivor (CC0) with clips from his Universal Animation Library, plus rifle clips made for this project. The compound bow, arrow, personal drone and the Helios laser rifle were modelled for this project.
 - Textures, sounds and HDRIs: see `assets/CREDITS_media.md`.
+- Chess puzzles: the Lichess puzzle database (CC0). Chess pieces: Colin M. L. Burnett's set (BSD licence, via Wikimedia Commons). Chess rules: chess.js by Jeff Hlywa (BSD-2-Clause).
 - Built with three.js.
 
 This is a personal fan project. Green Diamond is a development by MAQRO Construction; the brands shown belong to their owners.

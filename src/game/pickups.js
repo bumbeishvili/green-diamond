@@ -10,7 +10,7 @@ import { DEFS } from './weapons.js';
 const MAX = { ammo: 7, health: 6, cash: 10, gun: 3, word: 3 };
 export const PICKUP_COLORS = { ammo: '#9bd35a', health: '#ff6b6b', cash: '#ffe066', gun: '#ff9f43', word: '#b98cff' };
 const RING = { ammo: 0x7fd13a, health: 0xff4a4a, cash: 0xffc93a, gun: 0xff8a2a, word: 0x9d6bff };
-// (word crates only where English practice is on: the host's, or yours alone)
+// (puzzle crates only where the brain training is on: the host's, or yours alone)
 // the guns that lie around (the cheaper ones more often) and their models
 const GUNS = [['deagle', 0.2], ['shotgun', 0.18], ['m4', 0.16], ['autosniper', 0.08], ['mg', 0.08], ['bow', 0.12], ['aug', 0.1], ['msr', 0.05], ['chainsaw', 0.03]];
 const GUN_MODEL = { deagle: 'deagle', shotgun: 'shotgun_mossberg', m4: 'm4', autosniper: 'autosniper', mg: 'mg', bow: 'bow', aug: 'aug', msr: 'msr', chainsaw: 'chainsaw' };
@@ -125,12 +125,12 @@ export class Pickups {
       this.g.scene.add(im);
       return im;
     };
-    // a word crate: violet, with ABC on its sides
+    // a puzzle crate: violet, with a ? on its sides
     const wc = document.createElement('canvas'); wc.width = 128; wc.height = 96;
     const x = wc.getContext('2d');
     x.fillStyle = '#5b3aa8'; x.fillRect(0, 0, 128, 96);
     x.strokeStyle = '#2d1b5c'; x.lineWidth = 8; x.strokeRect(4, 4, 120, 88);
-    x.fillStyle = '#fff'; x.font = 'bold 44px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('ABC', 64, 50);
+    x.fillStyle = '#fff'; x.font = 'bold 60px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('?', 64, 52);
     const wt = new THREE.CanvasTexture(wc); wt.colorSpace = THREE.SRGBColorSpace;
     const wm = new THREE.MeshStandardMaterial({ map: wt, roughness: 0.6, emissive: 0x2a1060, emissiveIntensity: 0.6 });
     const word = { geometry: new THREE.BoxGeometry(0.42, 0.32, 0.32), material: wm };
@@ -248,7 +248,7 @@ export class Pickups {
     if (kind === 'ammo') { g.weapons.topUp(); g.hud.notice('Ammo can: spare magazines and a grenade'); g.audio.play('pickup', { vol: 0.9 }); }
     else if (kind === 'health') { g.hud.notice('First aid kit: +50 health'); g.audio.play('heal', { vol: 0.9 }); }
     else if (kind === 'gun') this.takeGun(GUNS[amount] ? GUNS[amount][0] : 'deagle');
-    else if (kind === 'word') g.practice?.crate();
+    else if (kind === 'word') g.training?.crate();
     else { g.hud.notice(`${amount} lari (+${amount} points)`); g.audio.play('cash', { vol: 0.9 }); }
   }
 
@@ -265,7 +265,7 @@ export class Pickups {
   // top every kind back up to its count, away from the player
   replenish(minFromPlayer = 25) {
     for (const kind of Object.keys(MAX)) {
-      if (kind === 'word' && !(this.g.practice && this.g.practice.on && !this.g.pvp?.on)) continue;
+      if (kind === 'word' && !(this.g.training && this.g.training.on && !this.g.pvp?.on)) continue;
       for (let n = this.count(kind); n < MAX[kind]; n++) {
         const spot = this.randomSpot(minFromPlayer);
         if (!spot) break;
@@ -283,9 +283,9 @@ export class Pickups {
     this.trickleT = (this.trickleT ?? 30) - dt;
     if (this.trickleT > 0) return;
     this.trickleT = 30 + Math.random() * 20;
-    // (with English practice on, one in five is a word crate; the rest as ever)
+    // (with the brain training on, one in five is a puzzle crate; the rest as ever)
     let r = Math.random(), kind = null;
-    if (this.g.practice && this.g.practice.on && !this.g.pvp?.on) { if (r < 0.2) kind = 'word'; else r = (r - 0.2) / 0.8; }
+    if (this.g.training && this.g.training.on && !this.g.pvp?.on) { if (r < 0.2) kind = 'word'; else r = (r - 0.2) / 0.8; }
     kind = kind || (r < 0.35 ? 'cash' : r < 0.65 ? 'ammo' : r < 0.8 ? 'health' : 'gun');
     const spot = this.count(kind) < MAX[kind] + 3 && this.randomSpot(20);
     if (!spot) return;
@@ -296,8 +296,8 @@ export class Pickups {
   collect(it) {
     const g = this.g, pl = g.player;
     if (it.kind === 'word') {
-      if (g.practice && g.practice.open) return false;   // (one at a time)
-      g.practice?.crate();
+      if (g.training && g.training.open) return false;   // (one at a time)
+      g.training?.crate();
       g.audio.play('pickup', { vol: 0.8, rate: 1.2 });
       return true;
     }

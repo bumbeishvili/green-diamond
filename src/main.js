@@ -28,7 +28,7 @@ import { Host, Client } from './net/netgame.js';
 import { PvP, isPvp, teamOf, TEAM_NAMES, TEAM_CSS } from './game/pvp.js';
 import { SLOT_CSS } from './net/avatars.js';
 import { Touch } from './game/touch.js';
-import { Practice } from './learn/practice.js';
+import { Training } from './train/training.js';
 import { ticker } from './net/session.js';
 import { DEFS } from './game/weapons.js';
 
@@ -157,7 +157,7 @@ class Game {
     this.pvp = new PvP(this);
     this.zombies.pvp = this.pvp;
     this.pickups = new Pickups(this);
-    this.practice = new Practice(this);   // English practice (off unless you switch it on)
+    this.training = new Training(this);   // brain training: puzzles for lari between waves
     this.pickups.setup(this.models);
     this.vehicles = new Vehicles(this);
     this.vehicles.setup(this.models);
@@ -234,7 +234,7 @@ class Game {
 
   credits() {
     $('credits').textContent = 'Map data © OpenStreetMap contributors (ODbL) · Terrain: AWS Terrain Tiles · Imagery: Sentinel-2 cloudless 2024 by EOX (CC BY-NC-SA 4.0) · '
-      + 'Models: Quaternius, Kenney, J-Toastie, Rikindle3D, dogchicken, bachosoftdesign, Benjinsmith, mightydinosaurcol, jeremy, SirDraco65, Pichuliru, LonesomeDucky, Lucian Pavel, Isidor Goo (Prius), Franz Albers (Leaf), Aldios (Civic), Kirigami (Lamborghini), TastyTony (AUG), Kaan (MSR), loafbrr_1 (chainsaw) & others (see assets/models/CREDITS.md) · Textures: ambientCG, Poly Haven · three.js';
+      + 'Models: Quaternius, Kenney, J-Toastie, Rikindle3D, dogchicken, bachosoftdesign, Benjinsmith, mightydinosaurcol, jeremy, SirDraco65, Pichuliru, LonesomeDucky, Lucian Pavel, Isidor Goo (Prius), Franz Albers (Leaf), Aldios (Civic), Kirigami (Lamborghini), TastyTony (AUG), Kaan (MSR), loafbrr_1 (chainsaw) & others (see assets/models/CREDITS.md) · Textures: ambientCG, Poly Haven · Chess puzzles: Lichess (CC0), pieces: Colin M. L. Burnett, chess.js · three.js';
   }
 
   start() {
@@ -288,16 +288,14 @@ class Game {
     $('credits-btn').onclick = (e) => { e.stopPropagation(); $('credits').classList.toggle('hidden'); };
     addEventListener('pointerdown', (e) => { if (!e.target.closest?.('#credits, #credits-btn')) $('credits').classList.add('hidden'); });
     this.input.onLockChange = (locked) => {
-      if (!locked && this.state === 'playing' && !this.practice?.open && !URLFLAGS.autostart && !URLFLAGS.nolock) { this.state = 'paused'; $('pause').classList.remove('hidden'); }
+      if (!locked && this.state === 'playing' && !this.training?.open && !URLFLAGS.autostart && !URLFLAGS.nolock) { this.state = 'paused'; $('pause').classList.remove('hidden'); }
       if (locked && this.mode === 'solo') $('clicktoplay').classList.add('hidden');
     };
-    // English practice: how much, Georgian hints, and your progress
-    const lm = $('learn'), lk = $('learnka');
-    lm.value = this.practice.mode; lk.checked = settings.learnHints !== false;
-    lm.onchange = lk.onchange = () => this.practice.setMode(lm.value, lk.checked);
-    $('learnme').onclick = () => this.practice.panel();
-    $('subjects').value = this.practice.subjects;
-    $('subjects').onchange = () => this.practice.setSubjects($('subjects').value);
+    // brain training: how often, and your progress (where any puzzle can be practised)
+    const lm = $('learn');
+    lm.value = this.training.mode;
+    lm.onchange = () => this.training.setMode(lm.value);
+    $('learnme').onclick = () => this.training.panel();
   }
 
   // (touch: the pause button; with a mouse, Esc does it by letting go of the pointer)
@@ -340,6 +338,7 @@ class Game {
     const q = new URLSearchParams(location.search);
     if (q.get('weapon') && q.get('weapon') !== 'pistol') this.weapons.give(q.get('weapon'));
     if (q.has('ads')) this.forceAds = true;
+    if (URLFLAGS.drill) setTimeout(() => this.training.test(URLFLAGS.drill, URLFLAGS.drilllevel), 600);
     try { await this.audio.init(); this.audio.resume(); this.audio.play('ambience', { vol: 0.35, loop: true, jitter: 0 }); } catch (e) { /* audio is optional */ }
   }
 
@@ -534,7 +533,7 @@ class Game {
     if (this.teamT <= 0) { this.teamT = 0.2; this.hud.teamPanel(n.teamStates(), this.voice ? this.voice.talkingSlots(this.localSlot ?? 0) : null); }
     this.hud.down(this.player.dead && this.state !== 'over' ? Math.max(1, n.localRespawnLeft) : 0, this.pvp.on ? this.killedBy || 'You died' : null);
     this.hud.el.hud.classList.toggle('down-state', this.player.dead);
-    $('clicktoplay').classList.toggle('hidden', this.state !== 'playing' || this.input.locked || !!URLFLAGS.nolock || !!this.touch || this.practice.open);
+    $('clicktoplay').classList.toggle('hidden', this.state !== 'playing' || this.input.locked || !!URLFLAGS.nolock || !!this.touch || this.training.open);
   }
 
   // The world for one step: the horde's flow fields (towards every player), the zombies, the
@@ -580,8 +579,8 @@ class Game {
     this.pickups.update(dt);
   }
 
-  // a wave survived: an English round, if you practise
-  onWaveEnd(w) { this.practice?.waveEnd(w); }
+  // a wave survived: a puzzle on offer, if the training's on
+  onWaveEnd(w) { this.training?.waveEnd(w); }
 
   onWave(w) {
     if (w <= 2) this.hud.flashKeys(6);
@@ -648,9 +647,9 @@ class Game {
     const raw = this.timer.getDelta(), dt = Math.min(0.05, raw);
     this.time += dt;
     if (this.state === 'playing') this.dpr.playT += dt;
-    // (answering an English question: no moving or shooting; alone, the world waits too)
-    const playing = this.state === 'playing' && !this.practice?.open;
-    if (this.practice?.open && this.player.dead) this.practice.quiz.finish(true);
+    // (at a puzzle: no moving or shooting; alone, the world waits too)
+    const playing = this.state === 'playing' && !this.training?.open;
+    if (this.training?.open && this.player.dead) this.training.close();
     const debugCam = this.applyDebugCamera();
 
     // the clock drifts towards the current wave's hour

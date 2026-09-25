@@ -288,6 +288,17 @@ export class Audio {
         f.connect(g).connect(out);
         break;
       }
+      // the laser coming on: a bright chirp falling fast over a crackle; going off: a dying whine;
+      // a zombie in the beam: a sizzle
+      case 'laserOn': {
+        const o = tone('sawtooth', 2600, 520, 0.16), f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1800; f.Q.value = 1.4;
+        o.connect(f); env(f, 0.003, 0.5, 0.15);
+        env(tone('sine', 1320, 880, 0.12), 0.002, 0.3, 0.12);
+        env(noise(5200, 1.2, 'highpass'), 0.002, 0.25, 0.08);
+        break;
+      }
+      case 'laserOff': env(tone('sine', 1500, 280, 0.35), 0.005, 0.22, 0.33); env(noise(3000, 2, 'bandpass'), 0.002, 0.12, 0.1); break;
+      case 'sizzle': env(noise(4200, 0.9, 'highpass'), 0.01, 0.35, 0.28); env(noise(900, 2.5, 'bandpass'), 0.004, 0.18, 0.12); break;
       // a body under the wheels: a soft low thud and a squelch
       case 'bump': env(tone('sine', 62, 30, 0.22), 0.004, 1.0, 0.22); env(noise(480, 1.1), 0.004, 0.55, 0.14); env(noise(1300, 2, 'bandpass'), 0.02, 0.2, 0.12); break;
       // glass going: a burst, then tinkling bits

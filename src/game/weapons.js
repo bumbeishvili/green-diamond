@@ -68,12 +68,17 @@ export const DEFS = {
     sound: 'missile', tracer: false, chamber: false, move: 0.88, flash: 0.4, zoom: 0.2, price: 6000, speed: 48, radius: 5.5, blastPlayer: 90 },
   // Chainsaw: hold the trigger and it cuts whatever's in front of it, a few at a time; it runs on fuel (R refuels)
   chainsaw: { name: 'Chainsaw', short: 'Chainsaw', slot: 9.5, saw: true, dmg: 520, head: 1, auto: true, mag: 100, reserve: 200, reload: 2.2, move: 0.93, price: 1800 },
+  // Helios laser rifle: hold the trigger for a beam (twenty pulses a second) that burns through two
+  // at once. No magazine: a battery that drains while it fires and charges itself back up when it doesn't
+  laser: { name: 'Helios laser rifle', short: 'Laser', slot: 7.8, laser: true, dmg: 21, head: 1.6, rpm: 1200, auto: true, mag: 100, reserve: 0,
+    spread: 0.0009, adsSpread: 0.0003, bloom: 0, bloomMax: 0, recover: 1, kickUp: 0, kickSide: 0, drift: 0, pellets: 1, range: 140, falloff: 120,
+    tracer: false, chamber: false, move: 0.95, pen: 2, flash: 0, zoom: 0.3, price: 7500, drain: 20, charge: 16, chargeDelay: 0.7 },
 };
 
 // Number keys select a category; pressing it again cycles inside it.
 export const CATS = {
   Digit1: ['pistol', 'deagle'], Digit2: ['rifle', 'm4', 'aug'], Digit3: ['shotgun'], Digit4: ['sniper', 'autosniper', 'msr'],
-  Digit5: ['mg', 'launcher'], Digit6: ['bow'], Digit7: ['knife', 'chainsaw'],
+  Digit5: ['mg', 'launcher', 'laser'], Digit6: ['bow'], Digit7: ['knife', 'chainsaw'],
 };
 
 // Where each gun is sold (buy stations in director.js).
@@ -83,6 +88,7 @@ export const WHERE = {
   bow: 'at the crate by the basketball court',
   aug: 'at the corner shop at the end of the podium', msr: 'in the cache on the other tower roof (take the stairs)',
   launcher: 'in the crate down in the car park', chainsaw: 'in the groundskeeper\'s crate by the stadium',
+  laser: 'in the crate down in the car park under the pool court (the ramp between Spar and Nikora)',
 };
 
 export const MAX_GRENADES = 4;
@@ -117,6 +123,7 @@ const VIEW = {
   msr: { pos: [0.15, -0.17, -0.5], ads: [0.0, -0.08, -0.3], rot: [0, 0, 0] },
   launcher: { pos: [0.24, -0.19, -0.34], ads: [0.0, -0.1, -0.2], rot: [0, 0, 0] },
   chainsaw: { pos: [0.28, -0.45, -0.35], ads: [0.28, -0.45, -0.35], rot: [0.6, 0.35, 0.3] },
+  laser: { pos: [0.14, -0.16, -0.32], ads: [0.0, -0.122, -0.2], rot: [0, 0, 0] },
 };
 
 const RIG_VIEW = { pos: [0, 0, 0], ads: [0, 0, 0], rot: [0, 0, 0] }; // rigs are authored in camera space
@@ -380,6 +387,43 @@ function proceduralChainsaw() {
   return g;
 }
 
+// Helios laser rifle: a white shell over a graphite frame, cooling fins down the barrel, a glowing
+// emitter at the tip, cyan light strips, and on the right the battery, its bar showing the charge.
+function proceduralLaser() {
+  const g = new THREE.Group(), add = builder(g);
+  const shell = M(0xe8ebee, 0.32, 0.25), frame = M(0x3b414b, 0.42, 0.6), black = M(0x16171a, 0.7, 0.3);
+  const glow = new THREE.MeshStandardMaterial({ color: 0xa8faff, emissive: 0x30e0ff, emissiveIntensity: 2.2, roughness: 0.3 });
+  const glass = new THREE.MeshStandardMaterial({ color: 0x0c2a33, roughness: 0.1, metalness: 0.2, transparent: true, opacity: 0.55 });
+  const cellMat = new THREE.MeshStandardMaterial({ color: 0x7ff6ff, emissive: 0x20d8ff, emissiveIntensity: 2.4, roughness: 0.3 });
+  add(new RoundedBoxGeometry(0.066, 0.086, 0.4, 3, 0.02), shell, 0, 0, -0.06);           // the body
+  add(new RoundedBoxGeometry(0.056, 0.03, 0.34, 2, 0.01), frame, 0, 0.052, -0.08);       // the top rail
+  add(CYL(0.028, 0.024, 0.26, 16), frame, 0, 0.012, -0.36);                              // the barrel shroud
+  for (let k = 0; k < 4; k++) add(BOX(0.072, 0.006, 0.03), frame, 0, 0.012, -0.28 - k * 0.055);   // fins
+  add(new THREE.TorusGeometry(0.027, 0.007, 10, 24), glow, 0, 0.012, -0.49);              // the emitter ring
+  add(CYL(0.02, 0.02, 0.012, 16), glow, 0, 0.012, -0.494);                                // its lens
+  for (const sx of [-1, 1]) add(BOX(0.003, 0.007, 0.3), glow, sx * 0.034, -0.012, -0.07); // light strips
+  add(BOX(0.034, 0.1, 0.05), black, 0, -0.085, 0.05, 0.25);                               // the grip
+  add(BOX(0.03, 0.02, 0.07), black, 0, -0.05, -0.02);                                     // the trigger guard
+  add(new RoundedBoxGeometry(0.05, 0.07, 0.17, 2, 0.015), shell, 0, -0.012, 0.22);         // the stock
+  add(BOX(0.052, 0.074, 0.02), black, 0, -0.012, 0.31);                                   // the butt pad
+  // the holo sight up on a riser (so aiming, the gun sits low): a hood of thin posts round a glass
+  // pane, a glowing ring in it
+  add(BOX(0.03, 0.036, 0.03), frame, 0, 0.083, -0.035);
+  for (const sx of [-1, 1]) add(BOX(0.004, 0.036, 0.012), frame, sx * 0.019, 0.122, -0.035);
+  add(BOX(0.042, 0.004, 0.014), frame, 0, 0.141, -0.035);
+  add(BOX(0.034, 0.032, 0.002), glass, 0, 0.122, -0.037);
+  add(new THREE.TorusGeometry(0.006, 0.0012, 6, 16), glow, 0, 0.122, -0.04);
+  // the battery on the right: a glass case, the bar inside scaled to the charge
+  add(BOX(0.018, 0.034, 0.13), glass, 0.043, -0.01, 0.0);
+  const cell = add(BOX(0.012, 0.024, 0.12), cellMat, 0.043, -0.01, 0.0);
+  cell.geometry.translate(0, 0, -0.06);                                                    // (scales from its back end)
+  cell.position.z = 0.06;
+  arms(g, [0, -0.1, 0.07], [-0.01, -0.05, -0.3]);
+  g.userData.muzzle = new THREE.Vector3(0, 0.012, -0.5);
+  g.userData.glow = glow; g.userData.cell = cell; g.userData.cellMat = cellMat;
+  return g;
+}
+
 // A mini missile: a white body with a red nose, four fins, a flame at the back. Nose down -Z.
 function missileMesh() {
   const g = new THREE.Group();
@@ -575,6 +619,54 @@ function proceduralBow(arrowGeo, arrowMat) {
   return g;
 }
 
+// Laser beams in the world: a white-hot core in a cyan glow and a flare where it lands, each shown
+// for as long as it's renewed (your own every frame while you fire; other players' with their shots).
+class Beams {
+  constructor(scene, n = 6) {
+    const geo = new THREE.CylinderGeometry(1, 1, 1, 8, 1, true).rotateX(Math.PI / 2).translate(0, 0, 0.5);
+    const mat = (color, opacity) => new THREE.MeshBasicMaterial({ color, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
+    const c = document.createElement('canvas'); c.width = c.height = 64;
+    const x = c.getContext('2d'), gr = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.25, 'rgba(160,250,255,0.9)'); gr.addColorStop(1, 'rgba(40,200,255,0)');
+    x.fillStyle = gr; x.fillRect(0, 0, 64, 64);
+    const tex = new THREE.CanvasTexture(c);
+    const core = mat(0xf0ffff, 0.95), glow = mat(0x2ad6ff, 0.32);
+    this.list = [];
+    for (let i = 0; i < n; i++) {
+      const g = new THREE.Group(), a = new THREE.Mesh(geo, core), b = new THREE.Mesh(geo, glow);
+      a.scale.set(0.009, 0.009, 1); b.scale.set(0.04, 0.04, 1);
+      a.frustumCulled = b.frustumCulled = false;
+      g.add(a, b);
+      const flare = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, toneMapped: false }));
+      g.visible = flare.visible = false;
+      scene.add(g, flare);
+      this.list.push({ g, b, flare, life: 0, key: null });
+    }
+  }
+
+  // a beam from a to b for `life` seconds (the same key renews the same beam)
+  show(key, a, b, life = 0.1) {
+    const e = this.list.find((q) => q.key === key) || this.list.find((q) => q.life <= 0) || this.list[0];
+    e.key = key; e.life = life;
+    e.g.position.copy(a);
+    e.g.lookAt(b);
+    e.g.scale.set(1, 1, Math.max(0.01, a.distanceTo(b)));
+    e.flare.position.copy(b);
+    e.g.visible = e.flare.visible = true;
+  }
+
+  update(dt) {
+    for (const e of this.list) {
+      if (e.life <= 0) continue;
+      e.life -= dt;
+      if (e.life <= 0) { e.g.visible = e.flare.visible = false; e.key = null; continue; }
+      const f = 0.85 + Math.random() * 0.3;   // (it shimmers)
+      e.b.scale.x = e.b.scale.y = 0.04 * f;
+      e.flare.scale.setScalar(0.45 * f);
+    }
+  }
+}
+
 export class Weapons {
   constructor(game) {
     this.g = game;
@@ -607,6 +699,8 @@ export class Weapons {
     this.drawT = 0; this.nockT = 0; this.fullT = 0;
     this.views = {};
     this.flash = this.makeFlash();
+    this.beams = new Beams(game.scene);
+    this.laserT = 0; this.laserIdle = 9;   // (the laser: lit for this long more; resting this long)
     this.shots = 0;
     this.instaKill = 0;
     this.stats = { shots: 0, hits: 0, heads: 0 };
@@ -690,6 +784,7 @@ export class Weapons {
     if (!fromGLTF('msr', 'msr', clips)) fromCode('msr', proceduralMSR());
     if (!fromGLTF('launcher', 'launcher', clips)) fromCode('launcher', proceduralLauncher());
     if (!fromGLTF('chainsaw', 'chainsaw', clips)) fromCode('chainsaw', proceduralChainsaw());
+    fromCode('laser', proceduralLaser());
     // (the missile: the downloaded one if there is one, ~35 cm, nose down -Z)
     if (w.missile) {
       const m = w.missile.scene.clone(true), b = new THREE.Box3().setFromObject(m), sz = b.getSize(new THREE.Vector3());
@@ -938,6 +1033,7 @@ export class Weapons {
     for (const k of Object.keys(this.owned)) {
       const d = DEFS[k], a = this.owned[k];
       if (d.melee) continue;
+      if (d.laser) { if (a.mag < d.mag) { a.mag = d.mag; any = true; } continue; }   // (a fresh battery)
       const add = d.bow ? 6 : d.pump ? 14 : d.launcher ? 2 : d.saw ? 100 : Math.max(d.mag * 2, 20);
       const cap = this.reserveCap(k);
       if (a.reserve < cap) { a.reserve = Math.min(cap, a.reserve + add); any = true; }
@@ -1026,7 +1122,7 @@ export class Weapons {
         if (trigger && this.shellLoading && ammo.mag > 0) { this.reloading = 0; this.shellLoading = false; this.cool = 0.15; }
         if (trigger && this.cool <= 0 && this.switching <= 0 && this.reloading <= 0 && this.knifeT <= 0 && this.throwT <= 0 && !p.sprinting) {
           if (ammo.mag > 0) this.fire();
-          else if (input.mouse.leftPressed) { this.g.audio.play('empty'); this.cool = 0.25; }
+          else if (input.mouse.leftPressed) { this.g.audio.play('empty'); this.cool = 0.25; if (def.laser) this.g.hud?.notice('The battery\'s flat: it charges itself in a moment'); }
         }
       }
     } else {
@@ -1059,6 +1155,7 @@ export class Weapons {
     this.updateArrows(dt);
     this.updateMissiles(dt);
     if (view.rocket) view.rocket.visible = ammo.mag > 0 && this.reloading <= 0;
+    this.updateLaser(dt);
     this.animateView(dt, input, view);
   }
 
@@ -1138,6 +1235,118 @@ export class Weapons {
     n.o.frequency.setTargetAtTime(freq, t, level === 2 ? 0.06 : 0.15);
     n.f.frequency.setTargetAtTime(bp, t, 0.08);
     n.gain.gain.setTargetAtTime(vol, t, 0.05);
+  }
+
+  // ---------------- the laser ----------------
+  // A pulse of the beam (twenty a second while the trigger's held): as far as what it hits goes, a
+  // shot like any other, burning through two; no recoil or brass, and a battery, not a magazine
+  fireLaser() {
+    const def = this.def, ammo = this.ammo, g = this.g, p = g.player;
+    ammo.mag = Math.max(0, ammo.mag - def.drain * (60 / def.rpm));
+    this.cool = 60 / def.rpm;
+    this.shots++;
+    this.stats.shots++;
+    if (this.laserT <= 0) g.audio.play('laserOn', { vol: 0.7 });
+    this.laserT = 0.09;   // (lit until the next pulse, and a little over)
+    this.laserIdle = 0;
+    const cam = g.camera;
+    const origin = cam.getWorldPosition(new THREE.Vector3());
+    const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(cam.quaternion);
+    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(cam.quaternion), up = new THREE.Vector3(0, 1, 0).applyQuaternion(cam.quaternion);
+    const spread = THREE.MathUtils.lerp(def.spread, def.adsSpread, p.ads), a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * spread;
+    const dir = fwd.addScaledVector(right, Math.cos(a) * r).addScaledVector(up, Math.sin(a) * r).normalize();
+    const slot = g.localSlot ?? 0, aimed = p.ads > 0.5;
+    if (g.mode === 'client') {
+      // (co-op: every other pulse goes to the host, counting for two)
+      if (this.shots % 2 === 0) g.net.shoot('laser', origin, [dir], aimed, 2);
+    } else {
+      const res = this.resolveShot('laser', origin, [dir], slot, null, this.ignoreItems, this.damageMult('laser', slot, aimed), p.vehicle);
+      if (res.hit && (res.kill || this.shots % 4 === 0)) { g.hud?.hitmarker(res.kill, res.head); if (res.kill) g.audio.play('hit', { vol: 0.45, jitter: 0 }); }
+      if (g.mode === 'host' && this.shots % 2 === 0) g.net.shotFx(slot, 'laser', origin, [dir]);
+    }
+    this.kick = Math.min(this.kick + 0.04, 0.15);
+    if (this.shots % 3 === 0) this.hudWeapon();
+  }
+
+  // The laser between pulses: its beam drawn every frame while it fires (from the emitter where it
+  // is on the screen to where it lands), the hum, the emitter's glow, the battery's bar, and the
+  // battery charging while it rests (in your hands or not)
+  updateLaser(dt) {
+    const g = this.g, la = this.owned.laser, def = DEFS.laser;
+    this.beams.update(dt);
+    if (!la) return;
+    const firing = this.laserT > 0;
+    if (firing) this.laserT -= dt;
+    else {
+      this.laserIdle += dt;
+      if (this.laserIdle > def.chargeDelay && la.mag < def.mag) {
+        const was = la.mag;
+        la.mag = Math.min(def.mag, la.mag + def.charge * dt);
+        if (this.current === 'laser' && Math.floor(la.mag) !== Math.floor(was)) this.hudWeapon();
+      }
+    }
+    const view = this.views.laser, on = firing && this.current === 'laser' && !g.player.dead;
+    this.laserSound(on ? 1 : 0);
+    if (!view) return;
+    const u = view.model.userData;
+    u.glow.emissiveIntensity = on ? 3.5 + Math.random() * 1.5 : 1.8;
+    u.cell.scale.z = Math.max(0.02, la.mag / def.mag);
+    u.cellMat.emissive.setHex(la.mag < 25 ? 0xff5030 : 0x20d8ff);
+    if (!on) { if (this.laserWasOn) { g.audio.play('laserOff', { vol: 0.5 }); this.laserWasOn = false; } return; }
+    this.laserWasOn = true;
+    // where it lands: along the aim to the first wall (it burns through the zombies in between)
+    const cam = g.camera, o = cam.getWorldPosition(this.tmpLo || (this.tmpLo = new THREE.Vector3()));
+    const d = (this.tmpLd || (this.tmpLd = new THREE.Vector3())).set(0, 0, -1).applyQuaternion(cam.quaternion);
+    const hit = this.trace(o, d, def.range, null, new Set(this.ignoreItems || []), null, true, g.player.vehicle);
+    const end = hit.point ? hit.point.clone() : o.clone().addScaledVector(d, def.range);
+    if (hit.point && Math.random() < 0.5) g.effects.emit(hit.point, 2, { color: [0.6, 0.95, 1], speed: 3, spread: 1, up: 0.6, life: 0.25, size: 0.03, gravity: 4 });
+    // from the emitter as it's seen on the screen: its point in the gun's own view, then out along
+    // the world camera's ray through that point
+    const mz = (this.tmpLm || (this.tmpLm = new THREE.Vector3())).copy(view.muzzle || u.muzzle);
+    view.model.updateWorldMatrix(true, false);
+    mz.applyMatrix4(view.model.matrixWorld).project(this.vmCam);
+    const ray = this.tmpRay || (this.tmpRay = new THREE.Raycaster());
+    ray.setFromCamera({ x: mz.x, y: mz.y }, cam);
+    this.beams.show('me', ray.ray.origin.clone().addScaledVector(ray.ray.direction, 0.6), end, 0.06);
+  }
+
+  // Someone else's laser (the shots the host passes on, or a client's on the host): their beam, from
+  // about where their gun is to where it lands
+  remoteLaser(slot, o, dir) {
+    const def = DEFS.laser, up = new THREE.Vector3(0, 1, 0), right = new THREE.Vector3().crossVectors(dir, up).normalize();
+    const hit = this.trace(o, dir, def.range, null, null, null, true);
+    const end = hit.point ? hit.point.clone() : o.clone().addScaledVector(dir, def.range);
+    const start = o.clone().addScaledVector(dir, 0.7).addScaledVector(right, 0.16).addScaledVector(up, -0.14);
+    this.beams.show(`p${slot}`, start, end, 0.14);
+    if (hit.point) this.g.effects.emit(hit.point, 2, { color: [0.6, 0.95, 1], speed: 3, spread: 1, up: 0.6, life: 0.25, size: 0.03, gravity: 4 });
+    // (a zap when their beam comes on)
+    const now = performance.now(), last = this.remoteLaserAt || (this.remoteLaserAt = new Map());
+    if (now - (last.get(slot) || 0) > 350) this.g.audio.play('laserOn', { pos: start, vol: 0.6 });
+    last.set(slot, now);
+  }
+
+  // the laser's hum: a low buzz with a high shimmer riding on it, up while the beam's on
+  laserSound(level) {
+    const a = this.g.audio, ctx = a.ctx;
+    if (!ctx || !a.master) return;
+    if (!this.laserNode) {
+      if (!level) return;
+      const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 110;
+      const hi = ctx.createOscillator(); hi.type = 'sine'; hi.frequency.value = 1760;
+      const lfo = ctx.createOscillator(); lfo.frequency.value = 23;
+      const lg = ctx.createGain(); lg.gain.value = 70; lfo.connect(lg).connect(hi.frequency);
+      const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 900; f.Q.value = 1.2;
+      const hg = ctx.createGain(); hg.gain.value = 0.2;
+      const gain = ctx.createGain(); gain.gain.value = 0;
+      o.connect(f).connect(gain); hi.connect(hg).connect(gain);
+      gain.connect(a.master);
+      o.start(); hi.start(); lfo.start();
+      this.laserNode = { gain, level: 0 };
+    }
+    const n = this.laserNode;
+    if (n.level === level) return;
+    n.level = level;
+    n.gain.gain.setTargetAtTime(level ? 0.16 : 0, ctx.currentTime, level ? 0.02 : 0.06);
   }
 
   // ---------------- mini missiles ----------------
@@ -1491,6 +1700,7 @@ export class Weapons {
   }
 
   fire() {
+    if (this.def.laser) { this.fireLaser(); return; }
     const def = this.def, ammo = this.ammo, g = this.g, p = g.player;
     ammo.mag--;
     this.cool = 60 / def.rpm;
@@ -1588,8 +1798,10 @@ export class Weapons {
           if (!def.pen || exclude.length >= def.pen) break;
           exclude.push(zb); mult *= 0.7;
         } else if (res.point) {
-          g.effects.impact(res.point, res.normal, res.surface);
-          if (k === 0 || Math.random() < 0.3) g.audio.play(res.surface === 'metal' ? 'metal' : 'concrete', { pos: res.point, vol: 0.5 });
+          if (!def.laser) {
+            g.effects.impact(res.point, res.normal, res.surface);
+            if (k === 0 || Math.random() < 0.3) g.audio.play(res.surface === 'metal' ? 'metal' : 'concrete', { pos: res.point, vol: 0.5 });
+          }
           // a car or bike: it takes the hit like a crash, a bit at a time
           if (res.vehicle && g.vehicles) {
             const fall = THREE.MathUtils.clamp(1 - (travelled + res.t - def.falloff) / (def.range - def.falloff), 0.35, 1);

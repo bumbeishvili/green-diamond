@@ -320,8 +320,11 @@ export class Host {
         const at = Math.max(this.tick - MAX_REWIND_TICKS, Math.min(this.tick, +m.rt || this.tick));
         const rewind = at < this.tick && !this.noRewind ? (zb) => g.zombies.rewindOffset(zb, at) : null;
         const dirs = m.d.slice(0, 12).map(v3).map((d) => d.normalize());
-        const res = g.weapons.resolveShot(m.w, v3(m.o), dirs, r.slot, rewind, null, g.weapons.damageMult(m.w, r.slot, !!m.a), p.vehicle, this.noRewind ? null : at);
-        if (res.hit) this.s.sendTo(id, 'rel', { t: 'hit', k: res.kill, h: res.head });
+        const laser = m.w === 'laser', n = laser ? Math.max(1, Math.min(2, +m.n || 1)) : 1;
+        if (laser) { const now = performance.now(); if (now - (r.laserAt || 0) < 70) return; r.laserAt = now; }   // (no faster than it fires)
+        const res = g.weapons.resolveShot(m.w, v3(m.o), dirs, r.slot, rewind, null, g.weapons.damageMult(m.w, r.slot, !!m.a) * n, p.vehicle, this.noRewind ? null : at);
+        if (res.hit && (!laser || res.kill || (r.laserHits = (r.laserHits || 0) + 1) % 3 === 1)) this.s.sendTo(id, 'rel', { t: 'hit', k: res.kill, h: res.head });
+        if (laser) g.weapons.remoteLaser(r.slot, v3(m.o), dirs[0]);
         this.shotFx(r.slot, m.w, v3(m.o), dirs, id);
         break;
       }
@@ -357,15 +360,15 @@ export class Host {
         break;
       case 'buy': this.buy(r, m); break;
       case 'learn': this.learnReward(r, m); break;
-      // (answering a question: no harm to them for a while; two questions of 20 s at most, then it lapses)
-      case 'ans': p.answering = m.on ? performance.now() / 1000 + 45 : 0; break;
+      // (at a puzzle: no harm to them for a while; the client says so again every minute, else it lapses)
+      case 'ans': p.answering = m.on ? performance.now() / 1000 + 100 : 0; break;
       case 'enter': this.vehicleEnter(r, m.vid); break;
       case 'exit': this.vehicleExit(r); break;
       default: break;
     }
   }
 
-  // ---- English practice: a client's rewards (points, health, a power-up, an upgrade), within reason ----
+  // ---- brain training: a client's rewards (points, health, a power-up, an upgrade), within reason ----
   learnReward(r, m) {
     const g = this.g, d = g.director, p = r.player, now = performance.now() / 1000;
     const L = r.learn || (r.learn = { t0: now, pts: 0, heal: -1e9, pw: -1e9, up: -1e9 });
@@ -626,11 +629,14 @@ export class Host {
 
   // effects the clients should see
   blood(kind, p, dir) {
-    this.fx.push([kind === 'feathers' ? 'f' : kind === 'bile' ? 'g' : kind === 'spark' ? 'p' : 'b', +p.x.toFixed(2), +p.y.toFixed(2), +p.z.toFixed(2), dir ? +dir.x.toFixed(2) : 0, dir ? +dir.y.toFixed(2) : 0, dir ? +dir.z.toFixed(2) : 0]);
+    this.fx.push([kind === 'feathers' ? 'f' : kind === 'bile' ? 'g' : kind === 'spark' ? 'p' : kind === 'burn' ? 'h' : 'b', +p.x.toFixed(2), +p.y.toFixed(2), +p.z.toFixed(2), dir ? +dir.x.toFixed(2) : 0, dir ? +dir.y.toFixed(2) : 0, dir ? +dir.z.toFixed(2) : 0]);
   }
 
   shotFx(slot, w, o, dirs, except = null) {
     const ev = ['s', slot, WEAPONS.indexOf(w), ...r3(o), ...dirs.slice(0, 9).flatMap(r4)];
+    // (a laser's pulses go with the snapshots: ten a second each on their own would be a lot of messages;
+    // it's a beam, so no flash or bang either)
+    if (DEFS[w]?.laser) { this.fx.push(ev); return; }
     if (except) { for (const [id, p] of this.s.peers) if (id !== except) p.send('unrel', JSON.stringify({ t: 'fx', l: [ev] })); }
     else this.fx.push(ev);
     if (slot !== this.slot) this.avatars.flash(slot);
@@ -789,7 +795,7 @@ export class Client {
   frame(dt) {
     const g = this.g, p = g.player, input = g.input;
     if (!this.match) return;
-    const playing = g.state === 'playing' && !g.practice?.open;
+    const playing = g.state === 'playing' && !g.training?.open;
     // looking around is per frame; moving is per tick (like on the host)
     if (playing && !p.dead) p.look(input, true);
     if (playing && input.hit('Space')) this.jump = true;
@@ -1089,6 +1095,7 @@ export class Client {
         const [, slot, wi, ox, oy, oz, ...ds] = e;
         if (slot === this.slot) continue;
         const def = DEFS[WEAPONS[wi]] || DEFS.rifle, o = new THREE.Vector3(ox, oy, oz);
+        if (def.laser) { if (ds.length >= 3) g.weapons.remoteLaser(slot, o, new THREE.Vector3(ds[0], ds[1], ds[2]).normalize()); continue; }
         this.avatars.flash(slot);
         g.audio.play(def.sound || 'rifle', { pos: o, vol: (def.vol ?? 0.9) * 0.9, rate: def.rate ?? 1 });
         for (let i = 0; i + 2 < ds.length; i += 3) {
@@ -1115,6 +1122,7 @@ export class Client {
       } else {
         const p = new THREE.Vector3(e[1], e[2], e[3]), d = new THREE.Vector3(e[4], e[5], e[6]);
         if (e[0] === 'p') { g.effects.emit(p, 8, { color: [1, 0.85, 0.5], speed: 4, spread: 0.9, up: 0.6, life: 0.25, size: 0.04, gravity: 6 }); g.audio.play('metal', { pos: p, vol: 0.7 }); continue; }
+        if (e[0] === 'h') { g.effects.emit(p, 5, { color: [1, 0.62, 0.25], speed: 2.4, spread: 0.9, up: 0.9, life: 0.4, size: 0.035, gravity: 3 }); g.audio.play('sizzle', { pos: p, vol: 0.45 }); continue; }   // (a laser's burn)
         if (e[0] === 'b') g.effects.bloodBurst(p, d);
         else if (e[0] === 'f') g.effects.emit(p, 10, { color: [0.05, 0.05, 0.06], speed: 2.2, spread: 1.6, up: 1, life: 1.4, size: 0.07, gravity: 1.5 });
         else g.effects.emit(p, 12, { color: [0.35, 0.75, 0.15], speed: 2.5, spread: 1.2, up: 1, life: 0.8, size: 0.09, dir: d });
@@ -1124,7 +1132,7 @@ export class Client {
   }
 
   // ---- what we tell the host ----
-  shoot(w, o, dirs, aimed) { this.s.sendTo(this.s.hostId, 'rel', { t: 'shot', w, o: r3(o), d: dirs.slice(0, 12).map(r4), rt: +this.renderTick().toFixed(2), a: aimed ? 1 : 0 }); }
+  shoot(w, o, dirs, aimed, n = 1) { this.s.sendTo(this.s.hostId, 'rel', { t: 'shot', w, o: r3(o), d: dirs.slice(0, 12).map(r4), rt: +this.renderTick().toFixed(2), a: aimed ? 1 : 0, ...(n > 1 ? { n } : {}) }); }
   melee(heavy) { this.s.sendTo(this.s.hostId, 'rel', { t: 'melee', heavy }); }
   saw() { this.s.sendTo(this.s.hostId, 'rel', { t: 'saw' }); }
   learnReward(m) { this.s.sendTo(this.s.hostId, 'rel', { t: 'learn', ...m }); }

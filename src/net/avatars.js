@@ -185,6 +185,7 @@ function carryParts() {
   const M = (color, r = 0.6, m = 0.2) => new THREE.MeshStandardMaterial({ color, roughness: r, metalness: m });
   carryKit = {
     orange: M(0xe8641c, 0.55, 0.1), steel: M(0xb9bec4, 0.3, 0.9), olive: M(0x4d5540, 0.75, 0.1), black: M(0x151515, 0.7, 0.3),
+    white: M(0xe8ebee, 0.35, 0.2), glow: new THREE.MeshStandardMaterial({ color: 0xa8faff, emissive: 0x30e0ff, emissiveIntensity: 2.2, roughness: 0.3 }),
   };
   return carryKit;
 }
@@ -199,6 +200,10 @@ function carryMesh(kind) {
   } else if (kind === 'launcher') {
     box(0.18, 0.18, 0.8, K.olive, -0.2, 1.55, 0.12);
     box(0.19, 0.19, 0.04, K.black, -0.2, 1.55, 0.53);
+  } else if (kind === 'laser') {
+    box(0.07, 0.09, 0.62, K.white, -0.13, 1.3, 0.38);
+    box(0.05, 0.06, 0.14, K.white, -0.13, 1.28, 0.02);
+    box(0.06, 0.06, 0.05, K.glow, -0.13, 1.31, 0.71);
   }
   return g;
 }
@@ -306,7 +311,7 @@ export class Avatars {
 
   // what's in their hands: the rifle, or the chainsaw / missile pack (the knife: nothing to see)
   carry(av, kind) {
-    const show = kind === 'chainsaw' || kind === 'launcher' ? kind : null;
+    const show = kind === 'chainsaw' || kind === 'launcher' || kind === 'laser' ? kind : null;
     if (av.carrying === (show || kind)) return;
     av.carrying = show || kind;
     if (av.parts.gun) av.parts.gun.visible = !show && kind !== 'knife';

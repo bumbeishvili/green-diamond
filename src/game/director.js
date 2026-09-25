@@ -87,6 +87,12 @@ export class Director {
       const [lx, ly] = park.lights[Math.floor(park.lights.length / 2)];
       S.push({ x: lx, z: -ly, y: park.floor, item: 'launcher', label: 'RPG-7 mini-missile launcher in the crate down in the car park', cost: DEFS.launcher.price, crate: true, fixed: true });
     }
+    // the laser rifle: a crate in the car park under the pool court, between Spar and Nikora
+    const south = g.underground && g.underground.list.find((u) => u.name === 'south');
+    if (south && south.lights.length) {
+      const [lx, ly] = south.lights[Math.floor(south.lights.length * 0.7)];
+      S.push({ x: lx, z: -ly, y: south.floor, item: 'laser', label: 'Helios laser rifle in the crate down in the south car park', cost: DEFS.laser.price, crate: true, fixed: true });
+    }
     // the SCAR 20S: a cache on the highest roof you can climb to; the MSR on the next highest
     const roofs = [...g.stairs.list].sort((a, b) => b.top - a.top);
     const top = roofs[0];
@@ -571,7 +577,7 @@ export class Director {
       if (cost == null) g.hud.prompt(what, 3);
       else {
         g.hud.prompt(`Press <b>F</b> — ${what} <b>[${cost}]</b>${this.points < cost ? ' <span style="color:#ff6b6b">not enough points</span>' : ''}`, 3);
-        if (g.input.hit('KeyF') && g.state === 'playing' && !g.practice?.open) { g.input.pressed.delete('KeyF'); this.tryBuy(s); }
+        if (g.input.hit('KeyF') && g.state === 'playing' && !g.training?.open) { g.input.pressed.delete('KeyF'); this.tryBuy(s); }
       }
     }
     for (const m of this.stationMeshes) m.rotation.z += dt;

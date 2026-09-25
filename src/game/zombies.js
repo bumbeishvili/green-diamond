@@ -8,6 +8,7 @@ import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 
 const SKIP = { playerOnly: true, barrier: true };
 const UP = new THREE.Vector3(0, 1, 0);
+const BURN = { color: [1, 0.62, 0.25], speed: 2.4, spread: 0.9, up: 0.9, life: 0.4, size: 0.035, gravity: 3 };   // (laser sparks)
 const rnd = (a, b) => a + Math.random() * (b - a);
 
 export const TYPES = {
@@ -486,6 +487,16 @@ export class Zombies {
       }
     }
     zb.hp -= amount;
+    // the laser burns rather than bleeds: sparks and a sizzle (a few a second, not one a pulse), and
+    // it slows them a little rather than stopping them
+    if (weapon === 'laser') {
+      const t = performance.now();
+      if (!(zb.burnAt > t - 90)) { zb.burnAt = t; this.fx.emit(point, 5, BURN); this.onFx?.('burn', point, dir); }
+      if (!(zb.sizzleAt > t - 260)) { zb.sizzleAt = t; this.audio.play('sizzle', { pos: point, vol: 0.55 }); }
+      if (zb.hp <= 0) { this.kill(zb, dir, head, weapon, by); return true; }
+      zb.hitT = Math.max(zb.hitT, 0.08);
+      return false;
+    }
     const car = weapon === 'vehicle';   // (a car's hit has a sound and a message of its own: vehicles.runOver)
     if (!car) this.onFx?.(zb.species === 'crow' ? 'feathers' : zb.def.explode ? 'bile' : 'blood', point, dir);
     if (zb.species === 'crow') this.fx.emit(point, 10, { color: [0.05, 0.05, 0.06], speed: 2.2, spread: 1.6, up: 1, life: 1.4, size: 0.07, gravity: 1.5 });

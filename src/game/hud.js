@@ -8,7 +8,7 @@ const svg = (tag, attrs = {}, parent = null) => { const e = document.createEleme
 
 const SLOT_CSS = ['#3fa7ff', '#5fd35f', '#ffa23a', '#c77dff'];
 // how a kill happened, for the feed
-const HOW = { knife: 'knife', grenade: 'grenade', bow: 'bow', car: 'ran over', bike: 'ran over', self: 'blew themselves up', zombie: 'zombies' };
+const HOW = { knife: 'knife', grenade: 'grenade', bow: 'bow', car: 'ran over', bike: 'ran over', laser: 'laser', self: 'blew themselves up', zombie: 'zombies' };
 
 // DOM heads-up display + minimap drawn from the level data.
 const $ = (id) => document.getElementById(id);
@@ -52,6 +52,12 @@ export class HUD {
       this.el.mag.textContent = '—';
       this.el.mag.classList.remove('low');
       this.el.res.textContent = '';
+      return;
+    }
+    if (def.laser) {
+      this.el.mag.textContent = `${Math.floor(ammo.mag)}%`;
+      this.el.mag.classList.toggle('low', ammo.mag <= 25);
+      this.el.res.textContent = ammo.mag < def.mag ? 'charging' : 'battery';
       return;
     }
     if (def.saw) {
@@ -439,7 +445,7 @@ export class HUD {
     legend.innerHTML = [
       item('<i class="arrow"></i>', 'you'), item('<i style="background:#ff3b30"></i>', 'zombies'), item(ic('giant'), 'a giant'),
       item(ic('shop-gun'), 'shops and weapons'), item(ic('ammo'), 'ammo'), item(ic('health'), 'first aid'), item(ic('cash'), 'lari'),
-      item(ic('gun'), 'a gun'), item(ic('word'), 'question crate'), item(ic('powerup'), 'power-up'), item(ic('stairs'), 'stairs'), item('<b>P</b>', 'car park'),
+      item(ic('gun'), 'a gun'), item(ic('word'), 'puzzle crate'), item(ic('powerup'), 'power-up'), item(ic('stairs'), 'stairs'), item('<b>P</b>', 'car park'),
     ].join('') + `<em>${'ontouchstart' in window ? 'tap to close' : 'M to close'}</em>`;
     wrap.appendChild(legend);
     const close = (e) => { e.preventDefault(); e.stopPropagation(); if (this.big) this.toggleMap(); };

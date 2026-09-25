@@ -443,53 +443,6 @@ body.touch #health { transform: scale(0.5); transform-origin: left top; }
 body.touch #eoffer { left: 42%; bottom: 14px; font-size: 14px; padding: 8px 14px 11px; }
 @keyframes eoIn { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translate(-50%, 0); } }
 @keyframes eoBar { from { width: 100%; } to { width: 0%; } }
-#quiz { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; background: rgba(4,5,7,.55); padding: 12px; }
-#quiz.hidden { display: none; }
-#quiz .card { width: min(560px, 96vw); max-height: 96vh; overflow-y: auto; background: #111418; border: 1px solid #2c3036; border-radius: 10px; box-shadow: 0 18px 60px rgba(0,0,0,.6);
-  padding: 16px 18px 14px; font-family: var(--body); color: var(--ink); display: flex; flex-direction: column; gap: 10px; }
-#quiz .top { display: flex; align-items: center; gap: 10px; }
-#quiz .title { font-family: var(--head); letter-spacing: .08em; text-transform: uppercase; color: #b98cff; font-size: 16px; }
-#quiz .dots { display: flex; gap: 4px; flex: 1; }
-#quiz .dots i { width: 9px; height: 9px; border-radius: 50%; background: #2c3036; }
-#quiz .dots i.cur { background: #b98cff; }
-#quiz .dots i.ok { background: #5fd35f; }
-#quiz .dots i.no { background: #ff5a4a; }
-#quiz .streak { color: #ffb347; font-size: 13px; }
-#quiz .x { background: none; border: 0; color: var(--muted); font-size: 18px; cursor: pointer; padding: 2px 6px; }
-#quiz .kind { color: var(--muted); font-size: 13px; letter-spacing: .04em; }
-#quiz .prompt { font-size: 30px; font-weight: 700; line-height: 1.25; text-align: center; padding: 6px 0; cursor: default; }
-#quiz .prompt.gap { font-size: 21px; font-weight: 500; }
-#quiz .prompt.gap u { color: #b98cff; text-decoration: none; letter-spacing: .1em; }
-#quiz .prompt.word { font-size: 28px; }
-#quiz .prompt .play { cursor: pointer; font-size: 44px; }
-#quiz .prompt .play.small { font-size: 18px; vertical-align: middle; opacity: .8; }
-#quiz .prompt .emo { font-size: 26px; }
-#quiz .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-#quiz .opts button { background: #1b1f25; border: 1px solid #333840; color: var(--ink); font: 600 17px var(--body); padding: 12px 10px; border-radius: 7px; cursor: pointer; text-align: left;
-  display: flex; gap: 10px; align-items: center; -webkit-tap-highlight-color: transparent; }
-#quiz .opts button b { color: #8a857c; font-size: 12px; min-width: 14px; }
-#quiz .opts button:hover:not(:disabled) { border-color: #b98cff; }
-#quiz .opts button.ok { background: #1d3a22; border-color: #5fd35f; }
-#quiz .opts button.no { background: #3a1d1d; border-color: #ff5a4a; }
-#quiz .fb:empty { display: none; }
-#quiz .fb.ok { color: #7fe07f; font-size: 16px; text-align: center; }
-#quiz .fb.ok b { color: #ffe066; }
-#quiz .fb.no { background: #1a1d22; border-radius: 7px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
-#quiz .fb .w { font-size: 20px; }
-#quiz .fb .w .play { cursor: pointer; }
-#quiz .fb .pos { color: #8a857c; font-size: 12px; font-style: italic; }
-#quiz .fb .ka { color: #9fe0b4; font-size: 18px; margin-left: 6px; }
-#quiz .fb .ex { color: #cfc9bf; font-size: 15px; }
-#quiz .fb .ex b { color: #fff; }
-#quiz .bar { height: 3px; background: #22262c; border-radius: 2px; overflow: hidden; }
-#quiz .bar i { display: block; height: 100%; background: #6b4fb0; }
-#quiz .foot { display: flex; align-items: center; justify-content: space-between; min-height: 34px; }
-#quiz .gain { color: #ffe066; font-family: var(--head); font-size: 20px; }
-#quiz .next { background: #6b4fb0; border: 0; color: #fff; font: 600 15px var(--body); padding: 8px 16px; border-radius: 6px; cursor: pointer; }
-#quiz .next small { opacity: .6; font-size: 11px; margin-left: 4px; }
-#quiz .next.hidden { display: none; }
-#learnpanel h2 { margin: 0; }
-#learnpanel { z-index: 30; }
 /* the settings screen: over the menu or the pause screen, a label and its control a line */
 #settings { z-index: 26; gap: 16px; background: rgba(7, 8, 10, 0.95); }
 #settings .setbtns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; align-items: center; margin-top: 4px; }
@@ -501,13 +454,73 @@ body.touch #eoffer { left: 42%; bottom: 14px; font-size: 14px; padding: 8px 14px
 #settings .settings select { min-width: 210px; }
 #settings .learnrow { border-top: 1px solid #2c3036; padding-top: 14px; }
 #settings .learnrow label:has(input[type=checkbox]) { justify-content: flex-start; }
-#learnpanel .lstats { display: grid; grid-template-columns: repeat(3, minmax(140px, 1fr)); gap: 10px; max-width: 620px; }
-#learnpanel .lstats div { background: rgba(20,22,26,.8); border: 1px solid #2c3036; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 4px; }
-#learnpanel .lstats b { font-family: var(--head); font-size: 26px; color: #b98cff; }
-#learnpanel .lstats span { font-size: 12px; color: var(--muted); }
-#learnpanel .lnote { max-width: 560px; color: var(--muted); font-size: 14px; line-height: 1.5; margin: 0; }
-#learnpanel .lbtns { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
 .learnrow input[type=checkbox] { accent-color: #b98cff; }
 .btn.small { padding: 5px 14px; font-size: 14px; }
 @media (max-height: 560px) { #settings h2 { font-size: 30px; } #settings .settings { gap: 7px; } #settings .learnrow { padding-top: 8px; } #settings .setbtns .btn { font-size: 16px; padding: 7px 20px; } }
-@media (max-height: 560px) { #quiz .prompt { font-size: 22px; padding: 0; } #quiz .opts button { padding: 8px; font-size: 15px; } #learnpanel .lstats { grid-template-columns: repeat(3, 1fr); } }
+
+/* ---- brain training: the card over the game (a puzzle at a time) ---- */
+#train { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; background: rgba(4,5,7,.6); padding: 10px; }
+#train.hidden { display: none; }
+#train .card { width: min(700px, 96vw); max-height: 96vh; overflow-y: auto; background: #111418; border: 1px solid #2c3036; border-radius: 10px; box-shadow: 0 18px 60px rgba(0,0,0,.6);
+  padding: 12px 16px 16px; font-family: var(--body); color: var(--ink); display: flex; flex-direction: column; gap: 10px; }
+#train .top { display: flex; align-items: center; gap: 10px; min-height: 26px; }
+#train .title { font-family: var(--head); font-weight: 400; letter-spacing: .08em; text-transform: uppercase; color: #b98cff; font-size: 18px; }
+#train .skill { font-size: 12px; color: #d9ceff; background: #2a2340; border-radius: 10px; padding: 2px 9px; }
+#train .lvl { font-size: 12px; color: var(--muted); }
+#train .dots { display: flex; gap: 4px; flex: 1; justify-content: flex-end; }
+#train .dots i { width: 9px; height: 9px; border-radius: 50%; background: #2c3036; }
+#train .dots i.cur { background: #b98cff; }
+#train .dots i.ok { background: #5fd35f; }
+#train .x { background: none; border: 0; color: var(--muted); font-size: 18px; cursor: pointer; padding: 2px 6px; }
+#train .bar { height: 4px; background: #1d2127; border-radius: 2px; overflow: hidden; }
+#train .bar i { display: block; height: 100%; width: 0; background: #8f6ae0; }
+#train .stage { position: relative; min-height: 320px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; border-radius: 8px; padding: 4px; }
+#train .stage.f-ok { animation: tOk .4s ease-out; }
+#train .stage.f-no { animation: tNo .4s ease-out; }
+@keyframes tOk { from { box-shadow: inset 0 0 0 3px #5fd35f, inset 0 0 40px rgba(95,211,95,.25); } to { box-shadow: inset 0 0 0 3px transparent; } }
+@keyframes tNo { from { box-shadow: inset 0 0 0 3px #ff5a4a, inset 0 0 40px rgba(255,90,74,.25); } to { box-shadow: inset 0 0 0 3px transparent; } }
+#train .t-load { color: var(--muted); font-size: 15px; }
+#train .t-intro { display: flex; flex-direction: column; align-items: center; gap: 20px; text-align: center; max-width: 500px; }
+#train .t-intro .how { font-size: 19px; line-height: 1.5; margin: 0; }
+#train .t-intro .how b { color: #d9ceff; }
+#train .btn small { opacity: .6; font-size: 12px; margin-left: 6px; letter-spacing: 0; }
+#train .t-res { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+#train .t-res .big { font-family: var(--head); font-size: 72px; line-height: 1; color: #ffe066; }
+#train .t-res .big.ok { color: #7fe07f; }
+#train .t-res .big.no { color: #ff9a8a; }
+#train .t-res .what { font-size: 19px; }
+#train .t-res .gain { color: #ffe066; font-weight: 700; font-size: 20px; }
+#train .t-res .lv { color: var(--muted); font-size: 15px; }
+#train .t-res .btn { margin-top: 12px; }
+/* answer buttons (ctx.choose), and what the puzzles share */
+#train .answers { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; width: 100%; }
+#train .answers button { background: #1b1f25; border: 1px solid #333840; color: var(--ink); font: 600 18px var(--body); padding: 10px; border-radius: 8px; cursor: pointer;
+  display: flex; gap: 8px; align-items: center; justify-content: center; min-height: 54px; -webkit-tap-highlight-color: transparent; }
+#train .answers button b { color: #8a857c; font-size: 12px; font-weight: 700; }
+#train .answers button:hover:not(:disabled) { border-color: #b98cff; }
+#train .answers button:disabled { cursor: default; }
+#train .answers button.ok { background: #1d3a22; border-color: #5fd35f; }
+#train .answers button.no { background: #3a1d1d; border-color: #ff5a4a; }
+#train .t-big { font-size: 60px; font-weight: 800; letter-spacing: .04em; line-height: 1.1; text-align: center; }
+#train .t-hint { color: var(--muted); font-size: 14px; text-align: center; }
+#train .t-row { display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; }
+#train .t-score { position: absolute; right: 6px; top: 2px; color: var(--muted); font-size: 13px; }
+#train.touch .card { padding: 8px 10px 10px; gap: 6px; }
+#train.touch .stage { min-height: 250px; }
+@media (max-height: 520px) { #train .card { max-height: 99vh; gap: 6px; padding: 8px 12px 10px; } #train .stage { min-height: 230px; } #train .t-big { font-size: 44px; } #train .t-res .big { font-size: 52px; } }
+/* "My training": every puzzle, its level and best; tap one to practise it */
+#trainpanel { z-index: 30; gap: 12px; overflow-y: auto; }
+#trainpanel h2 { margin: 0; }
+#trainpanel .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; width: min(820px, 94vw); }
+#trainpanel .tile { background: rgba(20,22,26,.85); border: 1px solid #2c3036; border-radius: 8px; padding: 9px 10px; display: flex; flex-direction: column; gap: 4px; text-align: left;
+  color: var(--ink); font: 14px var(--body); cursor: pointer; }
+#trainpanel .tile:hover { border-color: #b98cff; }
+#trainpanel .tile b { font-size: 15px; }
+#trainpanel .tile .sk { color: #b98cff; font-size: 12px; }
+#trainpanel .tile .lvbar { height: 4px; background: #2c3036; border-radius: 2px; overflow: hidden; }
+#trainpanel .tile .lvbar i { display: block; height: 100%; background: #8f6ae0; }
+#trainpanel .tile .nums { color: var(--muted); font-size: 12px; }
+#trainpanel .lnote { max-width: 620px; color: var(--muted); font-size: 14px; line-height: 1.5; margin: 0; text-align: center; }
+#trainpanel .lnote.small { font-size: 12px; }
+#trainpanel .lbtns { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+@media (max-height: 560px) { #trainpanel .tiles { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; } #trainpanel .tile { padding: 6px 8px; } }
