@@ -565,6 +565,9 @@ export class HUD {
   matchClock(ms) {
     const el = document.getElementById('mclock');
     if (!el) return;
+    const untimed = ms > 1e9;   // (co-op: no clock, waves until you're overrun)
+    if (untimed !== this.untimed) { this.untimed = untimed; el.classList.toggle('hidden', untimed); }
+    if (untimed) return;
     const t = Math.max(0, Math.ceil(ms / 1000)), txt = `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
     if (txt !== this.clockTxt) { this.clockTxt = txt; el.textContent = txt; el.classList.toggle('late', t <= 60); }
   }

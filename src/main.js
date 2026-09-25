@@ -259,7 +259,9 @@ class Game {
       } else if (!document.hidden && this.bgTick) { ticker.stop(this.bgTick); this.bgTick = null; this.timer.update(); }
     });
     if (URLFLAGS.autostart) { $('loading').classList.add('hidden'); this.beginPlay(); }
-    else this.intro(() => { $('menu').classList.remove('hidden'); this.state = 'menu'; });
+    // (to the menu once the title's done; unless a match started meanwhile: a friend's invite link,
+    // the room already playing)
+    else this.intro(() => { if (this.state !== 'loading') return; $('menu').classList.remove('hidden'); this.state = 'menu'; });
     this.renderer.setAnimationLoop(() => this.frame());
     // joined a room while loading: now's the time to say hello
     if (this.netui) this.attachSession(this.netui.session);
@@ -404,7 +406,7 @@ class Game {
     }
     const mins = (rules && rules.minutes) || 15, team = teamOf(rules, this.localSlot ?? 0);
     this.hud.banner(!pvp ? 'Green Diamond' : rules.mode === 'teams' ? `${TEAM_NAMES[team]} team` : 'Everyone for themselves',
-      !pvp ? `Co-op: hold out for ${mins} minutes`
+      !pvp ? (rules && rules.timed ? `Co-op: hold out for ${mins} minutes` : 'Co-op: hold out together, wave after wave')
         : `${rules.kills ? `First ${rules.mode === 'teams' ? 'team ' : ''}to ${rules.kills} kills` : `Most kills in ${mins} minutes`}${rules.zombies ? ', and the zombies are about' : ''}`);
     $('quit').textContent = 'Leave match';
     $('resume').textContent = 'Back to the fight';
@@ -420,7 +422,8 @@ class Game {
     const mins = Math.round(((this.rules && this.rules.minutes) || 15));
     $('go-title').textContent = m.win ? 'You held Green Diamond' : 'Overrun';
     $('go-title').classList.toggle('win', !!m.win);
-    $('go-sub').textContent = m.win ? `${mins} minutes, ${m.wave} wave${m.wave === 1 ? '' : 's'}, and you're still standing.` : `Everyone went down in wave ${m.wave}.`;
+    $('go-sub').textContent = m.win ? `${mins} minutes, ${m.wave} wave${m.wave === 1 ? '' : 's'}, and you're still standing.`
+      : `Everyone went down in wave ${m.wave}${m.wave > 1 ? `: you held out through ${m.wave - 1}` : ''}.`;
     const esc = (t) => String(t).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
     const st = $('go-stats');
     st.className = 'table';

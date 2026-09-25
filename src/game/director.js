@@ -321,10 +321,10 @@ export class Director {
 
   // ---- waves ----
   // bigger teams face more of them, a little tougher (co-op)
-  // A match on the clock (co-op, PvP) paces them to get about ten waves into fifteen minutes:
-  // smaller waves, sent in faster, a shorter break between them. In PvP the zombies are just
-  // about, not the point: fewer of them.
-  get quick() { return this.g.mode === 'host'; }
+  // A match on the clock (PvP) paces them to get about ten waves into fifteen minutes: smaller
+  // waves, sent in faster, a shorter break between them. In PvP the zombies are just about, not
+  // the point: fewer of them. (Co-op has no clock: waves as alone, grown for the team.)
+  get quick() { return this.g.mode === 'host' && !!this.g.rules?.timed; }
   get crowd() { return this.g.pvp && this.g.pvp.on ? 0.5 : 1; }
   waveCount(w) {
     if (this.quick) return Math.max(4, Math.round((5 + w * 2.2 + w * w * 0.12) * (1 + 0.45 * (this.teamSize - 1)) * this.crowd));

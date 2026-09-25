@@ -124,9 +124,6 @@ export class NetUI {
     if (!net || net.role !== 'host' || net.inMatch) return;
     const mode = $('mp-mode').value, was = net.rules.mode;
     const patch = { mode, zombies: $('mp-zombies').value === '1', minutes: +$('mp-minutes').value, kills: +$('mp-kills').value };
-    // (from co-op to PvP: ten minutes suits it better; and back)
-    if (was === 'coop' && mode !== 'coop' && patch.minutes === 15) patch.minutes = 10;
-    if (was !== 'coop' && mode === 'coop' && patch.minutes === 10) patch.minutes = 15;
     net.setRules(patch);
   }
 
@@ -151,7 +148,7 @@ export class NetUI {
     }
     $('mp-summary').textContent = host
       ? (busy ? '' : teams ? 'Click a name to move them to the other team.' : '')
-      : `${MODE_NAMES[rules.mode] || ''}${pvp ? ` · zombies ${rules.zombies ? 'around' : 'off'}` : ''} · ${rules.minutes} min${pvp && rules.kills ? ` · first to ${rules.kills} kills` : ''}${teams ? ` · you're ${TEAM_NAMES[team(mySlot)]}` : ''}`;
+      : `${MODE_NAMES[rules.mode] || ''}${pvp ? ` · zombies ${rules.zombies ? 'around' : 'off'} · ${rules.minutes} min` : ' · waves until the team is down'}${pvp && rules.kills ? ` · first to ${rules.kills} kills` : ''}${teams ? ` · you're ${TEAM_NAMES[team(mySlot)]}` : ''}`;
   }
 
   async copyInvite() {

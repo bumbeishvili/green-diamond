@@ -41,15 +41,15 @@ one in hosts.) The host picks the game, and the others see what was picked:
 - **Mode**: co-op against the zombies; PvP, everyone for themselves; or PvP in two teams. In teams,
   the host clicks a name to move that player to the other side.
 - **Zombies** (PvP): around, or none.
-- **Time**: 5 to 20 minutes (co-op: 15 by default, PvP: 10).
+- **Time** (PvP): 5 to 20 minutes (10 by default).
 - **Win at** (PvP): 10 to 50 kills, or no limit (the most kills when the clock runs out wins).
 
 When everyone is in, the host presses **Start match**. Two players is enough, and friends can join a
 match that's already running (in co-op they turn up next to the team; in teams, on the smaller side).
 
 Co-op:
-- **The match**: hold out for 15 minutes (the clock is at the top). Waves come quicker than alone,
-  about ten in the fifteen minutes, and they grow with the team.
+- **The match**: no clock. Wave after wave, as alone, but grown for the team, until the whole team
+  is down at once.
 - **Going down**: you come back after 4 seconds, next to a teammate. If the whole team is down at
   once, it's over.
 - **Points and shops**: everyone has their own points, weapons and ammo. Power-ups (max ammo,

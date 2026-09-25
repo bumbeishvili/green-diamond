@@ -19,12 +19,12 @@ import { isPvp, PVP_RESPAWN, PvP } from '../game/pvp.js';
 // host hasn't seen yet (reconciliation, blended in smoothly). Zombies and the other players are
 // drawn 100 ms in the past, between two snapshots (interpolation).
 
-export const MATCH_MS = 15 * 60 * 1000;
+export const UNTIMED = 0xFFFFFFFF;   // (the time left in a match with no clock: co-op)
 export const RESPAWN_S = 4;
 // What the host picks in the lobby (and remembers): co-op, or players against each other
 // ('ffa': everyone for themselves, 'teams': two teams the host arranges), zombies or not, how
 // long, and how many kills win it (0: no limit, the clock decides).
-export const DEFAULT_RULES = { mode: 'coop', zombies: true, minutes: 15, kills: 20, teams: {} };
+export const DEFAULT_RULES = { mode: 'coop', zombies: true, minutes: 10, kills: 20, teams: {} };   // (minutes: PvP's)
 function savedRules() {
   try { return { ...DEFAULT_RULES, ...JSON.parse(localStorage.getItem('gd-rules') || '{}'), teams: {} }; } catch { return { ...DEFAULT_RULES }; }
 }
@@ -179,7 +179,10 @@ export class Host {
     Object.assign(this.rules.teams, rules.teams);
     g.rules = rules;
     this.avatars.clear();
-    const dur = URLFLAGS.mptime ? URLFLAGS.mptime * 1000 : (rules.minutes || 15) * 60000;
+    // (co-op has no clock: waves until the whole team is down at once; PvP plays to its minutes.
+    // ?mptime puts a clock on any match, for tests)
+    const dur = URLFLAGS.mptime ? URLFLAGS.mptime * 1000 : rules.mode === 'coop' ? 0 : (rules.minutes || 10) * 60000;
+    rules.timed = dur > 0;
     this.match = { t0: performance.now(), dur, over: false, rules };
     this.tick = 0; this.acc = 0;
     g.players = [g.player];
@@ -499,7 +502,7 @@ export class Host {
     if (this.scoreT <= 0) { this.scoreT = 1; this.scores(); }
   }
 
-  msLeft() { return this.match ? Math.max(0, this.match.dur - (performance.now() - this.match.t0)) : 0; }
+  msLeft() { return !this.match ? 0 : !this.match.dur ? UNTIMED : Math.max(0, this.match.dur - (performance.now() - this.match.t0)); }
 
   // players going down, coming back, and the end of the match
   lifeAndDeath(dt) {
@@ -534,7 +537,7 @@ export class Host {
     }
     if (this.match.over) return;
     if (!pvp && all.every((e) => e.p.dead)) this.end(false);
-    else if (this.msLeft() <= 0) this.end(true);
+    else if (this.match.dur && this.msLeft() <= 0) this.end(true);
   }
 
   // PvP: someone died; whoever hurt them last (lately) gets the kill, and maybe the match
@@ -704,7 +707,7 @@ export class Client {
     this.renderPos = new THREE.Vector3();
     this.teleport = -1;
     this.team = [];
-    this.msLeft = MATCH_MS;
+    this.msLeft = UNTIMED;   // (till the host says: co-op has no clock)
     this.pendingStairs = null;
     // our voice: to the host, who passes it on
     if (game.voice) game.voice.send = (buf) => { new Uint8Array(buf)[1] = this.slot; this.s.sendTo(this.s.hostId, 'unrel', buf); };
@@ -780,7 +783,7 @@ export class Client {
     g.localSlot = m.slot;
     g.player.slot = m.slot;
     this.team = m.team || [];
-    this.msLeft = m.dur - m.elapsed;
+    this.msLeft = m.dur ? m.dur - m.elapsed : UNTIMED;
     this.seq = 0; this.hist = []; this.snaps = []; this.offset = null; this.acc = 0; this.teleport = -1;
     this.smooth.set(0, 0, 0);
     const p = g.player;
