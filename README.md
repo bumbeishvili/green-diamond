@@ -5,7 +5,11 @@ complex at 32 Bob Walsh Street, Dighomi, Tbilisi. It runs in the browser (three.
 
 ## Play
 
-Double-click **`start.command`**. Or run:
+Online: **https://diamond.infoicy.com** (also https://green-diamond.dato-developer.workers.dev and
+https://green-diamond-kohl.vercel.app; for playing with friends over the internet, use one of the
+first two: only they have the relay that gets round networks that block direct connections).
+
+To run it yourself, double-click **`start.command`**. Or run:
 
 ```sh
 python3 tools/serve.py        # then open http://127.0.0.1:8765

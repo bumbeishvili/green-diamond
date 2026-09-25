@@ -10,5 +10,8 @@
   "durable_objects": { "bindings": [{ "name": "ROOMS", "class_name": "Room" }] },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
   "alias": { "@vercel/blob": "./cloudflare/no-blob.js" },
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
+  // served on workers.dev and on its own domain (diamond.infoicy.com: Cloudflare makes its DNS record and certificate)
+  "workers_dev": true,
+  "routes": [{ "pattern": "diamond.infoicy.com", "custom_domain": true }]
 }
