@@ -364,11 +364,11 @@ const PROVISIONAL = {
   1284053962: ["A'", "B'"],                 // 34: two lobbies, A' the northern one, B' the southern
 };
 const KA_LETTER = { A: 'ა', B: 'ბ', C: 'ც', D: 'დ', E: 'ე', F: 'ფ', G: 'გ', H: 'ჰ' };
-function blockName(id, door) {
+export function blockName(id, door) {
   let letters = BLOCKS[id] || PROVISIONAL[id];
   if (Array.isArray(letters)) letters = door && door.y > 88 ? letters[0] : letters[1];
   if (!letters) return null;
-  return { ka: `${letters.replace(/[A-H]/g, (c) => KA_LETTER[c])} ბლოკი`, en: `${letters} BLOCK` };
+  return { ka: `${letters.replace(/[A-H]/g, (c) => KA_LETTER[c])} ბლოკი`, en: `${letters} BLOCK`, letters, provisional: !BLOCKS[id] };
 }
 
 // The ground-floor flats' terraces (the developer's courtyard photos): where a block's paved apron

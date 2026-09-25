@@ -1,5 +1,9 @@
 import { DEFS, CATS, UPGRADES } from './weapons.js';
 import { isPvp, teamOf, TEAM_CSS, TEAM_NAMES } from './pvp.js';
+import { blockName } from '../world/buildings.js';
+
+const NS = 'http://www.w3.org/2000/svg';
+const svg = (tag, attrs = {}, parent = null) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); if (parent) parent.appendChild(e); return e; };
 
 const SLOT_CSS = ['#3fa7ff', '#5fd35f', '#ffa23a', '#c77dff'];
 // how a kill happened, for the feed
@@ -19,11 +23,15 @@ export class HUD {
     this.hitT = 0; this.dmgT = 0;
     this.big = false;
     this.buildMap(level);
+    this.buildBigMap(level);
     this.lastPrompt = '';
     this.pendingPrompt = ''; this.pendingPrio = -1;
   }
 
-  show(on) { this.el.hud.classList.toggle('hidden', !on); if (on) this.flashKeys(12); }
+  show(on) {
+    this.el.hud.classList.toggle('hidden', !on);
+    if (on) { this.flashKeys(12); this.fitMini?.(); } else if (this.big) this.toggleMap();
+  }
 
   // Unobtrusive key strip at the bottom: bright for a few seconds, then faded; H toggles it.
   flashKeys(sec = 5) {
@@ -183,11 +191,15 @@ export class HUD {
     else this.el.dmg.style.opacity = 0;
   }
 
-  toggleMap() { this.big = !this.big; this.el.map.classList.toggle('big', this.big); }
+  toggleMap() {
+    this.big = !this.big;
+    this.bigEl.classList.toggle('hidden', !this.big);
+    this.el.map.style.visibility = this.big ? 'hidden' : '';
+  }
 
   // ---- minimap ----
   buildMap(level) {
-    const S = 1024, R = 190; // canvas px, metres from centre to edge
+    const S = (devicePixelRatio || 1) > 1.5 ? 2048 : 1536, R = 190; // canvas px, metres from centre to edge
     this.mapScale = S / (2 * R);
     this.mapR = R;
     const c = document.createElement('canvas'); c.width = c.height = S;
@@ -233,30 +245,34 @@ export class HUD {
     for (const b of level.surroundings.buildings) poly(b.poly, '#6d6d6b');
     this.mapCanvas = c;
     this.mapCtx = this.el.map.getContext('2d');
+    // (the minimap drawn at the screen's own pixel density: sharp on phones and retina screens)
+    this.fitMini = () => {
+      const cv = this.el.map, css = cv.getBoundingClientRect().width;
+      if (!css) return;
+      const n = Math.round(css * Math.min(3, devicePixelRatio || 1));
+      if (cv.width !== n) cv.width = cv.height = n;
+    };
+    addEventListener('resize', this.fitMini);
   }
 
   drawMap(player, zombies, markers = [], mates = []) {
+    if (this.big) this.drawBigMap(player, zombies, markers, mates);
     const ctx = this.mapCtx, cv = this.el.map;
-    const W = cv.width, H = cv.height;
-    const big = this.big;
-    const scale = big ? W / (2 * this.mapR) * 1.0 : 2.4; // px per metre
+    const W = cv.width, H = cv.height, u = W / 220;   // (sizes as on the 220 px original)
+    const scale = 2.4 * u; // px per metre
     ctx.save();
     ctx.clearRect(0, 0, W, H);
     ctx.translate(W / 2, H / 2);
     const yaw = player.mapYaw ?? player.yaw;   // (in a car: the way the car points)
-    if (!big) ctx.rotate(yaw);
+    ctx.rotate(yaw);
     const px = player.pos.x, py = -player.pos.z;
     const k = scale / this.mapScale;
-    if (big) {
-      ctx.drawImage(this.mapCanvas, -W / 2, -H / 2, W, H);
-    } else {
-      ctx.drawImage(this.mapCanvas, -(px + this.mapR) * this.mapScale * k, -(this.mapR - py) * this.mapScale * k, this.mapCanvas.width * k, this.mapCanvas.height * k);
-    }
-    const toMap = (x, z) => big ? [x * (W / (2 * this.mapR)), z * (W / (2 * this.mapR))] : [(x - px) * scale, (z + py) * scale];
+    ctx.drawImage(this.mapCanvas, -(px + this.mapR) * this.mapScale * k, -(this.mapR - py) * this.mapScale * k, this.mapCanvas.width * k, this.mapCanvas.height * k);
+    const toMap = (x, z) => [(x - px) * scale, (z + py) * scale];
     for (const m of markers) {
-      if (m.bigOnly && !big) continue;
+      if (m.bigOnly) continue;
       const [mx, mz] = toMap(m.x, m.z);
-      const r = (big ? 5 : 3.5) * (m.size || 1);
+      const r = 3.5 * u * (m.size || 1);
       ctx.fillStyle = m.color;
       if (m.shape === 'square') { ctx.fillRect(mx - r * 0.6, mz - r * 0.6, r * 1.2, r * 1.2); continue; }
       ctx.beginPath(); ctx.arc(mx, mz, r, 0, Math.PI * 2); ctx.fill();
@@ -266,7 +282,7 @@ export class HUD {
       if (z.state === 'dead' || z.state === 'climb') continue;
       const [zx, zz] = toMap(z.pos.x, z.pos.z);
       ctx.fillStyle = zc[z.species] || zc.human;
-      ctx.beginPath(); ctx.arc(zx, zz, (big ? 3.5 : 2.6) * (z.species === 'crow' ? 0.8 : z.def && z.def.boss ? 2.4 : z.def && z.def.shove ? 1.4 : 1), 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(zx, zz, 2.6 * u * (z.species === 'crow' ? 0.8 : z.def && z.def.boss ? 2.4 : z.def && z.def.shove ? 1.4 : 1), 0, Math.PI * 2); ctx.fill();
     }
     // teammates: arrows in their colours
     for (const m of mates) {
@@ -275,6 +291,7 @@ export class HUD {
       ctx.save();
       ctx.translate(mx, mz);
       ctx.rotate(-m.yaw);
+      ctx.scale(u, u);
       ctx.globalAlpha = m.dead ? 0.45 : 1;
       ctx.fillStyle = SLOT_CSS[m.slot % 4];
       ctx.strokeStyle = 'rgba(0,0,0,0.7)'; ctx.lineWidth = 1.2;
@@ -282,19 +299,213 @@ export class HUD {
       ctx.restore();
     }
     ctx.restore();
-    // player arrow: on the rotating minimap it always points up (the map turns instead);
-    // on the big north-up map it turns with the player's heading
+    // you: always pointing up (the map turns instead)
     ctx.save();
     ctx.translate(W / 2, H / 2);
-    if (big) {
-      const [ax, az] = toMap(player.pos.x, player.pos.z);
-      ctx.translate(ax, az);
-      ctx.rotate(-yaw);
-    }
+    ctx.scale(u, u);
     ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = 'rgba(0,0,0,0.6)'; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(0, -9); ctx.lineTo(6, 7); ctx.lineTo(0, 3.5); ctx.lineTo(-6, 7); ctx.closePath(); ctx.fill(); ctx.stroke();
     ctx.restore();
+  }
+
+  // ---- the big map (M): the level drawn in vectors (sharp at any size), north up, with its names ----
+  buildBigMap(level) {
+    const el = this.bigEl = document.createElement('div');
+    el.id = 'bigmap';
+    el.className = 'hidden';
+    const P = level.play ? level.play.outer : level.buildings.flatMap((b) => b.poly.outer);
+    const xs = P.map((p) => p[0]), ys = P.map((p) => p[1]);
+    // (room east for the street and the gates' names, and at the bottom for the legend)
+    const x0 = Math.min(...xs) - 14, x1 = Math.max(...xs) + 34, y0 = -Math.max(...ys) - 14, y1 = -Math.min(...ys) + 14;
+    const W = x1 - x0, H = y1 - y0;
+    // (the map, and its legend beside it)
+    const wrap = document.createElement('div');
+    wrap.className = 'wrap';
+    wrap.style.setProperty('--ar', (W / H).toFixed(3));
+    el.appendChild(wrap);
+    const frame = document.createElement('div');
+    frame.className = 'frame';
+    wrap.appendChild(frame);
+    const root = svg('svg', { viewBox: `${x0.toFixed(1)} ${y0.toFixed(1)} ${W.toFixed(1)} ${H.toFixed(1)}`, preserveAspectRatio: 'xMidYMid meet' }, frame);
+    const f = (v) => v.toFixed(1);
+    const ring = (pts) => pts.map(([x, y], i) => `${i ? 'L' : 'M'}${f(x)} ${f(-y)}`).join('') + 'Z';
+    const polyD = (p) => ring(p.outer) + (p.holes || []).map(ring).join('');
+    const line = (pts) => pts.map(([x, y], i) => `${i ? 'L' : 'M'}${f(x)} ${f(-y)}`).join('');
+    const layer = (cls) => svg('g', { class: cls }, root);
+    svg('rect', { x: f(x0), y: f(y0), width: f(W), height: f(H), class: 'ground' }, root);
+    const streets = layer('streets');
+    for (const s of level.surroundings.streets) svg('path', { d: line(s.line), 'stroke-width': s.w }, streets);
+    if (level.play) svg('path', { d: polyD(level.play), class: 'play', 'fill-rule': 'evenodd' }, root);
+    const ZC = { road: 'road', parking: 'road', pavers: 'pavers', lawn: 'lawn', deck: 'deck', court_pavers: 'pavers', court_lawn: 'lawn', court_deck: 'deck' };
+    const zones = layer('zones');
+    for (const [k, zs] of Object.entries(level.zones)) for (const z of zs) svg('path', { d: polyD(z), class: ZC[k] || 'road', 'fill-rule': 'evenodd' }, zones);
+    const pools = layer('pools');
+    for (const p of level.pools) svg('path', { d: polyD(p.poly), 'fill-rule': 'evenodd' }, pools);
+    const courts = layer('courts');
+    for (const c of level.sport || []) svg('circle', { cx: f(c.x), cy: f(-c.y), r: f(c.w / 2), class: c.kind === 'court_round' ? 'round' : 'pad' }, courts);
+    const under = layer('under');
+    for (const u of level.underground || []) svg('path', { d: polyD(u.poly) }, under);
+    const blds = layer('blds');
+    for (const b of level.surroundings.buildings) svg('path', { d: polyD(b.poly), class: 'out', 'fill-rule': 'evenodd' }, blds);
+    for (const b of level.buildings) svg('path', { d: polyD(b.poly), class: b.group || 'mid', 'fill-rule': 'evenodd' }, blds);
+    // the car parks' ramps: a P
+    const icons = layer('icons');
+    for (const u of level.underground || []) for (const dr of u.doors) {
+      const g = svg('g', { class: 'park', transform: `translate(${f((dr.a[0] + dr.b[0]) / 2)} ${f(-(dr.a[1] + dr.b[1]) / 2)})` }, icons);
+      svg('rect', { x: -2.6, y: -2.6, width: 5.2, height: 5.2, rx: 0.9 }, g);
+      svg('text', { y: 1.45 }, g).textContent = 'P';
+    }
+    const labels = layer('labels');
+    // the streets' names along them (the longest stretch of each inside the map; reading left to right)
+    const clip = (a, b) => {   // a segment cut to the map (Liang-Barsky, in map coordinates)
+      const bx0 = x0 + 4, bx1 = x1 - 4, by0 = -(y1 - 6), by1 = -(y0 + 14);
+      let t0 = 0, t1 = 1;
+      const dx = b[0] - a[0], dy = b[1] - a[1];
+      for (const [q, r] of [[-dx, a[0] - bx0], [dx, bx1 - a[0]], [-dy, a[1] - by0], [dy, by1 - a[1]]]) {
+        if (q === 0) { if (r < 0) return null; continue; }
+        const t = r / q;
+        if (q < 0) { if (t > t1) return null; if (t > t0) t0 = t; } else { if (t < t0) return null; if (t < t1) t1 = t; }
+      }
+      return [[a[0] + dx * t0, a[1] + dy * t0], [a[0] + dx * t1, a[1] + dy * t1]];
+    };
+    const best = new Map();
+    for (const s of level.surroundings.streets) {
+      if (!s.name) continue;
+      let run = [], len = 0;
+      const flush = () => { if (run.length > 1 && len > 45 && len > (best.get(s.name)?.len || 0)) best.set(s.name, { pts: run, len }); run = []; len = 0; };
+      for (let i = 1; i < s.line.length; i++) {
+        const c = clip(s.line[i - 1], s.line[i]);
+        if (!c) { flush(); continue; }
+        if (!run.length) run.push(c[0]);
+        else if (Math.hypot(run[run.length - 1][0] - c[0][0], run[run.length - 1][1] - c[0][1]) > 0.5) { flush(); run.push(c[0]); }
+        run.push(c[1]); len += Math.hypot(c[1][0] - c[0][0], c[1][1] - c[0][1]);
+      }
+      flush();
+    }
+    const defs = svg('defs', {}, root);
+    let si = 0;
+    for (const [name, { pts }] of best) {
+      const a = pts[0], z = pts[pts.length - 1];
+      const run = z[0] - a[0] < 0 || (Math.abs(z[0] - a[0]) < 1 && z[1] < a[1]) ? [...pts].reverse() : pts;
+      svg('path', { id: `bm-st-${si}`, d: line(run) }, defs);
+      const t = svg('text', { class: 'street', dy: 1.3 }, labels);
+      const tp = svg('textPath', { href: `#bm-st-${si}`, startOffset: '50%', 'text-anchor': 'middle' }, t);
+      tp.textContent = name;
+      si++;
+    }
+    this.big2Level = { level, labels, x0, x1, y0, y1 };
+    // north, and a scale
+    const nG = svg('g', { class: 'north', transform: `translate(${f(x1 - 9)} ${f(y0 + 11)})` }, root);
+    svg('path', { d: 'M0 -6 L3.2 3 L0 1.2 L-3.2 3 Z' }, nG);
+    svg('text', { y: 9.5 }, nG).textContent = 'N';
+    const sG = svg('g', { class: 'scale', transform: `translate(${f(x0 + 8)} ${f(y0 + 9)})` }, root);
+    svg('path', { d: 'M0 -1.6 V0 H50 V-1.6' }, sG);
+    svg('text', { x: 25, y: -3 }, sG).textContent = '50 m';
+    // (the parts that move, filled in while it's open: dots under tags under arrows)
+    const dyn = svg('g', { class: 'dyn' }, root);
+    this.big2 = { g: { dot: svg('g', {}, dyn), tag: svg('g', { class: 'tags' }, dyn), arrow: svg('g', {}, dyn) }, pool: { dot: [], sq: [], tag: [], arrow: [] } };
+    const legend = document.createElement('div');
+    legend.className = 'legend';
+    const item = (swatch, text) => `<span>${swatch}${text}</span>`;
+    legend.innerHTML = [
+      item('<i class="arrow"></i>', 'you'), item('<i style="background:#ff3b30"></i>', 'zombies'), item('<i style="background:#ffb347"></i>', 'shops and weapons'),
+      item('<i style="background:#9bd35a"></i>', 'ammo'), item('<i style="background:#ff6b6b"></i>', 'first aid'), item('<i style="background:#ffe066"></i>', 'lari'),
+      item('<i style="background:#ff9f43"></i>', 'a gun'), item('<i style="background:#b98cff"></i>', 'word crate'), item('<i class="sq"></i>', 'stairs'), item('<b>P</b>', 'car park'),
+    ].join('') + `<em>${'ontouchstart' in window ? 'tap to close' : 'M to close'}</em>`;
+    wrap.appendChild(legend);
+    const close = (e) => { e.preventDefault(); e.stopPropagation(); if (this.big) this.toggleMap(); };
+    el.addEventListener('click', close);
+    el.addEventListener('touchstart', close, { passive: false });
+    document.body.appendChild(el);
+  }
+
+  // The big map's names: blocks first, then the gates, the shops with what they sell, the other
+  // stations; each at the first spot around its place that covers nothing already there.
+  placeLabels(stations) {
+    const { level, labels, x0, x1, y0, y1 } = this.big2Level, f = (v) => v.toFixed(1);
+    const placed = [], yMax = y1 - 1;
+    const measure = (lines) => ({ w: Math.max(...lines.map((l) => [...l.text].reduce((a, ch) => a + (ch.charCodeAt(0) > 255 ? 0.66 : 0.56), 0) * l.size)) + 1, h: lines.reduce((a, l) => a + l.size * 1.12, 0) });
+    const place = (x, y, lines, cands, force = false) => {
+      const { w, h } = measure(lines);
+      for (const [dx, dy] of cands) {
+        const b = [x + dx - w / 2, y + dy - h / 2, x + dx + w / 2, y + dy + h / 2];
+        if (b[0] < x0 + 1 || b[2] > x1 - 1 || b[1] < y0 + 1 || b[3] > yMax) continue;
+        if (!force && placed.some((q) => b[0] < q[2] && b[2] > q[0] && b[1] < q[3] && b[3] > q[1])) continue;
+        placed.push(b);
+        let ty = b[1];
+        for (const l of lines) { ty += l.size * 1.12; svg('text', { x: f(x + dx), y: f(ty - l.size * 0.22), class: l.cls }, labels).textContent = l.text; }
+        return true;
+      }
+      if (force) return place(x, y, lines, [cands[0]], true);
+      return false;
+    };
+    const around = (r) => [[0, 0], [0, -r], [0, r], [-r * 1.6, 0], [r * 1.6, 0], [0, -2 * r], [0, 2 * r], [-r * 1.6, -r], [r * 1.6, -r], [-r * 1.6, r], [r * 1.6, r], [0, -3 * r], [0, 3 * r]];
+    const beside = (r) => around(r).slice(1);   // (never on top of the dot it names)
+    // the station dots and the car parks' P signs: nothing written over them
+    for (const m of stations) placed.push([m.x - 1.9, m.z - 1.9, m.x + 1.9, m.z + 1.9]);
+    for (const u of level.underground || []) for (const dr of u.doors) { const x = (dr.a[0] + dr.b[0]) / 2, z = -(dr.a[1] + dr.b[1]) / 2; placed.push([x - 2.8, z - 2.8, x + 2.8, z + 2.8]); }
+    // the blocks (a building with two lobbies: a name by each)
+    const byB = new Map();
+    for (const d of level.doors || []) {
+      const n = blockName(d.building, d);
+      if (!n) continue;
+      if (!byB.has(d.building)) byB.set(d.building, []);
+      byB.get(d.building).push({ d, n });
+    }
+    for (const [id, list] of byB) {
+      const b = level.buildings.find((q) => q.id === id);
+      if (!b) continue;
+      const names = [...new Set(list.map((q) => q.n.letters))];
+      const put = (x, y, n) => place(x, -y, [{ text: n.letters, size: 6.4, cls: 'blk' + (n.provisional ? ' prov' : '') }], around(5), true);
+      if (names.length === 1) {
+        const o = b.poly.outer; let cx = 0, cy = 0; for (const [x, y] of o) { cx += x / o.length; cy += y / o.length; }
+        put(cx, cy, list[0].n);
+      } else for (const name of names) { const { d, n } = list.find((q) => q.n.letters === name); put(d.x - Math.cos(d.h) * 8, d.y - Math.sin(d.h) * 8, n); }
+    }
+    for (const g of level.gates || []) place(g.x, -g.y, [{ text: g.name.toUpperCase(), size: 4.4, cls: 'gate' }], [[12, 0], [12, -6], [12, 6], [0, -7], [0, 7]], true);
+    // the shops, each with what it sells there
+    const NAME = { Diamond: 'ხილ ბოსტანი', 'Ori Nabiji': '2 Nabiji' }, used = new Set();
+    for (const p of level.pois || []) {
+      const name = NAME[p.name] || p.name;
+      const st = stations.find((m) => !used.has(m) && Math.hypot(m.x - p.x, m.z + p.y) < 5);
+      if (!name || (p.kind === 'payment_terminal' && !st)) continue;
+      if (st) used.add(st);
+      const lines = [{ text: p.kind === 'payment_terminal' ? 'TBC' : name, size: 3.7, cls: 'shop' }];
+      if (st) lines.push({ text: st.tag, size: 3.1, cls: 'tagl' });
+      place(p.x, -p.y, lines, beside(5.5));
+    }
+    // the stations away from the shops (crates, roofs, the car park, the booths)
+    for (const m of stations) if (!used.has(m) && m.tag) place(m.x, m.z, [{ text: m.tag, size: 3.1, cls: 'tagl' }], beside(3.6));
+  }
+
+  // the big map's moving parts (pooled SVG elements)
+  drawBigMap(player, zombies, markers, mates) {
+    if (!this.big2Placed) { this.big2Placed = true; this.placeLabels(markers.filter((m) => m.station)); }
+    const { g, pool } = this.big2, used = { dot: 0, sq: 0, tag: 0, arrow: 0 };
+    const get = (kind, tag, parent) => { let e = pool[kind][used[kind]++]; if (!e) { e = svg(tag, {}, parent); pool[kind].push(e); } e.style.display = ''; return e; };
+    const f = (v) => v.toFixed(1);
+    const dot = (x, z, r, fill, cls = '') => { const e = get('dot', 'circle', g.dot); e.setAttribute('cx', f(x)); e.setAttribute('cy', f(z)); e.setAttribute('r', r); e.setAttribute('fill', fill); e.setAttribute('class', cls); };
+    const arrow = (x, z, yaw, fill, size, alpha = 1) => {
+      const e = get('arrow', 'path', g.arrow);
+      e.setAttribute('d', 'M0 -3.2 L2.3 2.6 L0 1.2 L-2.3 2.6 Z');
+      e.setAttribute('transform', `translate(${f(x)} ${f(z)}) rotate(${(-yaw * 180 / Math.PI).toFixed(0)}) scale(${size})`);
+      e.setAttribute('fill', fill); e.setAttribute('opacity', alpha);
+    };
+    for (const m of markers) {
+      if (m.shape === 'square') {
+        const e = get('sq', 'rect', g.dot);
+        e.setAttribute('x', f(m.x - 1.1)); e.setAttribute('y', f(m.z - 1.1)); e.setAttribute('width', 2.2); e.setAttribute('height', 2.2); e.setAttribute('class', 'stairs');
+      } else dot(m.x, m.z, m.station ? 1.8 : 1.35 * (m.size || 1), m.color, m.station ? 'st' : 'pk');
+    }
+    const zc = { human: '#ff3b30', dog: '#ff9a3a', crow: '#c77dff' };
+    for (const z of zombies) {
+      if (z.state === 'dead' || z.state === 'climb') continue;
+      dot(z.pos.x, z.pos.z, 1.15 * (z.species === 'crow' ? 0.8 : z.def && z.def.boss ? 2.4 : z.def && z.def.shove ? 1.4 : 1), zc[z.species] || zc.human, 'z');
+    }
+    for (const m of mates) if (!m.me) arrow(m.pos.x, m.pos.z, m.yaw, SLOT_CSS[m.slot % 4], 1.3, m.dead ? 0.45 : 1);
+    arrow(player.pos.x, player.pos.z, player.mapYaw ?? player.yaw, '#ffffff', 1.6);
+    for (const kind of Object.keys(pool)) for (let i = used[kind]; i < pool[kind].length; i++) pool[kind][i].style.display = 'none';
   }
 
   setStats(text) { this.el.stats.textContent = text; }

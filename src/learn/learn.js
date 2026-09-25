@@ -123,6 +123,11 @@ export class Learn {
     }
     r[1] = t + DUE[r[0]] * (right ? 1 : 1);
     if (learned) this.s.learned++;
+    // (no test to sit: three quick right answers running on new words at your level move you up one)
+    if (fresh && right && secs <= QUICK && q.b >= this.s.level) {
+      this.s.climb = (this.s.climb || 0) + 1;
+      if (this.s.climb >= 3 && this.s.level < 6) { this.s.level++; this.s.climb = 0; }
+    } else if (!right) this.s.climb = 0;
     this.s.answered++;
     const day = new Date().toISOString().slice(0, 10);
     this.s.days[day] = (this.s.days[day] || 0) + 1;

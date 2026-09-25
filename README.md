@@ -180,32 +180,25 @@ Aim down the sights (E or right-click) and every gun hits twice as hard.
 
 ### Learn English as you play
 
-For adults learning English (Georgian hints). It's on from the start at Light (a round every third
-wave); in **Settings**, **English practice** sets Light, Normal (every wave), Intense or Off. Not in PvP
-matches.
+For adults learning English (Georgian hints). It never gets in the way: it's an offer you can take
+or leave. On from the start at Light; **Settings** sets Light, Normal, Intense or Off. Not in PvP matches.
 
-- **Your level first.** The first time, a quick test (three words at each of six levels, from the
-  most basic words to advanced) finds where you are. It stops at the first level where you miss
-  two, so it's short if you're starting out, and quick if you know it all. Everything below your
-  level counts as known.
-- **A round between waves.** After each wave (every third on Light) you get a few questions: what a
-  word means, which English word fits a Georgian one, which word fills the gap in a sentence, or
-  which word you heard. Keys 1–4 or a tap answer; Space goes on. Playing alone, the game waits for
-  you; in co-op the next wave doesn't, so the round is shorter (three questions).
-- **Word crates.** Violet ABC crates turn up round the complex with practice on (in multiplayer,
-  when the host has it on). Walk over one for two or three questions.
-- **Fast if you know it, thorough if you don't.** A word you get right quickly the first time is
-  known: it won't come back for weeks. A word you miss shows you its meaning in Georgian, a sentence
-  that uses it, and how it sounds. Then it comes back a few minutes later, again later that
-  session, the next day, and so on until it sticks (spaced repetition). Progress is kept in your
-  browser; **My English** in Settings shows your level, the words you know, what's due, and lets
-  you take the level test again or start over.
-- **What it pays.** Every right answer is money, more for a word you've just learned than for one
-  you knew, and more as the waves get tougher. A round with any right answer tops up your ammo; two
-  in three right adds a grenade; all right adds health; a perfect round of four or more, or ten right
-  in a row, gives you a gun you haven't got (or a power-up if you have them all). Every 50 new words
-  learned, the gun in your hands goes up a level for free. With practice off, a word crate just has
-  150 lari in it.
+- **A word for a bonus.** After a wave (every third on Light, every wave on Normal and Intense) a
+  small card offers one word for extra lari. Press **B** or tap the card and one question comes up:
+  what a word means, which English word fits a Georgian one, which word fills a gap, or which word
+  you heard. Keys 1–4 or a tap answer. Alone, the game waits; in co-op the next wave doesn't. Leave
+  the card and it goes after a few seconds.
+- **Word crates.** Violet ABC crates round the complex (in multiplayer, when the host has practice
+  on) hold one question each.
+- **What it pays.** A right answer is worth 150 lari and more: more at a higher level, half as much
+  again for a word you once missed, more as the waves get tougher. Five right in a row, a gun you
+  haven't got (or a power-up if you have them all); every 50 new words learned, the gun in your
+  hands a level up for free.
+- **Fast if you know it, thorough if you don't.** There's no test to sit: three quick right answers
+  running move you up a level. A word you miss is shown with its Georgian, a sentence and its sound,
+  and comes back a few minutes later, then later that session, the next day and so on until it
+  sticks (spaced repetition). **My English** in Settings shows your level, the words you know and
+  what's due, finds your level in one go if you like, or starts over. Progress stays in your browser.
 
 ### Graphics
 

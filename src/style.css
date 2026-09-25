@@ -162,7 +162,48 @@ canvas#game { position: fixed; inset: 0; width: 100vw; height: 100vh; display: b
   position: absolute; left: 30px; top: 26px; width: 180px; height: 180px; border-radius: 50%;
   box-shadow: 0 0 0 2px rgba(255,255,255,.18), 0 6px 18px rgba(0,0,0,.5); opacity: .92;
 }
-#minimap.big { left: 50%; top: 50%; width: min(80vh, 80vw); height: min(80vh, 80vw); transform: translate(-50%, -50%); border-radius: 8px; opacity: .96; }
+/* the big map (M): the level in vectors, north up, with its names */
+#bigmap { position: fixed; inset: 0; z-index: 13; display: flex; align-items: center; justify-content: center; background: rgba(4, 6, 8, .45); pointer-events: none; }
+#bigmap.hidden { display: none; }
+body.touch #bigmap { pointer-events: auto; }
+#bigmap .wrap { display: flex; align-items: center; gap: 14px; }
+#bigmap .frame { position: relative; width: min(calc(92vh * var(--ar)), calc(94vw - 190px)); aspect-ratio: var(--ar); border-radius: 10px; overflow: hidden; background: #1d231c;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, .14), 0 18px 60px rgba(0, 0, 0, .6); }
+#bigmap svg { display: block; width: 100%; height: 100%; }
+#bigmap .ground { fill: #1d231c; }
+#bigmap .streets path { fill: none; stroke: #3c3f44; stroke-linecap: round; stroke-linejoin: round; }
+#bigmap .play { fill: #283026; }
+#bigmap .road { fill: #4b4e53; } #bigmap .pavers { fill: #6f6d67; } #bigmap .lawn { fill: #3b5b34; } #bigmap .deck { fill: #bab3a2; }
+#bigmap .pools path { fill: #2f97c9; stroke: #c4e9f7; stroke-width: .4; }
+#bigmap .courts .round { fill: #a6493b; stroke: #2f5a3a; stroke-width: .6; } #bigmap .courts .pad { fill: #d66d8a; }
+#bigmap .under path { fill: none; stroke: rgba(25, 29, 35, .85); stroke-width: .6; stroke-dasharray: 2 1.6; }
+#bigmap .blds path { fill: #dcd8cf; stroke: #8d887e; stroke-width: .35; }
+#bigmap .blds .podium { fill: #a49d8e; } #bigmap .blds .tower { fill: #cfcac0; } #bigmap .blds .guard, #bigmap .blds .small { fill: #c6c1b6; }
+#bigmap .blds .out { fill: #6a6a68; stroke: none; }
+#bigmap .park rect { fill: #2f6db3; stroke: #fff; stroke-width: .4; }
+#bigmap .park text { font: 800 4px var(--body); fill: #fff; text-anchor: middle; }
+#bigmap .labels text { font-family: var(--body); paint-order: stroke; stroke: rgba(12, 14, 16, .88); stroke-linejoin: round; }
+#bigmap .blk { font-size: 6.4px; font-weight: 800; fill: #fff; stroke-width: 1.3px; text-anchor: middle; }
+#bigmap .blk.prov { font-style: italic; fill: #ffe7a8; }
+#bigmap .shop { font-size: 3.7px; font-weight: 700; fill: #ffd28a; stroke-width: .9px; text-anchor: middle; }
+#bigmap .gate { font-size: 4.4px; font-weight: 800; fill: #7ff0a8; stroke-width: 1px; letter-spacing: .2px; text-anchor: middle; }
+#bigmap .street { font-size: 3.9px; font-weight: 600; fill: #d2ccc0; stroke-width: .8px; letter-spacing: .3px; }
+#bigmap .tagl { font-size: 3.1px; font-weight: 600; fill: #ffe2b8; stroke-width: .8px; text-anchor: middle; }
+#bigmap .dyn circle { stroke: rgba(0, 0, 0, .55); stroke-width: .35; }
+#bigmap .dyn .st { stroke: #3a2508; stroke-width: .5; }
+#bigmap .dyn .stairs { fill: #eef3f6; stroke: rgba(0, 0, 0, .6); stroke-width: .35; }
+#bigmap .dyn path { stroke: rgba(0, 0, 0, .7); stroke-width: .5; stroke-linejoin: round; }
+#bigmap .north path { fill: #fff; } #bigmap .north text { font: 800 4.5px var(--body); fill: #fff; text-anchor: middle; }
+#bigmap .scale path { fill: none; stroke: #fff; stroke-width: .5; } #bigmap .scale text { font: 600 3.4px var(--body); fill: #fff; text-anchor: middle; }
+#bigmap .legend { display: flex; flex-direction: column; gap: 7px; padding: 12px 14px; width: max-content; border-radius: 9px;
+  background: rgba(8, 10, 12, .84); box-shadow: 0 0 0 1px rgba(255, 255, 255, .08); font: 13px var(--body); color: #ddd6c8; }
+#bigmap .legend span { display: inline-flex; align-items: center; gap: 5px; }
+#bigmap .legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; box-shadow: 0 0 0 1px rgba(0, 0, 0, .5); }
+#bigmap .legend i.sq { border-radius: 1px; background: #eef3f6; }
+#bigmap .legend i.arrow { width: 0; height: 0; border-radius: 0; box-shadow: none; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 11px solid #fff; }
+#bigmap .legend b { background: #2f6db3; color: #fff; font-size: 10px; padding: 0 4px; border-radius: 2px; }
+#bigmap .legend em { margin-top: 4px; font-style: normal; color: #8f897f; font-size: 12px; }
+@media (max-height: 560px) { #bigmap .wrap { gap: 10px; } #bigmap .legend { gap: 3px; padding: 8px 10px; font-size: 11px; } #bigmap .legend em { font-size: 10px; } }
 #keys {
   position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); display: flex; flex-wrap: wrap; justify-content: center;
   gap: 2px 12px; max-width: min(860px, 70vw); font: 12px/1.5 var(--body); color: rgba(255,255,255,.8);
@@ -335,7 +376,7 @@ canvas#game { position: fixed; inset: 0; width: 100vw; height: 100vh; display: b
 body.touch canvas { touch-action: none; }
 body.touch #keys, body.touch #slots, body.touch #nades, body.touch #stats, body.touch #clicktoplay, body.touch #ammo-name { display: none !important; }
 body.touch #minimap { left: calc(12px + env(safe-area-inset-left)); top: 10px; width: 112px; height: 112px; pointer-events: auto; }
-body.touch #minimap.big { left: 50%; top: 50%; width: min(86vh, 86vw); height: min(86vh, 86vw); }
+
 body.touch #health { left: calc(12px + env(safe-area-inset-left)); top: 132px; bottom: auto; width: 112px; }
 body.touch #wave { left: calc(134px + env(safe-area-inset-left)); top: 8px; bottom: auto; font-size: 44px; }
 body.touch #points { right: calc(170px + env(safe-area-inset-right)); top: 12px; bottom: auto; font-size: 22px; }
@@ -386,7 +427,18 @@ body.touch #hud.driving #prompt { bottom: 60px; }
 /* (the health bar's length is the game's: armour makes it longer; on a phone, half of it) */
 body.touch #health { transform: scale(0.5); transform-origin: left top; }
 
-/* ---- English practice: the question card and "My English" ---- */
+/* ---- English practice: the offer between waves (B or a tap takes it), the question card, "My English" ---- */
+#eoffer { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 14; display: flex; align-items: center; gap: 12px; overflow: hidden;
+  padding: 10px 16px 13px; background: rgba(16, 13, 28, .9); border: 1px solid #6b4fb0; border-radius: 10px; color: #e9e3ff; font: 15px var(--body);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, .45); cursor: pointer; animation: eoIn .35s ease both; -webkit-tap-highlight-color: transparent; }
+#eoffer.hidden { display: none; }
+#eoffer b { font-family: var(--head); font-weight: 400; letter-spacing: .06em; text-transform: uppercase; color: #b98cff; font-size: 17px; }
+#eoffer em { font-style: normal; color: #ffe066; font-weight: 700; }
+#eoffer kbd { font: 700 13px var(--body); background: #6b4fb0; color: #fff; border-radius: 5px; padding: 3px 9px; }
+#eoffer i { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: #b98cff; animation: eoBar var(--t, 10s) linear both; }
+body.touch #eoffer { left: 42%; bottom: 14px; font-size: 14px; padding: 8px 14px 11px; }
+@keyframes eoIn { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@keyframes eoBar { from { width: 100%; } to { width: 0%; } }
 #quiz { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; background: rgba(4,5,7,.55); padding: 12px; }
 #quiz.hidden { display: none; }
 #quiz .card { width: min(560px, 96vw); max-height: 96vh; overflow-y: auto; background: #111418; border: 1px solid #2c3036; border-radius: 10px; box-shadow: 0 18px 60px rgba(0,0,0,.6);

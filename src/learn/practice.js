@@ -1,20 +1,21 @@
-// English practice in the game: when you're asked, and what it's worth.
+// English practice in the game: an offer, never a test you have to sit.
 //
-// Between waves you get a round (solo: the game waits for you; with friends it goes on around you),
-// and word crates turn up round the complex. The first time, a quick placement test finds your level.
-// Every right answer pays money (more for a word you're learning than for one you knew on sight, and
-// more as the waves get tougher); a round tops up your ammo, a good one adds a grenade, a clean one
-// some health; a perfect round, or every tenth right answer in a row, a gun you haven't got (or a
-// power-up); every 50 new words, the gun in your hands one level up for free.
+// After a wave (every third on Light) a small card offers one word for a bonus in lari: press B, or
+// tap it, and one question comes up (alone, the game waits for you; with friends it goes on around
+// you); leave it and it goes. Word crates round the complex hold one question too. Right: the money
+// (more for a word you once missed, more as the waves get tougher); five right in a row, a gun you
+// haven't got (or a power-up); every 50 new words, the gun in your hands a level up. Wrong: you see
+// the word (its Georgian, a sentence, its sound) and it comes back later. No level test: three quick
+// right answers running at your level move you up one (My English can still find your level at once).
 
 import { settings, saveSettings, URLFLAGS } from '../config.js';
 import { Learn, INTENSITY } from './learn.js';
 import { Quiz } from './quiz.js';
-import { DEFS, MAX_GRENADES } from '../game/weapons.js';
+import { DEFS } from '../game/weapons.js';
 
 const BANDS = ['', 'Beginner', 'Elementary', 'Pre-intermediate', 'Intermediate', 'Upper-intermediate', 'Advanced'];
-const EVERY = { light: 3, normal: 1, intense: 1 };            // a round every n waves
-const ROUND = { light: 4, normal: 5, intense: 8 };            // questions a round (alone)
+const EVERY = { light: 3, normal: 1, intense: 1 };            // an offer every n waves
+const OFFER_S = 10;                                           // how long the offer stays up
 const LOOT = ['deagle', 'shotgun', 'm4', 'aug', 'autosniper', 'msr', 'mg', 'bow', 'chainsaw', 'launcher'];
 
 export class Practice {
@@ -22,7 +23,7 @@ export class Practice {
     this.g = game;
     this.learn = new Learn();
     this.quiz = new Quiz(this.learn);
-    // (on from the start, at Light, until you pick something else in the menu; a test run, off unless
+    // (on from the start, at Light, until you pick something else in Settings; a test run, off unless
     // its URL says, and nothing saved)
     const auto = !!(URLFLAGS.autostart || URLFLAGS.mp);
     if (URLFLAGS.english || auto) this.setMode(URLFLAGS.english || 'off', settings.learnHints !== false, false);
@@ -41,45 +42,75 @@ export class Practice {
       saveSettings();
     }
     if (INTENSITY[this.mode] > 0) this.learn.load();
+    if (!this.on) this.hideOffer();
   }
 
-  // ---- when you're asked ----
-  // between waves (solo right away; with friends too, but the next wave won't wait)
+  // ---- the offer between waves: take it or leave it ----
   waveEnd(w) {
     if (!this.on || this.open || w % EVERY[this.mode] || this.g.pvp?.on) return;   // (not against other players)
-    setTimeout(() => { if (this.g.state === 'playing' && !this.g.player.dead) this.round(this.g.mode === 'solo' ? ROUND[this.mode] : 3, 'wave'); }, 1600);
+    setTimeout(() => this.offer(), 1400);
   }
 
-  // a word crate: one to three questions (with English off, just the cash inside)
+  // what a right answer pays now (a word you once missed: half as much again)
+  worth(learned = false) {
+    const tough = this.g.director ? this.g.director.toughness() : 1;
+    return Math.round(((150 + 50 * this.learn.s.level) * (learned ? 1.5 : 1) * tough) / 10) * 10;
+  }
+
+  offer() {
+    const g = this.g;
+    if (!this.on || this.open || g.state !== 'playing' || g.player.dead) return;
+    const el = this.offerEl || this.makeOffer();
+    el.querySelector('em').textContent = `+${this.worth()}`;
+    el.querySelector('i').remove();                    // (the time bar, from the start again)
+    el.appendChild(document.createElement('i'));
+    el.classList.remove('hidden');
+    clearTimeout(this.offerT);
+    this.offerT = setTimeout(() => this.hideOffer(), OFFER_S * 1000);
+  }
+
+  makeOffer() {
+    const el = this.offerEl = document.createElement('div');
+    el.id = 'eoffer';
+    el.className = 'hidden';
+    el.style.setProperty('--t', `${OFFER_S}s`);
+    el.innerHTML = `<b>English bonus</b><span>one word for <em></em> lari</span><kbd>${this.g.touch ? 'tap' : 'B'}</kbd><i></i>`;
+    document.body.appendChild(el);
+    const take = (e) => { e.preventDefault(); e.stopPropagation(); this.take(); };
+    el.addEventListener('click', take);
+    el.addEventListener('touchstart', take, { passive: false });
+    addEventListener('keydown', (e) => { if (e.code === 'KeyB' && !el.classList.contains('hidden') && this.g.state === 'playing') this.take(); });
+    return el;
+  }
+
+  hideOffer() { clearTimeout(this.offerT); this.offerEl?.classList.add('hidden'); }
+
+  take() { this.hideOffer(); this.ask('English bonus'); }
+
+  // a word crate: one question (with English off, just the cash inside)
   crate() {
     if (!this.on || this.g.pvp?.on) { this.cash(150); this.g.hud.notice('A word crate: 150 lari inside'); return; }
-    this.round(2 + (Math.random() < 0.35 ? 1 : 0), 'crate');
+    this.ask('Word crate');
   }
 
-  async round(n, why) {
+  // one question, and what it pays
+  async ask(title) {
     if (this.open) return;
-    if (!this.learn.s.placed) return this.placement();
-    const items = this.learn.pick(n);
+    const items = this.learn.pick(1);
     if (!items.length) return;
+    const level = this.learn.s.level;
     this.enter();
-    const res = await this.quiz.run(items, { title: why === 'crate' ? 'Word crate' : 'English', onAnswer: (r) => this.pay(r) });
+    const res = await this.quiz.run(items, { title, onAnswer: (r) => this.pay(r) });
     this.leave();
-    this.roundDone(res, why);
-  }
-
-  // the first time: a word or two a band, up while you're right (stops at the first band you miss twice)
-  async placement() {
-    const items = this.learn.placementItems();
-    if (!items.length) return;
-    this.enter();
-    const res = await this.quiz.run(items, {
-      title: 'Your English level', placement: true,
-      stopIf: (rs) => { const b = rs[rs.length - 1].band; return rs.filter((x) => x.band === b && !x.right).length >= 2; },
-    });
-    this.leave();
-    if (res.closed && res.total < 4) return;   // (skipped: it'll ask again next time)
-    const level = this.learn.place(res.results);
-    this.g.hud.banner(`English: ${BANDS[level]}`, 'New words start there; the ones below count as known');
+    const g = this.g;
+    if (res.gained) g.hud.notice(`English: +${res.gained} lari`);
+    if (this.learn.s.level > level) g.hud.banner(`English: ${BANDS[this.learn.s.level]}`, 'Harder words from now on');
+    // every 50 new words: the gun in your hands, a level up
+    const m = Math.floor(this.learn.s.learned / 50);
+    if (m > (this.learn.s.milestone || 0)) {
+      this.learn.s.milestone = m; this.learn.save();
+      this.upgrade(`${m * 50} new words`);
+    }
   }
 
   // (solo: the world waits; either way you can't shoot while you answer)
@@ -102,32 +133,13 @@ export class Practice {
   }
 
   // ---- what it's worth ----
-  // an answer: money (and the quiz shows it)
   pay(r) {
     if (!r.right) return 0;
-    const tough = this.g.director ? this.g.director.toughness() : 1;
-    let pts = r.fresh ? 10 + 5 * r.band : 20 + 10 * r.band;
-    if (r.learned) pts += 40 + 20 * r.band;
-    pts = Math.round((pts * tough) / 5) * 5;
+    const pts = this.worth(r.learned);
     this.cash(pts);
-    if (this.learn.s.streak > 0 && this.learn.s.streak % 10 === 0) this.bonus(`${this.learn.s.streak} right in a row`);
+    const s = this.learn.s.streak;
+    if (s > 0 && s % 5 === 0) this.bonus(`${s} right in a row`);
     return pts;
-  }
-
-  roundDone(res, why) {
-    const g = this.g, w = g.weapons, got = [];
-    if (!res.total) return;
-    if (res.right >= 1) { w.topUp(); got.push('ammo'); }
-    if (res.right * 3 >= res.total * 2 && w.grenades < MAX_GRENADES) { w.grenades++; g.hud.grenades(w.grenades); got.push('a grenade'); }
-    if (res.right === res.total && res.total >= 3 && g.player.health < g.player.maxHealth - 1) { this.heal(40); got.push('health'); }
-    if (res.right === res.total && res.total >= 4) this.bonus('a perfect round');
-    // every 50 new words: the gun in your hands, a level up
-    const m = Math.floor(this.learn.s.learned / 50);
-    if (m > (this.learn.s.milestone || 0)) {
-      this.learn.s.milestone = m; this.learn.save();
-      this.upgrade(`${m * 50} new words`);
-    }
-    if (res.gained || got.length) g.hud.banner(`English ${res.right}/${res.total}`, [res.gained ? `+${res.gained} lari` : '', ...got].filter(Boolean).join(' · '));
   }
 
   // money (a co-op client asks the host, which keeps everyone's points)
@@ -135,12 +147,6 @@ export class Practice {
     const g = this.g;
     if (g.mode === 'client') g.net.learnReward({ p: n });
     else g.director.addPoints(n, true);
-  }
-
-  heal(n) {
-    const g = this.g, p = g.player;
-    if (g.mode === 'client') g.net.learnReward({ h: n });
-    else p.health = Math.min(p.maxHealth, p.health + n);
   }
 
   // a gun you haven't got; if you have them all, a power-up at your feet
@@ -188,14 +194,14 @@ export class Practice {
     const s = this.stats(), pct = s.answered ? Math.round((s.right / s.answered) * 100) : 0;
     el.innerHTML = `<h2>My English</h2>
       <div class="lstats">
-        <div><b>${s.placed ? s.band : '—'}</b><span>your level${s.placed ? '' : ' (not tested yet)'}</span></div>
+        <div><b>${s.band}</b><span>your level${s.placed ? '' : ' (from your answers so far)'}</span></div>
         <div><b>${s.known}</b><span>words known, of ${s.total}</span></div>
         <div><b>${s.learned}</b><span>new words learned</span></div>
         <div><b>${s.due}</b><span>due for review</span></div>
         <div><b>${s.best}</b><span>best streak</span></div>
         <div><b>${pct}%</b><span>right, of ${s.answered} answers</span></div>
       </div>
-      <p class="lnote">${this.mode === 'off' ? 'English practice is off: switch it on in Settings (Light, Normal or Intense).' : `Practice is on (${this.mode}): a round after ${EVERY[this.mode] === 1 ? 'every wave' : `every ${EVERY[this.mode]} waves`}, and word crates round the complex.`}</p>
+      <p class="lnote">${this.mode === 'off' ? 'English practice is off: switch it on in Settings (Light, Normal or Intense).' : `On (${this.mode}): after ${EVERY[this.mode] === 1 ? 'every wave' : `every ${EVERY[this.mode]} waves`}, one word for a bonus if you want it (B, or tap the card), and word crates round the complex. Three quick right answers running move you up a level.`}</p>
       <div class="lbtns"><button class="btn" data-a="place" type="button">${s.placed ? 'Find my level again' : 'Find my level'}</button>
       <button class="btn ghost" data-a="reset" type="button">Start over</button><button class="btn ghost" data-a="close" type="button">Close</button></div>`;
     el.classList.remove('hidden');
