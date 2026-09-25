@@ -231,8 +231,10 @@ body.touch #bigmap { pointer-events: auto; }
 }
 
 /* ---------- multiplayer ---------- */
-#mp { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-#mp .mp-title { font-family: var(--head); font-size: 18px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink); }
+#mp { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 14px; padding-top: 18px; border-top: 1px solid rgba(255, 255, 255, .13); min-width: min(620px, 92vw); }
+#mp .mp-title.invited { font-size: 20px; }
+#menu > #settings-open { padding: 7px 34px; font-size: 16px; }
+#mp .mp-title { font-family: var(--head); font-size: 16px; letter-spacing: .1em; text-transform: uppercase; color: #cfc9bf; }
 #mp .mp-title span { font-family: var(--body); font-size: 12px; letter-spacing: 0; text-transform: none; color: var(--muted); margin-left: 6px; }
 #mp form { display: flex; gap: 8px; }
 #mp input { width: 220px; background: #16181b; color: var(--ink); border: 1px solid #3a3d42; padding: 8px 10px; font-size: 15px; }

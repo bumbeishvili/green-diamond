@@ -75,12 +75,13 @@
 
 <div id="menu" class="screen hidden">
   <button id="play" class="btn">Play</button>
+  <button id="settings-open" class="btn ghost" type="button">Settings</button>
   <div id="mp">
-    <div class="mp-title" id="mp-title">Play with friends <span>co-op or against each other · up to 4</span></div>
+    <div class="mp-title" id="mp-title">Or play with friends <span>co-op or against each other · up to 4</span></div>
     <form id="mp-form" autocomplete="off">
       <!-- (plain text boxes, not a login: no "Save password?" from the browser or a password manager) -->
       <input id="mp-name" type="text" placeholder="Your name" maxlength="16" spellcheck="false" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore data-form-type="other">
-      <input id="mp-pass" type="text" placeholder="Room password (empty: a new room)" maxlength="128" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" data-1p-ignore data-lpignore="true" data-bwignore data-form-type="other">
+      <input id="mp-pass" type="text" placeholder="Room password or link" maxlength="400" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" data-1p-ignore data-lpignore="true" data-bwignore data-form-type="other">
       <button id="mp-join" class="btn ghost" type="submit">Create room</button>
       <button id="mp-leave" class="btn ghost hidden" type="button">Leave</button>
     </form>
@@ -103,7 +104,6 @@
     </div>
     <button id="mp-start" class="btn hidden" type="button">Start match</button>
   </div>
-  <button id="settings-open" class="btn ghost" type="button">Settings</button>
   <div class="credits">Map data © OpenStreetMap contributors · <button id="credits-btn" class="linkbtn" type="button">Credits</button></div>
   <div id="credits" class="credits-full hidden"></div>
 </div>

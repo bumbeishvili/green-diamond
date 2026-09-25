@@ -32,10 +32,11 @@ from there: it opens full screen, sideways.
 
 ### Play with friends (co-op or against each other)
 
-Up to 4 players. Under **Play with friends**, type your name, leave the password empty and press
+Up to 4 players. Under **Or play with friends**, type your name, leave the password empty and press
 **Create room**. Then press **Copy link** and send it to your friends: they open it, type their name
-and press **Join**. (Or everyone types the same password and presses **Join**; the first one in
-hosts.) The host picks the game, and the others see what was picked:
+and press **Join**. Or they paste the link (or just the password) into the password box: that takes
+them straight into the room. (Or everyone types the same password and presses **Join**; the first
+one in hosts.) The host picks the game, and the others see what was picked:
 
 - **Mode**: co-op against the zombies; PvP, everyone for themselves; or PvP in two teams. In teams,
   the host clicks a name to move that player to the other side.

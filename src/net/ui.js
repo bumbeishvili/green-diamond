@@ -17,6 +17,14 @@ function roomCode() {
   return [...b].map((x) => a[x % a.length]).join('');
 }
 
+// What's typed or pasted as the password: the password itself (no stray spaces or line breaks), or a
+// whole invite link, whose room it is.
+function roomOf(text) {
+  const t = String(text || '').trim(), m = t.match(/[#?&]join=([^&\s#]+)/);
+  if (!m) return t;
+  try { return decodeURIComponent(m[1]); } catch { return m[1]; }
+}
+
 // An invite link carries the room in the #fragment: browsers never send that part to the server.
 function readInvite() {
   const h = new URLSearchParams(location.hash.slice(1));
@@ -48,9 +56,18 @@ export class NetUI {
       $('mp-title').classList.add('invited');
       $('mp-join').textContent = 'Join';
     }
-    this.pass.addEventListener('input', () => { $('mp-join').textContent = this.pass.value ? 'Join' : 'Create room'; });
+    const tidy = () => { const r = roomOf(this.pass.value); if (r !== this.pass.value) this.pass.value = r; $('mp-join').textContent = r ? 'Join' : 'Create room'; };
+    this.pass.addEventListener('input', tidy);
+    // pasted: straight into that room (with a name typed; otherwise the name first, then Join)
+    this.pass.addEventListener('paste', () => setTimeout(() => {
+      tidy();
+      if (!this.pass.value) return;
+      if (this.nameEl.value.trim()) $('mp-form').requestSubmit();
+      else { this.nameEl.focus(); this.nameEl.placeholder = 'Your name, then Join'; }
+    }, 0));
     $('mp-form').addEventListener('submit', (e) => {
       e.preventDefault();
+      tidy();
       if (!this.nameEl.value.trim()) { this.nameEl.focus(); this.nameEl.placeholder = 'Your name first'; return; }
       // no password: a new room with a code of its own (the invite link carries it)
       if (!this.pass.value) this.pass.value = roomCode();
