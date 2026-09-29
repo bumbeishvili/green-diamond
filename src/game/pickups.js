@@ -8,9 +8,14 @@ import { DEFS, groundGun } from './weapons.js';
 // every wave, and every half a minute or so during one, a few of them on the roofs (take the
 // stairs). A gun you don't have is yours; one you have, its ammo. Each new one goes where it's
 // furthest from the rest, so they spread over the whole complex. A player who dies drops the guns
-// they'd bought or found, for anyone to take. In PvP there are guns everywhere, kept topped up.
+// they'd bought or found, for anyone to take. In PvP the guns are at four armories, one in each
+// quarter of the complex: eighteen in a grid at each, every kind, each back a few seconds after
+// it's taken.
 const MAX = { ammo: 7, health: 6, cash: 10, gun: 3, word: 3 };
-const PVP_MAX = { ammo: 10, health: 8, cash: 5, gun: 18, word: 0 };
+const PVP_MAX = { ammo: 10, health: 8, cash: 5, gun: 0, word: 0 };
+// an armory's eighteen: every kind once, and the everyday ones twice (6 across, 3 deep, 1.7 m apart)
+const ARMORY = ['rifle', 'm4', 'aug', 'shotgun', 'deagle', 'mg', 'sniper', 'msr', 'autosniper', 'bow', 'launcher', 'laser', 'chainsaw', 'rifle', 'm4', 'shotgun', 'aug', 'deagle'];
+const ARMORY_COLS = 6, ARMORY_GAP = 1.7, ARMORY_BACK = 8;
 export const PICKUP_COLORS = { ammo: '#9bd35a', health: '#ff6b6b', cash: '#ffe066', gun: '#ff9f43', word: '#b98cff' };
 const RING = { ammo: 0x7fd13a, health: 0xff4a4a, cash: 0xffc93a, gun: 0xff8a2a, word: 0x9d6bff };
 // (puzzle crates only where the brain training is on: the host's, or yours alone)
@@ -206,11 +211,11 @@ export class Pickups {
     return best;
   }
 
-  spawn(kind, spot, gun = null) {
+  spawn(kind, spot, gun = null, extra = null) {
     const tough = this.g.director ? this.g.director.toughness() : 1;
     const amount = kind === 'cash' ? 50 * Math.round((2 + Math.floor(Math.random() * Math.random() * 5)) * tough)
       : kind === 'gun' ? gunIndex(gun || (this.pvp ? pick(PVP_GUNS) : pickGun())) : 0;
-    const it = { id: this.seq = (this.seq || 0) + 1, kind, x: spot.x, y: spot.y, z: spot.z, phase: Math.random() * 6.28, amount, t: 0 };
+    const it = { id: this.seq = (this.seq || 0) + 1, kind, x: spot.x, y: spot.y, z: spot.z, phase: Math.random() * 6.28, amount, t: 0, ...extra };
     this.list.push(it);
     if (this.g.mode === 'host') this.g.net.pickupAdd(it);
     return it;
@@ -229,24 +234,77 @@ export class Pickups {
     });
   }
 
-  // PvP: guns all over, topped up a few seconds after one's taken (away from everyone)
+  // PvP: the armories (made once a match), each gun back in its place a few seconds after it's
+  // taken; ammo and first aid about the place, topped up (away from everyone)
   stock(dt) {
     if (!this.pvp || this.g.mode === 'client') return;
+    if (!this.armories) this.buildArmories();
+    this.armories.forEach((a, arm) => {
+      for (const s of a.slots) {
+        if (s.item || this.t < s.back) continue;
+        s.item = this.spawn('gun', { x: s.x, y: a.y, z: s.z }, s.gun, { yaw: a.yaw, arm });
+        s.item.slot = s;
+      }
+    });
     this.stockT = (this.stockT ?? 0) - dt;
     if (this.stockT > 0) return;
     this.stockT = 4;
-    for (const kind of ['gun', 'ammo', 'health']) {
+    for (const kind of ['ammo', 'health']) {
       if (this.count(kind) >= this.max(kind)) continue;
       const spot = this.randomSpot(18, 0.18, kind);
       if (spot) this.spawn(kind, spot);
     }
   }
 
-  // co-op client: the host's loot, [id, kind, x, y, z, amount]
-  add([id, kind, x, y, z, amount]) {
-    if (this.list.some((it) => it.id === id)) return;
-    this.list.push({ id, kind, x, y, z, amount, phase: Math.random() * 6.28, t: 0 });
+  // Four armories, one in each quarter of the complex: the open, flat piece of ground nearest the
+  // middle of the quarter with room for the whole grid (either way round), clear of buildings,
+  // walls, shops and the rest.
+  buildArmories() {
+    const g = this.g, [x0, y0, x1, y1] = this.bounds, rows = Math.ceil(ARMORY.length / ARMORY_COLS);
+    const w = (ARMORY_COLS - 1) * ARMORY_GAP, d = (rows - 1) * ARMORY_GAP;
+    this.armories = [];
+    const cells = (cx, cz, yaw) => {
+      const c = Math.cos(yaw), s = Math.sin(yaw), out = [];
+      for (let i = 0; i < ARMORY.length; i++) {
+        const u = (i % ARMORY_COLS) * ARMORY_GAP - w / 2, v = Math.floor(i / ARMORY_COLS) * ARMORY_GAP - d / 2;
+        out.push({ x: cx + u * c - v * s, z: cz + u * s + v * c, gun: ARMORY[i] });
+      }
+      return out;
+    };
+    const fits = (cx, cz, yaw) => {
+      const y = g.hm.atWorld(cx, cz);
+      if (y < -0.5) return null;
+      const pad = cells(cx, cz, yaw);
+      // (the grid and a metre and a half round it: walkable, level, nothing in the way)
+      for (const q of [...pad, ...cells(cx, cz, yaw).map((q) => ({ x: cx + (q.x - cx) * 1.45, z: cz + (q.z - cz) * 1.45 }))]) {
+        if (!pointInPoly(q.x, -q.z, g.level.play.outer) || !g.nav.walkable(q.x, q.z) || Math.abs(g.hm.atWorld(q.x, q.z) - y) > 0.35) return null;
+        if (g.colliders.resolve({ x: q.x, z: q.z }, 0.7, y + 0.1, y + 1.6, 1)) return null;
+      }
+      if (g.director && g.director.stations.some((st) => Math.hypot(st.x - cx, st.z - cz) < 9)) return null;
+      return { y, slots: pad };
+    };
+    for (const [qx, qz] of [[0.25, 0.25], [0.75, 0.25], [0.25, 0.75], [0.75, 0.75]]) {
+      const mx = x0 + (x1 - x0) * qx, mz = -(y0 + (y1 - y0) * qz);
+      let best = null;
+      for (let k = 0; k < 900 && !(best && k > 300); k++) {
+        const r = 4 + Math.sqrt(k) * 3.2, a = k * 2.399;   // (a spiral out from the middle of the quarter)
+        const cx = mx + Math.cos(a) * r, cz = mz + Math.sin(a) * r;
+        for (const yaw of [0, Math.PI / 2]) {
+          const f = fits(cx, cz, yaw);
+          if (f && (!best || r < best.r) && !this.armories.some((o) => Math.hypot(o.x - cx, o.z - cz) < 60)) best = { r, x: cx, z: cz, yaw, ...f };
+        }
+      }
+      if (best) this.armories.push({ x: best.x, z: best.z, y: best.y, yaw: best.yaw, slots: best.slots.map((q) => ({ ...q, item: null, back: 0 })) });
+    }
   }
+
+  // co-op client: the host's loot, [id, kind, x, y, z, amount]
+  add([id, kind, x, y, z, amount, yaw = null, arm = null]) {
+    if (this.list.some((it) => it.id === id)) return;
+    this.list.push({ id, kind, x, y, z, amount, phase: Math.random() * 6.28, t: 0, yaw, arm });
+  }
+  // (on the wire: [id, kind, x, y, z, amount, yaw, armory])
+  static wire(it) { return [it.id, it.kind, +it.x.toFixed(2), +it.y.toFixed(2), +it.z.toFixed(2), it.amount, it.yaw ?? null, it.arm ?? null]; }
 
   // a gun on the ground: its own model, laid flat (made the first time it's drawn)
   gunMesh(it) {
@@ -326,7 +384,7 @@ export class Pickups {
     }
   }
 
-  clear() { for (const it of this.list) this.dropMesh(it); this.list.length = 0; }
+  clear() { for (const it of this.list) this.dropMesh(it); this.list.length = 0; this.armories = null; }
 
   // during a wave, every half a minute or so: one more thing somewhere (where the loot is real)
   trickle(dt) {
@@ -338,7 +396,7 @@ export class Pickups {
     // (with the brain training on, one in five is a puzzle crate; the rest as ever)
     let r = Math.random(), kind = null;
     if (this.g.training && this.g.training.on && !this.g.pvp?.on) { if (r < 0.2) kind = 'word'; else r = (r - 0.2) / 0.8; }
-    kind = kind || (r < 0.35 ? 'cash' : r < 0.65 ? 'ammo' : r < 0.8 ? 'health' : 'gun');
+    kind = kind || (r < 0.35 ? 'cash' : r < 0.65 ? 'ammo' : r < 0.8 ? 'health' : this.pvp ? 'ammo' : 'gun');   // (PvP's guns are at the armories)
     const spot = this.count(kind) < this.max(kind) + 3 && this.randomSpot(20, 0.18, kind);
     if (!spot) return;
     this.spawn(kind, spot);
@@ -394,6 +452,7 @@ export class Pickups {
       for (const p of players) {
         if (p.dead || Math.abs(it.x - p.pos.x) >= 1.25 || Math.abs(it.z - p.pos.z) >= 1.25 || Math.abs(it.y - p.pos.y) >= 1.7) continue;
         if (!(p === g.player ? this.collect(it) : this.collectRemote(it, p))) continue;
+        if (it.slot) { it.slot.item = null; it.slot.back = this.t + ARMORY_BACK; }   // (an armory's: back soon)
         this.list.splice(i, 1);
         this.dropMesh(it);
         if (g.mode === 'host') g.net.pickupGone(it, p === g.player ? g.localSlot ?? 0 : p.slot);
@@ -407,7 +466,10 @@ export class Pickups {
         // lying across the ring, turning slowly
         const m = this.gunMesh(it);
         m.position.set(it.x, y + 0.05, it.z);
-        m.rotation.set(0, spin * 0.6, 0);
+        m.rotation.set(0, it.yaw != null ? it.yaw : spin * 0.6, 0);   // (an armory's lie in rows)
+        // (only the near ones drawn: an armory's eighteen are a lot of guns)
+        const cam = g.camera.position;
+        m.visible = Math.abs(cam.x - it.x) + Math.abs(cam.z - it.z) < 110;
       } else if (it.kind === 'cash') {
         // three bundles: two side by side and one across the top
         const layout = [[-0.085, 0, 0], [0.085, 0, 0], [0, 0.056, Math.PI / 2]];
@@ -437,5 +499,15 @@ export class Pickups {
     if (this.rings.instanceColor) this.rings.instanceColor.needsUpdate = true;
   }
 
-  markers() { return this.list.map((it) => ({ x: it.x, z: it.z, color: PICKUP_COLORS[it.kind], size: 0.8, icon: it.kind })); }
+  // (an armory is one mark on the map, not eighteen)
+  markers() {
+    const m = [], arms = new Map();
+    for (const it of this.list) {
+      if (it.arm == null) { m.push({ x: it.x, z: it.z, color: PICKUP_COLORS[it.kind], size: 0.8, icon: it.kind }); continue; }
+      const a = arms.get(it.arm) || { x: 0, z: 0, n: 0 };
+      a.x += it.x; a.z += it.z; a.n++; arms.set(it.arm, a);
+    }
+    for (const a of arms.values()) m.push({ x: a.x / a.n, z: a.z / a.n, color: PICKUP_COLORS.gun, icon: 'gun', station: true, label: 'Armory' });
+    return m;
+  }
 }

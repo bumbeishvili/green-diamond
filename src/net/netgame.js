@@ -8,6 +8,7 @@ import {
 import { Avatars } from './avatars.js';
 import { URLFLAGS } from '../config.js';
 import { isPvp, PVP_RESPAWN, PvP } from '../game/pvp.js';
+import { Pickups } from '../game/pickups.js';
 
 // Co-op multiplayer, host-authoritative, over the WebRTC links of net/session.js.
 //
@@ -244,7 +245,7 @@ export class Host {
     this.s.sendTo(r.id, 'rel', {
       t: 'start', slot: r.slot, elapsed: performance.now() - this.match.t0, dur: this.match.dur,
       wave: d.wave, hour: g.hour, targetHour: g.targetHour ?? null, pos: r3(r.player.pos), yaw: r.player.yaw, rules: this.match.rules,
-      pickups: g.pickups.list.map((it) => [it.id, it.kind, +it.x.toFixed(2), +it.y.toFixed(2), +it.z.toFixed(2), it.amount]),
+      pickups: g.pickups.list.map((it) => Pickups.wire(it)),
       drops: d.drops.map((q) => [q.id, q.kind, q.mesh.position.x, q.mesh.position.y - 1, q.mesh.position.z]),
       team: this.teamList(), tick: this.tick,
       vehicles: g.vehicles.list.filter((v) => v.moved || v.driver != null || v.dmg > 0).map((v) => [v.vid, +v.pos.x.toFixed(3), +v.pos.y.toFixed(3), +v.pos.z.toFixed(3), +v.heading.toFixed(4), v.driver,
@@ -674,7 +675,7 @@ export class Host {
   spit(id, o, v) { this.say({ t: 'spit', id, p: r3(o), v: r3(v) }); }
   splat(id, p, r) { this.say({ t: 'splat', id, p: p.map((q) => +q.toFixed(2)), r }); }
   teamDouble() { this.g.director.double = 30; this.say({ t: 'double' }); }
-  pickupAdd(it) { this.say({ t: 'pk+', l: [[it.id, it.kind, +it.x.toFixed(2), +it.y.toFixed(2), +it.z.toFixed(2), it.amount]] }); }
+  pickupAdd(it) { this.say({ t: 'pk+', l: [Pickups.wire(it)] }); }
   pickupGone(it, slot) { this.say({ t: 'pk-', id: it.id, s: slot, k: it.kind, a: it.amount }); }
   dropFx(id, kind, x, y, z) { this.say({ t: 'dr+', id, k: kind, p: [+x.toFixed(2), +y.toFixed(2), +z.toFixed(2)] }); }
   dropGone(id, kind, slot) { this.say({ t: 'dr-', id, k: kind, s: slot }); }

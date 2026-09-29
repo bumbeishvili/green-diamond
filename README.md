@@ -60,8 +60,10 @@ PvP:
 - Guns, the knife, the chainsaw, grenades, missiles and cars hurt the other side
   (in teams, never your own side; your own grenade still can). Against a player a gun does half what
   it does to a zombie, and upgrades count for less.
-- **Guns everywhere**: about 18 lie about the complex, spread over all of it (the AK to the RPG and
-  the laser), topped up a few seconds after one's taken, and everyone starts with 10,000 points.
+- **Armories**: four of them, one in each quarter of the complex (on the map as Armory): eighteen
+  guns in a grid at each, every kind from the AK to the RPG and the laser, each one back in its place
+  8 seconds after it's taken. Ammo and first aid lie about everywhere else, and everyone starts with
+  10,000 points.
 - **Dying**: you're back 4 seconds later, somewhere away from whoever wants you dead, and nothing can
   hurt you for 2 seconds. Your bought and found guns drop where you fell: whoever gets there first has them. The kill goes to whoever hurt you last (within a few seconds); the
   zombies' kills go to nobody.

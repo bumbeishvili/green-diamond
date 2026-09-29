@@ -550,6 +550,12 @@ export class HUD {
         if (e.getAttribute('href') !== href) e.setAttribute('href', href);
         e.setAttribute('x', f(m.x - s / 2)); e.setAttribute('y', f(m.z - s / 2)); e.setAttribute('width', s); e.setAttribute('height', s);
       } else dot(m.x, m.z, m.station ? 1.8 : 1.35 * (m.size || 1), m.color, m.station ? 'st' : 'pk');
+      if (m.label) {   // (a PvP armory: named)
+        const t = get('tag', 'text', g.tag);
+        if (t.textContent !== m.label) t.textContent = m.label;
+        t.setAttribute('x', f(m.x)); t.setAttribute('y', f(m.z - 4.4));
+        t.setAttribute('class', 'alabel'); t.setAttribute('fill', m.color);
+      }
     }
     const zc = { human: '#ff3b30', dog: '#ff9a3a', crow: '#c77dff' };
     for (const z of zombies) {
