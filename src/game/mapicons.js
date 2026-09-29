@@ -8,6 +8,7 @@ const G = {
   gun: '<path d="M2.5 7.2h16.2l.8-1.2h2v4.8h-2.3l-.6.9h-6.1l-1.3 5.6c-.1.5-.6.9-1.1.9H6.4l1.5-6.5H2.5z"/>',
   word: '<path d="M5 5h5a2.4 2.4 0 1 1 4 0h5v5a2.4 2.4 0 1 0 0 4v5h-5a2.4 2.4 0 1 0-4 0H5v-5a2.4 2.4 0 1 1 0-4z"/>',
   powerup: '<path d="M12 2.6l2.9 6 6.6.9-4.8 4.6 1.2 6.6L12 17.5l-5.9 3.2 1.2-6.6-4.8-4.6 6.6-.9z"/>',
+  flag: '<path d="M6 3h1.9v18H6z M8.6 4.2h10.6l-2.8 4.3 2.8 4.3H8.6z"/>',
   stairs: '<path d="M3 20v-4h4.5v-4H12V8h4.5V4H21v16z"/>',
   armour: '<path d="M12 3l8 3v6c0 4.6-3.4 7.8-8 9-4.6-1.2-8-4.4-8-9V6z"/>',
   upgrade: '<path d="M15 3.2a5 5 0 0 0-4.6 6.7L3.6 16.7a1.6 1.6 0 0 0 0 2.3l1.4 1.4a1.6 1.6 0 0 0 2.3 0l6.8-6.8A5 5 0 0 0 20.8 9l-3 3-2.8-.6-.6-2.8 3-3A5 5 0 0 0 15 3.2z"/>',
@@ -20,7 +21,7 @@ const G = {
 export const ICONS = {
   ammo: ['#4f9d2f', 'ammo', 'round'], health: ['#d93b3f', 'health', 'round'], cash: ['#c8940f', 'cash', 'round'],
   gun: ['#e0701f', 'gun', 'round'], word: ['#7d52e8', 'word', 'round'], powerup: ['#3d8fd6', 'powerup', 'round'],
-  stairs: ['#eef2f5', 'stairs', 'square'], giant: ['#b3121a', 'skull', 'round'],
+  stairs: ['#eef2f5', 'stairs', 'square'], giant: ['#b3121a', 'skull', 'round'], goal: ['#d9a400', 'flag', 'round'],
   'shop-gun': ['#23272e', 'gun', 'shop'], 'shop-ammo': ['#23272e', 'ammo', 'shop'], 'shop-armour': ['#23272e', 'armour', 'shop'],
   'shop-upgrade': ['#23272e', 'upgrade', 'shop'], 'shop-speed': ['#23272e', 'speed', 'shop'], 'shop-double': ['#23272e', 'double', 'shop'],
 };

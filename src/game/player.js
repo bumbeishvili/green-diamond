@@ -137,7 +137,7 @@ export class Player {
     if (len > 0) { fx /= len; fz /= len; }
     const wantCrouch = allowControl && (input.down('ControlLeft') || input.down('ControlRight'));   // (Ctrl, Mac or PC)
     this.crouch = THREE.MathUtils.damp(this.crouch, wantCrouch ? 1 : 0, 12, dt);
-    this.sprinting = allowControl && input.down('ShiftLeft') && fz < 0 && this.crouch < 0.3 && this.ads < 0.3 && !this.winded;
+    this.sprinting = allowControl && input.down('ShiftLeft') && fz < 0 && this.crouch < 0.3 && this.ads < 0.3 && !this.winded && !this.carrying;
     this.inWater = this.pools.some((pl) => this.pos.y < pl.water - 0.3 && pointInPoly(this.pos.x, -this.pos.z, pl.pts));
     if (this.inWater) this.sprinting = false;
     // stamina: sprinting spends it (about 6 s from full), easing off brings it back (quicker standing
@@ -147,7 +147,8 @@ export class Player {
     if (this.stamina <= 0) this.winded = true;
     else if (this.winded && this.stamina >= 0.5) this.winded = false;
     const speed = (this.crouch > 0.5 ? WORLD.crouchSpeed : this.sprinting ? WORLD.sprintSpeed : WORLD.walkSpeed)
-      * this.speedMul * this.speedWeapon * (1 - this.ads * 0.35) * (this.inWater ? 0.55 : 1);
+      * this.speedMul * this.speedWeapon * (1 - this.ads * 0.35) * (this.inWater ? 0.55 : 1)
+      * (this.carrying ? 0.7 : 1) * (this.working ? 0 : 1);   // (a mission: carrying something, or at work on something)
 
     const sin = Math.sin(this.yaw), cos = Math.cos(this.yaw);
     const wishX = fx * cos + fz * sin, wishZ = -fx * sin + fz * cos;

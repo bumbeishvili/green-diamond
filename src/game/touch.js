@@ -37,7 +37,10 @@ export class Touch {
     el.addEventListener('touchcancel', (e) => this.end(e), opts);
     // (the minimap and the prompt are the HUD's: tapping them is M and F)
     document.getElementById('minimap')?.addEventListener('touchstart', (e) => { e.preventDefault(); this.tap('KeyM'); }, opts);
-    document.getElementById('prompt')?.addEventListener('touchstart', (e) => { e.preventDefault(); this.tap('KeyF'); }, opts);
+    // (held, for a job you hold F at)
+    const pr = document.getElementById('prompt');
+    pr?.addEventListener('touchstart', (e) => { e.preventDefault(); this.hold('KeyF', true); }, opts);
+    for (const ev of ['touchend', 'touchcancel']) pr?.addEventListener(ev, () => this.hold('KeyF', false), opts);
   }
 
   tap(code) { this.input.pressed.add(code); }

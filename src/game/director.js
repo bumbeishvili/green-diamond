@@ -575,6 +575,8 @@ export class Director {
     this.roofT = high ? this.roofT + dt : 0;
 
     if (g.frozen) return;
+    // (missions: they say what comes when, not the waves)
+    if (g.missions && g.missions.on) { g.missions.update(dt); return; }
     if (this.state === 'intermission') {
       this.timer -= dt;
       if (this.timer <= 0) this.startWave();

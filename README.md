@@ -192,6 +192,20 @@ Aim down the sights (E or right-click) and every gun hits twice as hard.
 - Power-ups sometimes drop from kills: Max Ammo, Insta-Kill, Double Points, Nuke.
 - Falling more than a couple of storeys hurts. If you fall into a pool, walk out up the steps (by the chrome rails), or jump at any edge.
 
+### Missions
+
+**Missions** on the menu: instead of the waves, jobs, each with its goal at the top of the screen, a
+beam of light over where it is, and a flag on the map. None of them can be done just by running.
+Die, or fail the job (some are against the clock), and the mission starts over from its beginning.
+Between them, a few seconds with the shops open, and each pays a bonus.
+
+1. **Hold the pool house**: stand in the ring for 45 seconds; the clock only runs while you're in it.
+2. **Supply run**: carry the medical crate from Spar to the pool house. Carrying it you can't run or
+   shoot; put it down (F) to fight, pick it up again.
+3. **Lights on**: at night, restart the three generators down in the car parks: hold F at each
+   (let go and it waits; get hit and that one starts over).
+4. **The giant**: bring it down within three minutes, with a crowd round it.
+
 ### Brain training
 
 Puzzles for the mind between waves, and lari for doing them. They never get in the way: each is an

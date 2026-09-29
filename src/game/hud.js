@@ -176,6 +176,15 @@ export class HUD {
     c.children[3].style.transform = `translateX(${px}px)`;
   }
 
+  // a mission's goal (and a job's progress under it)
+  objective(text, progress = 0) {
+    const el = this.el.objective || (this.el.objective = document.getElementById('objective'));
+    if (!el) return;
+    if (text !== this.objText) { this.objText = text; el.firstChild.textContent = text; el.classList.toggle('hidden', !text); }
+    const pct = Math.round(Math.max(0, Math.min(1, progress)) * 100);
+    if (pct !== this.objPct) { this.objPct = pct; el.lastChild.classList.toggle('on', pct > 0); el.lastChild.firstChild.style.width = `${pct}%`; }
+  }
+
   // the sprint: shown while it's short of full (orange when winded)
   stamina(v, winded) {
     const el = this.el.stamina || (this.el.stamina = document.getElementById('stamina'));

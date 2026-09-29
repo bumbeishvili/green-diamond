@@ -18,6 +18,7 @@ import { Zombies } from './game/zombies.js';
 import { Weapons } from './game/weapons.js';
 import { HUD } from './game/hud.js';
 import { Director } from './game/director.js';
+import { Missions } from './game/missions.js';
 import { Vehicles } from './game/vehicles.js';
 import { Stairs } from './game/stairs.js';
 import { Pickups } from './game/pickups.js';
@@ -157,6 +158,7 @@ class Game {
     this.rules = null;
     this.pvp = new PvP(this);
     this.zombies.pvp = this.pvp;
+    this.missions = new Missions(this);   // (the mission mode: off till it's chosen)
     this.pickups = new Pickups(this);
     this.training = new Training(this);   // brain training: puzzles for lari between waves
     this.pickups.setup(this.models);
@@ -258,7 +260,7 @@ class Game {
         });
       } else if (!document.hidden && this.bgTick) { ticker.stop(this.bgTick); this.bgTick = null; this.timer.update(); }
     });
-    if (URLFLAGS.autostart) { $('loading').classList.add('hidden'); this.beginPlay(); }
+    if (URLFLAGS.autostart) { $('loading').classList.add('hidden'); if (URLFLAGS.missions) this.beginMissions(); else this.beginPlay(); }
     // (to the menu once the title's done; unless a match started meanwhile: a friend's invite link,
     // the room already playing)
     else this.intro(() => { if (this.state !== 'loading') return; $('menu').classList.remove('hidden'); this.state = 'menu'; });
@@ -281,6 +283,7 @@ class Game {
     vol.oninput = () => { settings.vol = +vol.value; this.audio.setVolume(settings.vol); saveSettings(); };
     q.onchange = () => { settings.quality = q.value; if (this.touch) settings.touchChosen = true; saveSettings(); this.reload(); };
     $('play').onclick = () => this.beginPlay();
+    $('missions').onclick = () => this.beginMissions();
     $('resume').onclick = () => { $('pause').classList.add('hidden'); $('settings').classList.add('hidden'); this.input.lock(); this.state = 'playing'; };
     // the settings: a screen of their own, from the menu or the pause screen (Done or Esc closes it)
     for (const id of ['settings-open', 'settings-open2']) $(id).onclick = () => $('settings').classList.remove('hidden');
@@ -326,6 +329,12 @@ class Game {
     Promise.resolve(req.call(el, { navigationUI: 'hide' }))
       .then(() => screen.orientation?.lock?.('landscape'))
       .catch(() => {});
+  }
+
+  // alone, the missions instead of the waves
+  beginMissions() {
+    this.beginPlay();
+    this.missions.start(URLFLAGS.mission ? URLFLAGS.mission - 1 : 0);
   }
 
   async beginPlay() {
@@ -617,12 +626,12 @@ class Game {
     if (this.mode !== 'solo' || this.state !== 'playing') return;
     this.state = 'over';
     this.input.unlock();
-    const d = this.director, w = this.weapons.stats;
-    this.hud.banner('Green Diamond is yours', `All ${d.wave} waves, and you're still standing`);
+    const d = this.director, w = this.weapons.stats, what = this.missions.on ? 'missions' : 'waves';
+    this.hud.banner('Green Diamond is yours', `All ${d.wave} ${what}, and you're still standing`);
     $('go-title').textContent = 'You held Green Diamond';
     $('go-title').classList.add('win');
-    $('go-sub').textContent = `All ${d.wave} waves, and you're still standing.`;
-    $('go-stats').innerHTML = `<span>Waves survived</span><span>${d.wave}</span><span>Zombies killed</span><span>${d.kills}</span>`
+    $('go-sub').textContent = `All ${d.wave} ${what}, and you're still standing.`;
+    $('go-stats').innerHTML = `<span>${this.missions.on ? 'Missions' : 'Waves survived'}</span><span>${d.wave}</span><span>Zombies killed</span><span>${d.kills}</span>`
       + `<span>Headshots</span><span>${d.headshots}</span><span>Accuracy</span><span>${w.shots ? Math.round((w.hits / w.shots) * 100) : 0}%</span><span>Points</span><span>${d.points}</span>`;
     setTimeout(() => $('gameover').classList.remove('hidden'), 2500);
   }
@@ -701,7 +710,7 @@ class Game {
     if (!debugCam && this.mode !== 'client') {
       this.player.update(dt, this.input, playing);
       if (URLFLAGS.god) { this.player.health = this.player.maxHealth; this.player.dead = false; }
-      if (playing && this.player.dead) this.gameOver();
+      if (playing && this.player.dead) { if (this.missions.on) this.missions.died(); else this.gameOver(); }   // (a mission: from the top)
     }
     // (a co-op client moves its vehicle in its ticks: the view follows after them)
     if (this.mode !== 'client') this.vehicles.update(dt, this.input, playing && !debugCam);
@@ -714,7 +723,7 @@ class Game {
     if (this.voice) this.voice.update(this.input, playing && !!this.net);
     if (playing || coop) {
       if (this.mode === 'solo') this.worldStep(dt);
-      const armed = !this.vehicles.hidesWeapons;   // guns away while you drive a car or ride a bike
+      const armed = !this.vehicles.hidesWeapons && !this.player.carrying && !this.player.working;   // guns away while you drive a car or ride a bike (or your hands are full)
       this.hud.driving(!armed);
       this.weapons.update(dt, this.input, playing && !debugCam && armed);
       if (this.forceAds) this.player.ads = 1;
@@ -743,7 +752,8 @@ class Game {
     if ((this.frameCount || 0) % 2 === 0) {
       const me = this.localSlot ?? 0;
       const people = this.net && this.net.inMatch ? this.net.teamStates().map((q) => Object.assign(q, { foe: !q.me && this.pvp.foes(me, q.slot) })) : [];
-      this.hud.drawMap(this.player, this.zombies.list, [...this.stairs.markers(), ...this.pickups.markers(), ...this.director.markers()], people);
+      this.hud.drawMap(this.player, this.zombies.list, [...this.stairs.markers(), ...this.pickups.markers(), ...this.director.markers(), ...this.missions.markers()], people);
+      this.hud.objective(this.missions.objective(), this.missions.progress);
     }
     this.atmo.follow(debugCam ? (this.camera.position.y > 30 ? new THREE.Vector3(0, 0, 0) : this.camera.position) : this.player.pos);
     if (this.audio.ctx) this.audio.setListener(this.camera.position, this.player.forward(new THREE.Vector3()));
@@ -754,7 +764,7 @@ class Game {
     // after the frame was drawn, that frame would show black
     if (this.wantDpr) { this.renderer.setPixelRatio(this.wantDpr); this.wantDpr = 0; }
     this.renderer.render(this.scene, this.camera);
-    if (!debugCam && !this.specCam && !this.vehicles.hidesWeapons && !this.player.dead) this.weapons.render(this.renderer, this.atmo);
+    if (!debugCam && !this.specCam && !this.vehicles.hidesWeapons && !this.player.dead && !this.player.carrying && !this.player.working) this.weapons.render(this.renderer, this.atmo);
     this.input.endFrame();
 
     const st = this.stats;

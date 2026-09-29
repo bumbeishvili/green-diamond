@@ -18,6 +18,8 @@ export const URLFLAGS = {
   name: params.get('name'),
   mpstart: params.has('mpstart') ? parseInt(params.get('mpstart'), 10) || 1 : null,
   nolock: params.has('nolock'),
+  missions: params.has('missions'),   // solo: the missions (mission=N: from that one)
+  mission: params.has('mission') ? parseInt(params.get('mission'), 10) : null,
   mptime: params.has('mptime') ? parseFloat(params.get('mptime')) : null,   // match length (s)
   relay: params.has('relay'),   // co-op: through the server's relay from the start (Cloudflare), no direct attempt
   // (testing PvP: the host's rules, ?pvp=ffa|teams&pvpz=0&pvpkills=N)
