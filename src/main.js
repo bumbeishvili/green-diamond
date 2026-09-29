@@ -726,8 +726,12 @@ class Game {
     this.touch?.update(playing, this.hud.el.prompt.classList.contains('on'), !!(this.net && this.net.inMatch));
     this.hud.health(this.player.health, this.player.maxHealth, this.player.armour);
     this.hud.boss(this.zombies.bossHealth());
-    // (PvP: your foes aren't on your map)
-    if ((this.frameCount || 0) % 2 === 0) this.hud.drawMap(this.player, this.zombies.list, [...this.stairs.markers(), ...this.pickups.markers(), ...this.director.markers()], this.net && this.net.inMatch ? this.net.teamStates().filter((q) => q.me || !this.pvp.foes(this.localSlot ?? 0, q.slot)) : []);
+    // (everyone's on the map, your foes too in PvP, marked, so you can hunt them down)
+    if ((this.frameCount || 0) % 2 === 0) {
+      const me = this.localSlot ?? 0;
+      const people = this.net && this.net.inMatch ? this.net.teamStates().map((q) => Object.assign(q, { foe: !q.me && this.pvp.foes(me, q.slot) })) : [];
+      this.hud.drawMap(this.player, this.zombies.list, [...this.stairs.markers(), ...this.pickups.markers(), ...this.director.markers()], people);
+    }
     this.atmo.follow(debugCam ? (this.camera.position.y > 30 ? new THREE.Vector3(0, 0, 0) : this.camera.position) : this.player.pos);
     if (this.audio.ctx) this.audio.setListener(this.camera.position, this.player.forward(new THREE.Vector3()));
 

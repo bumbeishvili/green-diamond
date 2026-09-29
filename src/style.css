@@ -190,6 +190,10 @@ body.touch #bigmap { pointer-events: auto; }
 #bigmap .gate { font-size: 4.4px; font-weight: 800; fill: #7ff0a8; stroke-width: 1px; letter-spacing: .2px; text-anchor: middle; }
 #bigmap .street { font-size: 3.9px; font-weight: 600; fill: #d2ccc0; stroke-width: .8px; letter-spacing: .3px; }
 #bigmap .tagl { font-size: 3.1px; font-weight: 600; fill: #ffe2b8; stroke-width: .8px; text-anchor: middle; }
+#bigmap .pname { font-size: 3.8px; font-weight: 700; text-anchor: middle; stroke: rgba(0,0,0,.8); stroke-width: .7px; paint-order: stroke; }
+#bigmap .pname.foe { stroke: #7a0000; }
+#bigmap .dyn path.foe { stroke: #ff2b2b; stroke-width: .9px; }
+#bigmap .dyn .pring { fill: none; stroke: inherit; stroke-width: 1.5px; }
 #bigmap .dyn circle { stroke: rgba(0, 0, 0, .55); stroke-width: .35; }
 #bigmap .dyn .st { stroke: #3a2508; stroke-width: .5; }
 #bigmap .dyn .stairs { fill: #eef3f6; stroke: rgba(0, 0, 0, .6); stroke-width: .35; }

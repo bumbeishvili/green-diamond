@@ -137,7 +137,7 @@ npx wrangler deploy                              # then once: npx wrangler secre
 | T | talk (co-op and PvP) |
 | F | buy at a shop, take the stairs at a lobby door or roof door, get in or out of a car, motorbike or drone |
 | L | flashlight (switches on by itself after dark) |
-| M | big map |
+| M | big map (every player on it, named, with a ring pulsing out from each; in PvP your foes too, edged in red) |
 | H | hide or show the key strip |
 | Esc | pause |
 

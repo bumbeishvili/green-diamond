@@ -300,17 +300,29 @@ export class HUD {
       ctx.fillStyle = zc[z.species] || zc.human;
       ctx.beginPath(); ctx.arc(zx, zz, 2.6 * u * (z.species === 'crow' ? 0.8 : z.def && z.def.boss ? 2.4 : z.def && z.def.shove ? 1.4 : 1), 0, Math.PI * 2); ctx.fill();
     }
-    // teammates: arrows in their colours
+    // the other players: arrows in their colours (a foe's edged in red), each with a ring pulsing
+    // out from under it (a foe's red); anyone beyond the map's edge sits on its rim, pointing the
+    // way to them
+    const rim = W / 2 - 9 * u, secs = performance.now() / 1000;
     for (const m of mates) {
       if (m.me) continue;
-      const [mx, mz] = toMap(m.pos.x, m.pos.z);
+      let [mx, mz] = toMap(m.pos.x, m.pos.z);
+      const d = Math.hypot(mx, mz), far = d > rim;
+      if (far) { mx *= rim / d; mz *= rim / d; }
+      if (!m.dead) {
+        const ph = (secs / 1.3 + m.slot * 0.27) % 1;
+        ctx.globalAlpha = 0.9 * (1 - ph);
+        ctx.strokeStyle = m.foe ? '#ff2b2b' : SLOT_CSS[m.slot % 4]; ctx.lineWidth = 1.8 * u;
+        ctx.beginPath(); ctx.arc(mx, mz, (4 + 10 * ph) * u, 0, Math.PI * 2); ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
       ctx.save();
       ctx.translate(mx, mz);
-      ctx.rotate(-m.yaw);
-      ctx.scale(u, u);
+      ctx.rotate(far ? Math.atan2(mx, -mz) : -m.yaw);
+      ctx.scale(u * (far ? 0.8 : 1), u * (far ? 0.8 : 1));
       ctx.globalAlpha = m.dead ? 0.45 : 1;
       ctx.fillStyle = SLOT_CSS[m.slot % 4];
-      ctx.strokeStyle = 'rgba(0,0,0,0.7)'; ctx.lineWidth = 1.2;
+      ctx.strokeStyle = m.foe ? '#ff2b2b' : 'rgba(0,0,0,0.7)'; ctx.lineWidth = m.foe ? 2.2 : 1.2;
       ctx.beginPath(); ctx.moveTo(0, -7); ctx.lineTo(5, 6); ctx.lineTo(0, 3); ctx.lineTo(-5, 6); ctx.closePath(); ctx.fill(); ctx.stroke();
       ctx.restore();
     }
@@ -518,16 +530,18 @@ export class HUD {
   // the big map's moving parts (pooled SVG elements)
   drawBigMap(player, zombies, markers, mates) {
     if (!this.big2Placed) { this.big2Placed = true; this.placeLabels(markers.filter((m) => m.station)); }
-    const { g, pool } = this.big2, used = { dot: 0, sq: 0, tag: 0, arrow: 0, icon: 0 };
+    const { g, pool } = this.big2, used = { dot: 0, sq: 0, tag: 0, arrow: 0, icon: 0, pulse: 0 };
     if (!pool.icon) pool.icon = [];
+    if (!pool.pulse) pool.pulse = [];
     const get = (kind, tag, parent) => { let e = pool[kind][used[kind]++]; if (!e) { e = svg(tag, {}, parent); pool[kind].push(e); } e.style.display = ''; return e; };
     const f = (v) => v.toFixed(1);
     const dot = (x, z, r, fill, cls = '') => { const e = get('dot', 'circle', g.dot); e.setAttribute('cx', f(x)); e.setAttribute('cy', f(z)); e.setAttribute('r', r); e.setAttribute('fill', fill); e.setAttribute('class', cls); };
-    const arrow = (x, z, yaw, fill, size, alpha = 1) => {
+    const arrow = (x, z, yaw, fill, size, alpha = 1, foe = false) => {
       const e = get('arrow', 'path', g.arrow);
       e.setAttribute('d', 'M0 -3.2 L2.3 2.6 L0 1.2 L-2.3 2.6 Z');
       e.setAttribute('transform', `translate(${f(x)} ${f(z)}) rotate(${(-yaw * 180 / Math.PI).toFixed(0)}) scale(${size})`);
       e.setAttribute('fill', fill); e.setAttribute('opacity', alpha);
+      e.setAttribute('class', foe ? 'foe' : '');
     };
     for (const m of markers) {
       if (m.icon && ICONS[m.icon]) {
@@ -548,7 +562,28 @@ export class HUD {
       }
       dot(z.pos.x, z.pos.z, 1.15 * (z.species === 'crow' ? 0.8 : z.def && z.def.shove ? 1.4 : 1), zc[z.species] || zc.human, 'z');
     }
-    for (const m of mates) if (!m.me) arrow(m.pos.x, m.pos.z, m.yaw, SLOT_CSS[m.slot % 4], 1.3, m.dead ? 0.45 : 1);
+    // the other players, with their names and a ring pulsing out from under each (a foe's red)
+    for (const m of mates) {
+      if (m.me) continue;
+      if (!m.dead) {
+        const p = get('pulse', 'g', g.dot);
+        if (!p.firstChild) {
+          for (const off of [0, 0.7]) {
+            const ring = svg('circle', { r: 2, class: 'pring' }, p), begin = `${(off + m.slot * 0.3).toFixed(2)}s`;
+            svg('animate', { attributeName: 'r', values: '2;13', dur: '1.4s', begin, repeatCount: 'indefinite' }, ring);
+            svg('animate', { attributeName: 'opacity', values: '1;0', dur: '1.4s', begin, repeatCount: 'indefinite' }, ring);
+          }
+        }
+        p.setAttribute('transform', `translate(${f(m.pos.x)} ${f(m.pos.z)})`);
+        p.setAttribute('stroke', m.foe ? '#ff2b2b' : SLOT_CSS[m.slot % 4]);
+      }
+      arrow(m.pos.x, m.pos.z, m.yaw, SLOT_CSS[m.slot % 4], 1.3, m.dead ? 0.45 : 1, m.foe);
+      const t = get('tag', 'text', g.tag), name = m.name || `P${m.slot + 1}`;
+      if (t.textContent !== name) t.textContent = name;
+      t.setAttribute('x', f(m.pos.x)); t.setAttribute('y', f(m.pos.z - 5));
+      t.setAttribute('class', m.foe ? 'pname foe' : 'pname');
+      t.setAttribute('fill', SLOT_CSS[m.slot % 4]);
+    }
     this.big2.me.setAttribute('transform', `translate(${f(player.pos.x)} ${f(player.pos.z)})`);
     arrow(player.pos.x, player.pos.z, player.mapYaw ?? player.yaw, '#ffffff', 1.6);
     for (const kind of Object.keys(pool)) for (let i = used[kind]; i < pool[kind].length; i++) pool[kind][i].style.display = 'none';
