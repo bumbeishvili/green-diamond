@@ -176,6 +176,18 @@ export class HUD {
     c.children[3].style.transform = `translateX(${px}px)`;
   }
 
+  // the sprint: shown while it's short of full (orange when winded)
+  stamina(v, winded) {
+    const el = this.el.stamina || (this.el.stamina = document.getElementById('stamina'));
+    if (!el) return;
+    const pct = Math.round(v * 100);
+    if (pct === this.staminaPct && winded === this.staminaWinded) return;
+    this.staminaPct = pct; this.staminaWinded = winded;
+    el.firstChild.style.width = `${pct}%`;
+    el.classList.toggle('on', pct < 100);
+    el.classList.toggle('winded', !!winded);
+  }
+
   health(h, max, armour = 0) {
     const f = Math.max(0, h / max);
     // armour: a longer bar (more to lose) in steel blue, with a pip per level

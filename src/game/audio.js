@@ -310,6 +310,7 @@ export class Audio {
       case 'laserOff': env(tone('sine', 1500, 280, 0.35), 0.005, 0.22, 0.33); env(noise(3000, 2, 'bandpass'), 0.002, 0.12, 0.1); break;
       case 'sizzle': env(noise(4200, 0.9, 'highpass'), 0.01, 0.35, 0.28); env(noise(900, 2.5, 'bandpass'), 0.004, 0.18, 0.12); break;
       // a body under the wheels: a soft low thud and a squelch
+      case 'breath': env(noise(700, 1.1, 'bandpass'), 0.18, 0.3, 0.42); env(noise(1800, 0.8, 'bandpass'), 0.12, 0.12, 0.3); break;   // (winded: a ragged breath)
       case 'bump': case 'bodyFall': env(tone('sine', 62, 30, 0.22), 0.004, 1.0, 0.22); env(noise(480, 1.1), 0.004, 0.55, 0.14); env(noise(1300, 2, 'bandpass'), 0.02, 0.2, 0.12); break;
       // glass going: a burst, then tinkling bits
       case 'glass': {

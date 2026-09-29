@@ -598,7 +598,7 @@ export class Host {
     return {
       slot, flags: (p.dead ? PF.dead : 0) | (p.onGround ? PF.onGround : 0) | (p.sprinting ? PF.sprint : 0) | (p.inWater ? PF.inWater : 0) | (p.roof ? PF.roof : 0) | (p.vehicle ? PF.vehicle : 0),
       x: p.pos.x, y: p.pos.y, z: p.pos.z, vx: p.vel.x, vy: p.vel.y, vz: p.vel.z, yaw: p.yaw, pitch: p.pitch,
-      crouch: p.crouch, ads: p.ads, health: p.health, maxHealth: p.maxHealth, weapon, teleport, speedMul: p.speedMul, respawn,
+      crouch: p.crouch, ads: p.ads, health: p.health, maxHealth: p.maxHealth, weapon, teleport, speedMul: p.speedMul, respawn, stamina: p.stamina, winded: p.winded,
     };
   }
 
@@ -899,7 +899,7 @@ export class Client {
   // the host's word on where we are
   reconcile(me, ack, myVeh = null) {
     const g = this.g, p = g.player;
-    p.health = me.health; p.maxHealth = me.maxHealth; p.speedMul = me.speedMul;
+    p.health = me.health; p.maxHealth = me.maxHealth; p.speedMul = me.speedMul; p.stamina = me.stamina; p.winded = me.winded;
     const wasDead = p.dead;
     p.dead = !!(me.flags & PF.dead);
     this.respawn = me.respawn;

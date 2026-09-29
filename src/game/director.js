@@ -381,7 +381,7 @@ export class Director {
   }
 
   pickSpawn() {
-    const g = this.g, ps = this.living(), p = this.focus().pos;
+    const g = this.g, ps = this.living(), focus = this.focus(), p = focus.pos;
     const cands = [];
     for (const s of g.level.spawns) {
       const x = s.x, z = -s.y;
@@ -396,9 +396,11 @@ export class Director {
       if (!isFinite(path) || path > 160) continue;
       const sy = s.f ?? g.hm.atWorld(x, z);
       const seen = ps.some((q) => Math.hypot(x - q.pos.x, z - q.pos.z) < 60 && g.colliders.clear(q.pos.x, q.pos.y + 1.6, q.pos.z, x, sy + 1.4, z));
-      // prefer spawns about 30 m away on foot (a match on the clock: nearer), out of sight
+      // prefer spawns about 30 m away on foot (a match on the clock: nearer), out of sight, and
+      // (someone on the run) ahead of where they're going: you can't just outrun them
       const want = this.quick ? 22 : 30;
-      const w = (seen ? 0.08 : 1) * (Math.exp(-(((path - want) / 20) ** 2)) + 0.03);
+      const run = Math.hypot(focus.vel.x, focus.vel.z), ahead = run > 2.5 ? ((x - p.x) * focus.vel.x + (z - p.z) * focus.vel.z) / (run * (d || 1)) : 0;
+      const w = (seen ? 0.08 : 1) * (Math.exp(-(((path - want) / 20) ** 2)) + 0.03) * (1 + 2.5 * Math.max(0, ahead));
       cands.push([w, x, z, s.kind, s.f]);
     }
     if (!cands.length) return null;
@@ -427,7 +429,8 @@ export class Director {
     return 'walker';
   }
 
-  speedMul(type, w) { return type === 'runner' ? 1 + Math.min(0.08, w * 0.01) : 1 + Math.min(0.2, w * 0.02); }
+  // (the dogs are already faster than you can sprint: they gain little)
+  speedMul(type, w) { return type === 'runner' ? 1 + Math.min(0.08, w * 0.01) : type === 'dog' ? 1 + Math.min(0.1, w * 0.01) : 1 + Math.min(0.2, w * 0.02); }
 
   spawnOne() {
     const g = this.g, w = this.wave, pl = this.focus();

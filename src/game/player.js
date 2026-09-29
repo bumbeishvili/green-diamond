@@ -14,6 +14,8 @@ export const ARMOUR = [
 
 // First-person controller: walking, sprinting, crouching, jumping, curb step-up,
 // collision against the static world, head bob and view punch.
+const SPRINT_S = 6;   // (seconds of sprinting on a full breath)
+
 export class Player {
   constructor(camera, heightmap, colliders) {
     this.camera = camera;
@@ -26,6 +28,7 @@ export class Player {
     this.onGround = true;
     this.crouch = 0;           // 0..1 blend
     this.sprinting = false;
+    this.stamina = 1; this.winded = false;   // (sprint: about 6 s of it; run dry, and you're winded a while)
     this.moving = false;
     this.bob = 0;
     this.bobAmount = 0;
@@ -91,6 +94,7 @@ export class Player {
   }
 
   spawn(x, z, yaw = 0) {
+    this.stamina = 1; this.winded = false;
     this.pos.set(x, this.hm.atWorld(x, z), z);
     this.viewY = this.pos.y;
     this.vel.set(0, 0, 0);
@@ -133,9 +137,15 @@ export class Player {
     if (len > 0) { fx /= len; fz /= len; }
     const wantCrouch = allowControl && (input.down('ControlLeft') || input.down('ControlRight'));   // (Ctrl, Mac or PC)
     this.crouch = THREE.MathUtils.damp(this.crouch, wantCrouch ? 1 : 0, 12, dt);
-    this.sprinting = allowControl && input.down('ShiftLeft') && fz < 0 && this.crouch < 0.3 && this.ads < 0.3;
+    this.sprinting = allowControl && input.down('ShiftLeft') && fz < 0 && this.crouch < 0.3 && this.ads < 0.3 && !this.winded;
     this.inWater = this.pools.some((pl) => this.pos.y < pl.water - 0.3 && pointInPoly(this.pos.x, -this.pos.z, pl.pts));
     if (this.inWater) this.sprinting = false;
+    // stamina: sprinting spends it (about 6 s from full), easing off brings it back (quicker standing
+    // still); run it dry and you're winded: no sprinting till it's half back (3 s or so on foot)
+    if (this.sprinting && len > 0) this.stamina = Math.max(0, this.stamina - dt / SPRINT_S);
+    else this.stamina = Math.min(1, this.stamina + dt / (len > 0 ? 6 : 3.5));
+    if (this.stamina <= 0) this.winded = true;
+    else if (this.winded && this.stamina >= 0.5) this.winded = false;
     const speed = (this.crouch > 0.5 ? WORLD.crouchSpeed : this.sprinting ? WORLD.sprintSpeed : WORLD.walkSpeed)
       * this.speedMul * this.speedWeapon * (1 - this.ads * 0.35) * (this.inWater ? 0.55 : 1);
 

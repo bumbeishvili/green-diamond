@@ -96,11 +96,12 @@ export function decodeInputs(buf) {
 // ---------------------------------------------------------------- snapshots
 // header: u8 type, u32 tick, u32 ack, u32 msLeft, u16 wave, u8 flags, u8 nPlayers, u16 nZombies
 // player: u8 slot, u8 flags, f32 x y z, i16 vx vy vz (cm/s), u16 yaw, i16 pitch, u8 crouch, u8 ads,
-//         u16 health, u16 maxHealth, u8 weapon, u8 teleport, u8 speedMul, u8 respawn (s)
+//         u16 health, u16 maxHealth, u8 weapon, u8 teleport, u8 speedMul, u8 respawn (s),
+//         u8 stamina (0-127, +128 winded)
 // zombie: u16 nid, u8 type, u8 variant, u8 state, i16 x y z (2 cm), u8 heading, u8 rate, i8 extra,
 //         u8 scale, u8 flags
 const HEAD_BYTES = 1 + 4 + 4 + 4 + 2 + 1 + 1 + 2;
-const PLAYER_BYTES = 1 + 1 + 12 + 6 + 2 + 2 + 1 + 1 + 2 + 2 + 1 + 1 + 1 + 1;
+const PLAYER_BYTES = 1 + 1 + 12 + 6 + 2 + 2 + 1 + 1 + 2 + 2 + 1 + 1 + 1 + 1 + 1;
 const ZOMBIE_BYTES = 2 + 1 + 1 + 1 + 6 + 1 + 1 + 1 + 1 + 1;
 export const PF = { dead: 1, onGround: 2, sprint: 4, inWater: 8, fire: 16, reload: 32, roof: 64, vehicle: 128 };
 // vehicle: u16 vid, u8 driver, u8 flags (VF), f32 x y z heading speed steer, i16 vx vy vz (cm/s), i8 tilt x y (1/100 rad),
@@ -138,6 +139,7 @@ export function encodeSnapshot(s) {
     v.setUint8(o, p.teleport & 255); o += 1;
     v.setUint8(o, Math.round(p.speedMul * 100)); o += 1;
     v.setUint8(o, Math.min(255, Math.ceil(p.respawn || 0))); o += 1;
+    v.setUint8(o, Math.round(Math.max(0, Math.min(1, p.stamina ?? 1)) * 127) | (p.winded ? 128 : 0)); o += 1;
   }
   for (const z of zs) {
     v.setUint16(o, z.nid); o += 2;
@@ -185,6 +187,8 @@ export function decodeSnapshot(buf) {
     p.teleport = v.getUint8(o); o += 1;
     p.speedMul = v.getUint8(o) / 100; o += 1;
     p.respawn = v.getUint8(o); o += 1;
+    const st = v.getUint8(o); o += 1;
+    p.stamina = (st & 127) / 127; p.winded = !!(st & 128);
     s.players.push(p);
   }
   for (let i = 0; i < nz; i++) {

@@ -14,14 +14,14 @@ const rnd = (a, b) => a + Math.random() * (b - a);
 
 export const TYPES = {
   walker: { hp: 1, speed: [1.2, 1.7], dmg: 1, scale: [0.94, 1.06], models: ['city', 'thin', 'office'] },
-  runner: { hp: 0.75, speed: [3.4, 4.3], dmg: 0.9, scale: [0.94, 1.04], models: ['city', 'thin'], move: 'run' },
+  runner: { hp: 0.75, speed: [4.3, 5.0], dmg: 0.9, scale: [0.94, 1.04], models: ['city', 'thin'], move: 'run' },
   crawler: { hp: 0.6, speed: [1.0, 1.3], dmg: 0.7, scale: [0.98, 1.04], models: ['office'], crawl: true },
   brute: { hp: 3.5, speed: [1.35, 1.6], dmg: 1.7, scale: [1.3, 1.4], models: ['city', 'thin'], tint: [0.62, 0.55, 0.5], shove: 7 },
   screamer: { hp: 0.8, speed: [1.7, 2.1], dmg: 0.8, scale: [0.95, 1.0], models: ['office', 'city'], tint: [1.12, 1.18, 1.08], emissive: 0x161c16, scream: true },
   bloater: { hp: 1.5, speed: [0.95, 1.2], dmg: 1, scale: [1.06, 1.12], models: ['hazmat'], emissive: 0x3cff22, emissiveI: 0.3, wide: 1.2, explode: true, walkClip: /waddle/i },
   // animals nip rather than maul: a dog bite is under a fifth of a zombie's, a crow's a tenth
-  dog: { species: 'dog', hp: 0.45, speed: [5.3, 6.3], dmg: 0.18, scale: [0.95, 1.1] },   // (made ugly in dogs.js)
-  wolf: { species: 'dog', model: 'wolf', hp: 1.1, speed: [5.0, 5.8], dmg: 0.3, scale: [0.95, 1.05] },
+  dog: { species: 'dog', hp: 0.45, speed: [6.8, 7.5], dmg: 0.18, scale: [0.95, 1.1] },   // (made ugly in dogs.js)
+  wolf: { species: 'dog', model: 'wolf', hp: 1.1, speed: [6.5, 7.2], dmg: 0.3, scale: [0.95, 1.05] },
   crow: { species: 'crow', hp: 0.2, speed: [10, 12.5], dmg: 0.11, scale: [0.9, 1.1] },
   // (new kinds go on the end: their index is what goes over the wire)
   // wave 4 on: crouches, then leaps at you from a few metres off

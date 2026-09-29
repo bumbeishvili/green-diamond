@@ -48,7 +48,7 @@ export const WORLD = {
   playerRadius: 0.34,
   gravity: 22,
   jumpSpeed: 6.4,
-  walkSpeed: 4.3,
+  walkSpeed: 3.6,
   sprintSpeed: 6.9,
   crouchSpeed: 2.2,
   maxStep: 0.72, // curbs, courtyard steps

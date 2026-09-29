@@ -735,6 +735,9 @@ class Game {
     this.hud.update(dt);
     this.touch?.update(playing, this.hud.el.prompt.classList.contains('on'), !!(this.net && this.net.inMatch));
     this.hud.health(this.player.health, this.player.maxHealth, this.player.armour);
+    this.hud.stamina(this.player.stamina, this.player.winded);
+    // (winded: you can hear it)
+    if (this.player.winded && playing) { this.breathT = (this.breathT || 0) - dt; if (this.breathT <= 0) { this.breathT = 0.9; this.audio.play('breath', { vol: 0.5 }); } } else this.breathT = 0;
     this.hud.boss(this.zombies.bossHealth());
     // (everyone's on the map, your foes too in PvP, marked, so you can hunt them down)
     if ((this.frameCount || 0) % 2 === 0) {
