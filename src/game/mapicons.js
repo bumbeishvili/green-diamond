@@ -21,7 +21,7 @@ const G = {
 export const ICONS = {
   ammo: ['#4f9d2f', 'ammo', 'round'], health: ['#d93b3f', 'health', 'round'], cash: ['#c8940f', 'cash', 'round'],
   gun: ['#e0701f', 'gun', 'round'], word: ['#7d52e8', 'word', 'round'], powerup: ['#3d8fd6', 'powerup', 'round'],
-  stairs: ['#eef2f5', 'stairs', 'square'], giant: ['#b3121a', 'skull', 'round'], goal: ['#d9a400', 'flag', 'round'],
+  stairs: ['#eef2f5', 'stairs', 'square'], giant: ['#b3121a', 'skull', 'round'], goal: ['#ffd23f', 'flag', 'goal'],
   'shop-gun': ['#23272e', 'gun', 'shop'], 'shop-ammo': ['#23272e', 'ammo', 'shop'], 'shop-armour': ['#23272e', 'armour', 'shop'],
   'shop-upgrade': ['#23272e', 'upgrade', 'shop'], 'shop-speed': ['#23272e', 'speed', 'shop'], 'shop-double': ['#23272e', 'double', 'shop'],
 };
@@ -34,10 +34,10 @@ export function stationIcon(item) {
 // a badge as SVG markup in a 24x24 box
 export function badge(kind) {
   const [bg, sym, shape] = ICONS[kind] || ICONS.gun;
-  const glyphFill = shape === 'shop' ? '#ffc861' : shape === 'square' ? '#1c1f24' : '#ffffff';
+  const glyphFill = shape === 'shop' ? '#ffc861' : shape === 'square' || shape === 'goal' ? '#1c1f24' : '#ffffff';
   const back = shape === 'square'
     ? `<rect x="1" y="1" width="22" height="22" rx="4" fill="${bg}" stroke="rgba(0,0,0,.65)" stroke-width="1.2"/>`
-    : `<circle cx="12" cy="12" r="11" fill="${bg}" stroke="${shape === 'shop' ? '#ffc861' : 'rgba(0,0,0,.6)'}" stroke-width="${shape === 'shop' ? 1.4 : 1.2}"/>`;
+    : `<circle cx="12" cy="12" r="11" fill="${bg}" stroke="${shape === 'shop' ? '#ffc861' : shape === 'goal' ? '#fff' : 'rgba(0,0,0,.6)'}" stroke-width="${shape === 'shop' ? 1.4 : shape === 'goal' ? 1.8 : 1.2}"/>`;
   const glyph = G[sym].replace(/fill="#fff"/g, `fill="${glyphFill}"`);
   return `${back}<g transform="translate(12 12) scale(.72) translate(-12 -12)" fill="${glyphFill}">${glyph}</g>`;
 }

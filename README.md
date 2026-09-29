@@ -199,12 +199,33 @@ beam of light over where it is, and a flag on the map. None of them can be done 
 Die, or fail the job (some are against the clock), and the mission starts over from its beginning.
 Between them, a few seconds with the shops open, and each pays a bonus.
 
+You never have to guess where to go:
+- **In your view**, a gold marker sits over the next thing to head for, with how far it is. When it's
+  behind you or off the screen it sits on the edge, pointing the way to turn.
+- **The way in**: when the goal is down in a car park or up on a roof, the marker first takes you to
+  the ramp down or the stairs up ("ramp down · 33 m"), and back out again after.
+- **On the minimap**, each goal is a pulsing flag. Flags further out sit on the rim, in their direction.
+- **On the big map (M)**, each flag is named ("Generator · car park", "Nino · on the roof") and the
+  way in is marked. Beside the map: which mission it is, the goal now, the time left and the brief.
+
 1. **Hold the pool house**: stand in the ring for 45 seconds; the clock only runs while you're in it.
 2. **Supply run**: carry the medical crate from Spar to the pool house. Carrying it you can't run or
    shoot; put it down (F) to fight, pick it up again.
 3. **Lights on**: at night, restart the three generators down in the car parks: hold F at each
    (let go and it waits; get hit and that one starts over).
 4. **The giant**: bring it down within three minutes, with a crowd round it.
+5. **Rooftop rescue**: take the stairs up to Nino on a roof, bring her down and walk her to the pool
+   house. She follows you, up and down stairs too, but the zombies go for her as well: lose her
+   and it's over.
+6. **Fuel for the van**: four fuel cans, a long way from the van and from each other. Carry them
+   back one at a time.
+7. **Escort**: Dr Tamar walks from the north-west to the pool house on her own, slowly, and stops
+   when a zombie gets close. The zombies go for her as much as for you: keep them off her.
+8. **Clear the car park**: a horde of 26 down in the middle car park. Kill every one of them.
+9. **Hold the roof**: take the stairs to the top roof and hold the ring for 90 seconds. They come up
+   the stairs, and the crows come from the sky.
+10. **Escape**: get the van going (hold F by it), then drive it out of Gate 1, with a giant after
+    you. Wreck the van and you start over. Win this one and that's all ten.
 
 ### Brain training
 

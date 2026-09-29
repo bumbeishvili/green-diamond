@@ -4,13 +4,15 @@
 // or fail the job, and the mission starts over from its beginning: nobody comes back to carry on.
 import * as THREE from 'three';
 import { pointInPoly } from '../world/geom.js';
+import { NavGrid } from './navgrid.js';
+import { Avatars } from '../net/avatars.js';
 
 const GOLD = 0xffd23f;
 const BREAK_S = 12;          // between missions: the shops are open
 const clock = (s) => { const t = Math.max(0, Math.ceil(s)); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`; };
 
 // The missions. start: where you begin (a place, metres off it, facing it); setup: the job's state;
-// update: 'won', a reason it failed, or nothing yet; goal: the line on the HUD.
+// update: 'won', a reason it failed, or nothing yet; aim: what to head for now; goal: the line on the HUD.
 const MISSIONS = [
   {
     title: 'Hold the pool house',
@@ -18,6 +20,7 @@ const MISSIONS = [
     start: { at: 'pool', off: [0, -16] },
     setup(M, s) { s.zone = M.zone(M.at('pool'), 8, 45); s.pressure = { every: 1.5, max: 12 }; },
     update(M, s, dt) { return M.hold(s.zone, dt) ? 'won' : null; },
+    aim: (M, s) => [s.zone],
     goal: (M, s) => `Hold the pool house: ${clock(s.zone.need - s.zone.have)} to go${s.zone.inside ? '' : ' · get back in the ring!'}`,
   },
   {
@@ -27,6 +30,7 @@ const MISSIONS = [
     limit: 240,
     setup(M, s) { s.crate = M.crate(M.open(M.at('spar', [1.8, 1.8])), 'the medical crate'); s.to = M.zone(M.at('pool'), 5, 0); s.pressure = { every: 1.4, max: 14 }; },
     update(M, s) { return M.delivered(s.crate, s.to) ? 'won' : null; },
+    aim: (M, s) => [s.crate.held ? s.to : s.crate],
     goal: (M, s) => (s.crate.held ? 'Carry the crate to the pool house' : s.crate.moved ? 'Pick the crate back up (F)' : 'Get the medical crate from Spar'),
   },
   {
@@ -36,7 +40,8 @@ const MISSIONS = [
     hour: 21.2, limit: 420,
     setup(M, s) { s.jobs = ['middle', 'north', 'south'].map((name) => M.job(M.at(`park:${name}`), 10, 'the generator')).filter(Boolean); s.pressure = { every: 1.3, max: 16 }; },
     update(M, s, dt) { for (const j of s.jobs) M.work(j, dt); return s.jobs.every((j) => j.done) ? 'won' : null; },
-    goal: (M, s) => `Restart the generators: ${s.jobs.filter((j) => j.done).length} of ${s.jobs.length} running`,
+    aim: (M, s) => s.jobs.filter((j) => !j.done),
+    goal: (M, s) => `Restart the generators down in the car parks: ${s.jobs.filter((j) => j.done).length} of ${s.jobs.length} running`,
   },
   {
     title: 'The giant',
@@ -50,7 +55,115 @@ const MISSIONS = [
       if (s.giantT <= 0 && !s.giant) s.giant = M.g.zombies.list.find((z) => z.def.boss && z.state !== 'dead');
       return null;
     },
+    aim: (M, s) => (s.giant && s.giant.state !== 'dead' ? [s.giant.pos] : []),
     goal: (M, s) => (s.giant ? `Bring down the giant: ${Math.round(Math.max(0, s.giant.hp / s.giant.maxHp) * 100)}% left` : 'A giant’s coming…'),
+  },
+  {
+    title: 'Rooftop rescue',
+    brief: 'Nino’s stuck up on a roof. Take the stairs up to her and bring her down to the pool house alive: she keeps up with you walking, not running.',
+    start: { at: 'pool', off: [0, -6] },
+    limit: 360,
+    setup(M, s) {
+      const st = M.rescueRoof();
+      s.nino = M.survivor({ x: st.roof.x, y: st.top, z: st.roof.z }, 'Nino', st);
+      s.to = M.zone(M.at('pool'), 6, 0);
+      s.to.beam.m.visible = s.to.beam.r.visible = false;
+      s.pressure = { every: 1.4, max: 16 };
+    },
+    update(M, s, dt) {
+      const n = s.nino;
+      M.hurt(n, dt);
+      if (n.dead) return 'Nino didn’t make it';
+      if (!n.following && M.dist(n) < 3 && Math.abs(M.g.player.pos.y - n.y) < 2) { n.following = true; M.g.hud.notice('Nino: “I’m right behind you!”'); }
+      if (n.following) M.follow(n, dt);
+      s.to.beam.m.visible = s.to.beam.r.visible = n.following;
+      return M.inZone(n, s.to) ? 'won' : null;
+    },
+    aim: (M, s) => [s.nino.following && !s.nino.far ? s.to : s.nino],
+    goal: (M, s) => (!s.nino.following ? 'Get up to Nino on the roof (take the stairs)' : s.nino.far ? 'Nino can’t keep up: go back for her' : 'Bring Nino to the pool house'),
+  },
+  {
+    title: 'Fuel for the van',
+    brief: 'The van by Gate 1 has no fuel. Four cans are about the complex: carry them to it one at a time. No running, no shooting with a can in your hands.',
+    start: { at: 'pool', off: [0, -6] },
+    limit: 420,
+    setup(M, s) {
+      s.van = M.van();
+      const vp = { x: s.van.pos.x, y: s.van.pos.y, z: s.van.pos.z };
+      s.cans = M.spread(4, vp, 40).map((p) => M.crate(p, 'a fuel can', 'fuel'));
+      s.to = M.zone(vp, 4, 0);
+      s.pressure = { every: 1.3, max: 16 };
+    },
+    update(M, s) { return M.carryAll(s.cans, s.to) >= s.cans.length ? 'won' : null; },
+    aim: (M, s) => (s.cans.some((c) => c.held) ? [s.to] : s.cans.filter((c) => !c.done)),
+    goal: (M, s) => `Fuel for the van: ${s.cans.filter((c) => c.done).length} of ${s.cans.length} cans${s.cans.some((c) => c.held) ? ' · carry it to the van' : ''}`,
+  },
+  {
+    title: 'Escort',
+    brief: 'Dr Tamar is walking to the pool house with the medicine. She won’t move while they’re close: keep them off her.',
+    start: { at: 'north', off: [3, 3] },
+    limit: 360,
+    setup(M, s) {
+      const from = M.open(M.at('north')), to = M.at('pool');
+      s.tamar = M.survivor(from, 'Dr Tamar', null, 320);
+      s.route = M.route(to);
+      s.to = M.zone(to, 6, 0);
+      s.pressure = { every: 1.3, max: 16, near: s.tamar };
+    },
+    update(M, s, dt) {
+      const n = s.tamar;
+      M.hurt(n, dt);
+      if (n.dead) return 'Dr Tamar didn’t make it';
+      M.walk(n, s.route, dt);
+      return M.inZone(n, s.to) ? 'won' : null;
+    },
+    aim: (M, s) => [s.tamar],
+    goal: (M, s) => (s.tamar.cower ? 'Keep them off Dr Tamar: she won’t move with them this close' : 'Get Dr Tamar to the pool house'),
+    navGoals: (M, s) => (s.tamar && !s.tamar.dead ? [{ x: s.tamar.x, z: s.tamar.z }] : []),
+  },
+  {
+    title: 'Clear the car park',
+    brief: 'The big car park is full of them. Go down and finish every one: five minutes.',
+    start: { at: 'parkdoor:middle', off: [0, 0] },
+    limit: 300,
+    setup(M, s) { s.horde = M.horde('middle', 26); },
+    update(M, s) { return s.horde.every((z) => z.state === 'dead') ? 'won' : null; },
+    aim: (M, s) => s.horde.filter((z) => z.state !== 'dead').map((z) => z.pos),
+    goal: (M, s) => `Clear the car park: ${s.horde.filter((z) => z.state !== 'dead').length} left`,
+  },
+  {
+    title: 'Hold the roof',
+    brief: 'Up on the highest roof, hold out for 90 seconds. They come up the stairs, and the crows find you.',
+    start: { at: 'topdoor', off: [0, 0] },
+    limit: 360,
+    setup(M, s) { const st = M.topRoof(); s.zone = M.zone({ x: st.roof.x, y: st.top, z: st.roof.z }, 9, 90); s.pressure = { every: 1.2, max: 18, crows: true }; },
+    update(M, s, dt) { return M.hold(s.zone, dt) ? 'won' : null; },
+    aim: (M, s) => [s.zone],
+    goal: (M, s) => (M.g.player.roof ? `Hold the roof: ${clock(s.zone.need - s.zone.have)} to go${s.zone.inside ? '' : ' · back to the stairs!'}` : 'Take the stairs up to the roof'),
+  },
+  {
+    title: 'Escape',
+    brief: 'Get the van going (hold F at it), then drive it out through Gate 1. There’s a giant between you and the gate.',
+    start: { at: 'pool', off: [0, -6] },
+    limit: 420,
+    setup(M, s) {
+      s.van = M.van();
+      s.fix = M.job({ x: s.van.pos.x, y: s.van.pos.y, z: s.van.pos.z }, 12, 'the van', false);
+      s.out = M.zone(M.at('outside'), 9, 0);
+      s.out.beam.m.visible = s.out.beam.r.visible = false;
+      s.pressure = { every: 1.1, max: 20 };
+      s.giantT = 3;
+    },
+    update(M, s, dt) {
+      const g = M.g;
+      if (s.giantT > 0 && (s.giantT -= dt) <= 0) g.director.spawnPack({ kind: 'giant', n: 1 });
+      if (s.van.dmg >= 100) return 'The van’s wrecked';
+      M.work(s.fix, dt);
+      s.out.beam.m.visible = s.out.beam.r.visible = s.fix.done;
+      return s.fix.done && g.player.vehicle === s.van && M.inZone(s.van.pos, s.out) ? 'won' : null;
+    },
+    aim: (M, s) => [s.fix.done && M.g.player.vehicle === s.van ? s.out : s.fix],
+    goal: (M, s) => (!s.fix.done ? 'Get the van going: hold F at it' : M.g.player.vehicle === s.van ? 'Drive out through Gate 1' : 'Get in the van (F)'),
   },
 ];
 export const MISSION_COUNT = MISSIONS.length;
@@ -78,6 +191,15 @@ export class Missions {
     let p = null;
     if (name === 'pool') p = st.find((s) => s.item === 'ammo' && /pool house/.test(s.label));
     else if (name === 'spar') p = st.find((s) => s.item === 'rifle');
+    else if (name === 'north') p = st.find((s) => s.item === 'ammo' && /north-west/.test(s.label));
+    else if (name === 'outside') { const gt = g.level.gates.find((q) => q.name === 'Gate 1'); return { x: gt.x + 15 + off[0], y: g.hm.atWorld(gt.x + 15, -gt.y), z: -gt.y + off[1] }; }
+    else if (name === 'topdoor') { const ds = this.topRoof().doors, d = ds.find((q) => !q.blocked) || ds[0]; return { x: d.x + off[0], y: g.hm.atWorld(d.x, d.z), z: d.z + off[1] }; }
+    else if (name.startsWith('parkdoor:')) {
+      const u = g.underground && g.underground.list.find((q) => q.name === name.slice(9)), pool = this.at('pool');
+      if (!u) return null;
+      const d = u.doors.reduce((a, q) => (Math.hypot(q.out.x - pool.x, q.out.z - pool.z) < Math.hypot(a.out.x - pool.x, a.out.z - pool.z) ? q : a));
+      return { x: d.out.x + off[0], y: g.hm.atWorld(d.out.x, d.out.z), z: d.out.z + off[1] };
+    }
     else if (name.startsWith('park:')) {
       const u = g.underground && g.underground.list.find((q) => q.name === name.slice(5));
       if (!u || !u.lights.length) return null;
@@ -139,13 +261,20 @@ export class Missions {
   }
 
   // something to carry: F to pick it up and to put it down; carried, you can't run or shoot
-  crate(p, name) {
-    const mat = new THREE.MeshStandardMaterial({ color: 0xf2f0ea, roughness: 0.6 });
-    const red = new THREE.MeshStandardMaterial({ color: 0xd81f26, roughness: 0.6 });
+  crate(p, name, kind = 'medical') {
+    const mat = new THREE.MeshStandardMaterial({ color: kind === 'fuel' ? 0xb3261e : 0xf2f0ea, roughness: 0.6, metalness: kind === 'fuel' ? 0.3 : 0 });
+    const red = new THREE.MeshStandardMaterial({ color: kind === 'fuel' ? 0x2a2a2a : 0xd81f26, roughness: 0.6 });
     const m = new THREE.Group();
-    m.add(new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.42, 0.42), mat));
-    for (const [w, h, d, z] of [[0.3, 0.09, 0.01, 0.216], [0.09, 0.3, 0.01, 0.216], [0.3, 0.09, 0.01, -0.216], [0.09, 0.3, 0.01, -0.216]]) {
-      const c = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), red); c.position.z = z; m.add(c);
+    if (kind === 'fuel') {
+      // a jerrycan: the body, the handle on top, the spout
+      m.add(new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.46, 0.18), mat));
+      const h = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.05, 0.06), red); h.position.y = 0.26; m.add(h);
+      const sp = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.1, 8), red); sp.position.set(0.13, 0.27, 0); sp.rotation.z = -0.5; m.add(sp);
+    } else {
+      m.add(new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.42, 0.42), mat));
+      for (const [w, h, d, z] of [[0.3, 0.09, 0.01, 0.216], [0.09, 0.3, 0.01, 0.216], [0.3, 0.09, 0.01, -0.216], [0.09, 0.3, 0.01, -0.216]]) {
+        const c = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), red); c.position.z = z; m.add(c);
+      }
     }
     m.traverse((o) => { if (o.isMesh) o.castShadow = true; });
     m.position.set(p.x, p.y + 0.21, p.z);
@@ -181,17 +310,18 @@ export class Missions {
   }
 
   // a job to stand at: hold F for `need` seconds (let go and it waits; get hit and it's back to nothing)
-  job(p, need, name) {
+  job(p, need, name, box = true) {
     if (!p) return null;
     const mat = new THREE.MeshStandardMaterial({ color: 0x5a6a3a, roughness: 0.7, metalness: 0.2 });
     const m = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.9, 0.7), mat);
     m.position.set(p.x, p.y + 0.45, p.z);
     m.castShadow = true;
+    m.visible = box;
     this.g.scene.add(m);
     this.things.push(m);
     // (solid: once for each place; the colliders are for good)
     const key = `${p.x.toFixed(1)},${p.z.toFixed(1)}`;
-    if (!(this.solid ||= new Set()).has(key)) { this.solid.add(key); this.g.colliders.addBox(p.x, p.z, 0.6, 0.35, 0, { height: p.y + 0.9, minY: p.y - 0.2, kind: 'crate' }); }
+    if (box && !(this.solid ||= new Set()).has(key)) { this.solid.add(key); this.g.colliders.addBox(p.x, p.z, 0.6, 0.35, 0, { height: p.y + 0.9, minY: p.y - 0.2, kind: 'crate' }); }
     return { ...p, need, have: 0, done: false, name, mesh: m, beam: this.beam(p, p.y > -1) };
   }
   work(j, dt) {
@@ -211,12 +341,161 @@ export class Missions {
         j.beam.m.visible = j.beam.r.visible = false;
         g.audio.play('buy');
         g.hud.notice(`${j.name[0].toUpperCase()}${j.name.slice(1)} is running`);
+        if (j.name === 'the van') for (const o of [j.beam.m, j.beam.r]) o.visible = false;
       }
     } else if (pl.workingOn === j) pl.working = false;
     j.hp = pl.health;
     this.progress = j.have / j.need;
-    g.hud.prompt(`Hold <b>F</b> — restart ${j.name} <b>${Math.round((j.have / j.need) * 100)}%</b>`, 4);
+    g.hud.prompt(`Hold <b>F</b> — ${j.name === 'the van' ? 'get the van going' : `restart ${j.name}`} <b>${Math.round((j.have / j.need) * 100)}%</b>`, 4);
   }
+
+  // several things to carry, one at a time, to one place: how many have got there
+  carryAll(list, to) {
+    const g = this.g, pl = g.player;
+    const held = list.find((c) => c.held);
+    for (const c of list) {
+      if (c.done) continue;
+      if (held && c !== held) { c.beam.m.visible = c.beam.r.visible = false; continue; }   // (one in your hands at a time)
+      if (this.delivered(c, to)) {
+        c.done = true; c.held = false; pl.carrying = false;
+        c.mesh.visible = c.beam.m.visible = c.beam.r.visible = false;
+        g.audio.play('buy'); g.hud.notice(`${list.filter((q) => q.done).length} of ${list.length}`);
+      }
+    }
+    if (!list.some((c) => c.held)) { to.beam.m.visible = to.beam.r.visible = false; for (const c of list) if (!c.done) c.beam.m.visible = c.beam.r.visible = true; }
+    return list.filter((c) => c.done).length;
+  }
+
+  // n open spots spread over the complex (one in each quarter, as near its middle as there's room),
+  // well away from `from`
+  spread(n, from, away) {
+    const g = this.g, [x0, y0, x1, y1] = g.pickups.bounds, out = [];
+    const anchors = [[0.25, 0.25], [0.75, 0.25], [0.25, 0.75], [0.75, 0.75], [0.5, 0.5]].map(([qx, qz]) => ({ x: x0 + (x1 - x0) * qx, z: -(y0 + (y1 - y0) * qz) }));
+    anchors.sort((a, b) => Math.hypot(b.x - from.x, b.z - from.z) - Math.hypot(a.x - from.x, a.z - from.z));
+    for (const a of anchors) {
+      if (out.length >= n) break;
+      const p = this.open(a);
+      if (Math.hypot(p.x - from.x, p.z - from.z) >= away && !out.some((q) => Math.hypot(q.x - p.x, q.z - p.z) < 30)) out.push(p);
+    }
+    return out;
+  }
+
+  // the van by Gate 1 (the car parked nearest the gate, inside), back where it was and mended
+  van() {
+    const g = this.g, vs = g.vehicles;
+    if (!this.vanAt) {
+      const gt = g.level.gates.find((q) => q.name === 'Gate 1'), gx = gt.x, gz = -gt.y;
+      const v = vs.list.filter((q) => q.type === 'car' && q.pos.x < gx - 3).sort((a, b) => Math.hypot(a.pos.x - gx, a.pos.z - gz) - Math.hypot(b.pos.x - gx, b.pos.z - gz))[0];
+      this.vanAt = { v, pos: v.pos.clone(), heading: v.heading };
+    }
+    const { v, pos, heading } = this.vanAt;
+    if (g.player.vehicle === v) vs.exit();
+    if (v.pieces || v.dentable) vs.rebuild(v);
+    Object.assign(v, { dmg: 0, hp: {}, slip: 0, spin: 0, fallen: false, coasting: false, deadNoted: false, dents: [], pieces: null, dentable: null, lastCrash: null, speed: 0 });
+    v.lost = new Set();
+    vs.unpark(v); v.pos.copy(pos); v.heading = heading; v.moved = true; vs.park(v);
+    return v;
+  }
+
+  // the roofs: the highest you can climb to, and one for the rescue (nearest the pool house, not that one)
+  topRoof() { return [...this.g.stairs.list].sort((a, b) => b.top - a.top)[0]; }
+  rescueRoof() {
+    const pool = this.at('pool'), top = this.topRoof();
+    return this.g.stairs.list.filter((s) => s !== top && s.doors.some((d) => !d.blocked)).sort((a, b) => Math.hypot(a.roof.x - pool.x, a.roof.z - pool.z) - Math.hypot(b.roof.x - pool.x, b.roof.z - pool.z))[0] || top;
+  }
+
+  // ---- survivors: someone to keep alive, on their feet (a player's model, their name and health over them)
+  survivor(p, name, stair = null, hp = 260) {
+    this.npcs ||= new Avatars(this.g);
+    const slot = 6 + ((this.npcN = (this.npcN || 0) + 1) % 2);
+    const n = { x: p.x, y: p.y, z: p.z, yaw: 0, hp, max: hp, name, slot, stair, roof: stair ? stair : null, dead: false, following: false, cower: false, far: false };
+    this.npcList = [...(this.npcList || []), n];
+    this.show(n, 0);
+    return n;
+  }
+  show(n, dt) { this.npcs.set({ slot: n.slot, x: n.x, y: n.y, z: n.z, yaw: n.yaw, pitch: 0, crouch: n.cower ? 1 : 0, dead: n.dead, health: Math.max(0, n.hp), maxHealth: n.max, name: n.name }, dt, false); }
+  dist(n) { const p = this.g.player.pos; return Math.hypot(p.x - n.x, p.z - n.z); }
+  inZone(q, z) { return Math.hypot(q.x - z.x, q.z - z.z) < z.r && Math.abs(q.y - z.y) < 2.5; }
+
+  // the zombies at them hurt them (they go for the living, and a survivor's as good as anyone)
+  hurt(n, dt) {
+    if (n.dead) return;
+    let k = 0;
+    for (const z of this.g.zombies.list) if (z.state !== 'dead' && z.species !== 'crow' && Math.abs(z.pos.x - n.x) < 1.5 && Math.abs(z.pos.z - n.z) < 1.5 && Math.abs(z.pos.y - n.y) < 1.6) k++;
+    if (!k) return;
+    n.hp -= k * (16 + this.level * 2) * dt;
+    n.ouchT = (n.ouchT || 0) - dt;
+    if (n.ouchT <= 0) { n.ouchT = 0.8; this.g.audio.play('hurt', { pos: { x: n.x, y: n.y + 1.4, z: n.z }, vol: 0.6, rate: 1.25 }); }
+    if (n.hp <= 0) { n.dead = true; n.hp = 0; }
+  }
+
+  // a step for them, round what's in the way (and not off a roof)
+  step(n, mx, mz, len) {
+    const g = this.g, q = { x: n.x + mx * len, z: n.z + mz * len };
+    g.colliders.resolve(q, 0.3, n.y + 0.25, n.y + 1.6, 2);
+    if (n.roof) { const r = g.player.roofObj(q.x, q.z); if (!r || r.stair !== n.roof) return; }
+    n.x = q.x; n.z = q.z;
+    if (!n.roof) n.y = g.groundAt(n.x, n.z, n.y + 1);
+    n.yaw = Math.atan2(-mx, -mz);
+  }
+
+  // after you, walking pace (by the way the horde goes, round things); up and down the stairs with
+  // you if they're close when you go; too far behind and they wait for you
+  follow(n, dt) {
+    const g = this.g, pl = g.player, last = this.last || { x: pl.pos.x, y: pl.pos.y, z: pl.pos.z };
+    const jumped = Math.hypot(pl.pos.x - last.x, pl.pos.z - last.z) > 6 || Math.abs(pl.pos.y - last.y) > 3;
+    if (jumped && Math.hypot(last.x - n.x, last.z - n.z) < 12 && Math.abs(last.y - n.y) < 3) {
+      const f = pl.forward(this.tmp || (this.tmp = new THREE.Vector3()));
+      n.x = pl.pos.x - f.x * 1.4; n.z = pl.pos.z - f.z * 1.4; n.y = pl.pos.y;
+      // (on a roof or not by where she is now: yours isn't worked out again till your next step)
+      const ro = n.y > 2 ? g.player.roofObj(n.x, n.z) : null;
+      n.roof = ro ? ro.stair : null;
+      if (!n.roof) n.y = g.groundAt(n.x, n.z, n.y + 1);
+    }
+    const dx = pl.pos.x - n.x, dz = pl.pos.z - n.z, d = Math.hypot(dx, dz);
+    n.far = d > 30 || Math.abs(pl.pos.y - n.y) > 3;
+    if (d < 2.4 || n.far || pl.dead) { if (d > 0.1) n.yaw = Math.atan2(-dx, -dz); return; }
+    let mx = dx / d, mz = dz / d;
+    const dir = this.dir || (this.dir = { x: 0, z: 0 });
+    if (!n.roof && !pl.roof && !pl.vehicle && g.nav.direction(n.x, n.z, dir)) { mx = dir.x; mz = dir.z; }
+    this.step(n, mx, mz, 3.3 * dt);
+  }
+
+  // a way to somewhere, for someone walking it on their own (made once, then worked out a bit a frame)
+  route(to) {
+    this.nav2 ||= new NavGrid(this.g.colliders);
+    this.nav2.request(to.x, to.z);
+    return { grid: this.nav2, to };
+  }
+  walk(n, r, dt) {
+    r.grid.step(20000);
+    // (they won't go on with one of them near)
+    n.cower = this.g.zombies.list.some((z) => z.state !== 'dead' && z.species !== 'crow' && Math.hypot(z.pos.x - n.x, z.pos.z - n.z) < 7);
+    if (n.cower || r.grid.busy) return;
+    const dir = this.dir || (this.dir = { x: 0, z: 0 });
+    if (r.grid.direction(n.x, n.z, dir)) this.step(n, dir.x, dir.z, 1.9 * dt);
+    else { const dx = r.to.x - n.x, dz = r.to.z - n.z, d = Math.hypot(dx, dz); if (d > 0.5) this.step(n, dx / d, dz / d, 1.9 * dt); }
+  }
+
+  // a horde waiting in a car park (at its lights, the far end from the ramps first)
+  horde(name, count) {
+    const g = this.g, d = g.director, u = g.underground && g.underground.list.find((q) => q.name === name);
+    if (!u) return [];
+    const doors = u.doors.map((q) => q.in);
+    const spots = u.lights.map(([x, y]) => ({ x, z: -y })).filter((p) => doors.every((q) => Math.hypot(q.x - p.x, q.z - p.z) > 18));
+    const out = [];
+    for (let k = 0; k < count && spots.length; k++) {
+      const p = spots[Math.floor(Math.random() * spots.length)], type = d.pickType(this.level);
+      out.push(g.zombies.spawn(p.x + (Math.random() - 0.5) * 3, p.z + (Math.random() - 0.5) * 3, { type, hp: d.health(this.level), speedMul: d.speedMul(type, this.level), damage: d.damage(this.level), y: u.floor }));
+    }
+    return out;
+  }
+
+  // (the vehicles: the van's not for driving till the mission says so: the fuel run, before it's going)
+  lockedCar(v) { const s = this.s; return !!(this.on && s && s.van === v && (!s.fix || !s.fix.done)); }
+
+  // (main: the horde goes for these too, as for a player)
+  navGoals() { return this.on && this.state === 'active' && this.mission.navGoals ? this.mission.navGoals(this, this.s) : []; }
 
   // ---- the flow ----
 
@@ -228,6 +507,7 @@ export class Missions {
     this.things = [];
     g.player.carrying = false; g.player.working = false;
     g.zombies.clear();
+    this.npcs?.clear(); this.npcList = [];
     this.progress = 0;
   }
 
@@ -291,6 +571,10 @@ export class Missions {
     else if (this.state === 'done') return;
     // the job, and the ones coming for you (only once it's on)
     const r = m.update(this, s, dt);
+    for (const n of this.npcList || []) this.show(n, dt);
+    this.npcs?.update(dt);
+    const pp = g.player.pos;
+    this.last = { x: pp.x, y: pp.y, z: pp.z };
     if (this.state !== 'active') return;
     if (r === 'won') { this.win(); return; }
     if (r) { this.fail(r); return; }
@@ -299,6 +583,8 @@ export class Missions {
     if (pr) {
       this.spawnT = (this.spawnT ?? 1) - dt;
       if (this.spawnT <= 0 && g.zombies.alive < pr.max) { g.director.spawnOne(); this.spawnT = pr.every * (0.6 + Math.random() * 0.8); }
+      // (up on the roof: the crows find you)
+      if (pr.crows && g.player.roof) { this.crowT = (this.crowT ?? 8) - dt; if (this.crowT <= 0) { this.crowT = 12 + Math.random() * 6; g.director.spawnCrows(2 + Math.floor(Math.random() * 2)); } }
       // (from mission 3: a pack of dogs now and then)
       if (this.level >= 3) { this.dogT = (this.dogT ?? 25) - dt; if (this.dogT <= 0) { this.dogT = 30 + Math.random() * 20; g.director.spawnPack({ kind: 'dogs', n: Math.min(5, 2 + Math.floor(this.level / 3)) }); } }
     }
@@ -314,15 +600,73 @@ export class Missions {
     return `${m.goal(this, this.s)}${left}`;
   }
 
-  // on the map: where the job is
+  // The marker in your view: the nearest thing to head for; and when that's down in a car park
+  // (or up on a roof) and you're not, the way there first: the ramp down, the stairs up.
+  waypoint() {
+    if (!this.on || this.state !== 'active' || !this.mission.aim) return null;
+    const g = this.g, pl = g.player, p = pl.vehicle ? pl.vehicle.pos : pl.pos;
+    let t = null, bd = Infinity;
+    for (const q of this.mission.aim(this, this.s)) { const d = q ? Math.hypot(q.x - p.x, q.z - p.z) : Infinity; if (d < bd) { bd = d; t = q; } }
+    if (!t) return null;
+    const ty = t.y ?? g.hm.atWorld(t.x, t.z), U = g.underground;
+    const via = (x, z, hint) => ({ x, y: g.hm.atWorld(x, z), z, hint, far: Math.hypot(x - p.x, z - p.z) });
+    const uT = U && U.at(t.x, t.z, ty + 0.1), uP = U && !pl.vehicle && U.at(p.x, p.z, p.y + 0.1);
+    if (uP && uT !== uP) { const d = U.nearestDoor(uP, p.x, p.z); return via(d.out.x, d.out.z, 'out of the car park'); }
+    if (uT && !uP) {
+      const cost = (q) => Math.hypot(q.out.x - p.x, q.out.z - p.z) + Math.hypot(q.in.x - t.x, q.in.z - t.z);
+      const d = uT.doors.reduce((a, q) => (cost(q) < cost(a) ? q : a));
+      return via(d.out.x, d.out.z, 'ramp down');
+    }
+    // (a roof is several pieces: the same roof is up there at the same height)
+    const upT = ty > 2, upP = !!pl.roof && !pl.vehicle;
+    const stairAt = (x, z, y, ro) => ro?.stair || (g.stairs?.list || []).filter((q) => Math.abs(q.top - y) < 2)
+      .reduce((a, q) => (!a || Math.hypot(q.roof.x - x, q.roof.z - z) < Math.hypot(a.roof.x - x, a.roof.z - z) ? q : a), null);
+    if (upP && !(upT && Math.abs(ty - p.y) < 2)) {
+      const st = stairAt(p.x, p.z, p.y, pl.roof);
+      if (st) return { x: st.roof.x, y: st.top, z: st.roof.z, hint: 'stairs down', far: Math.hypot(st.roof.x - p.x, st.roof.z - p.z) };
+    }
+    if (upT && !upP) {
+      const st = stairAt(t.x, t.z, ty, pl.roofObj(t.x, t.z)), ds = st ? st.doors.filter((d) => !d.blocked) : [];
+      const d = ds.reduce((a, q) => (Math.hypot(q.x - p.x, q.z - p.z) < Math.hypot(a.x - p.x, a.z - p.z) ? q : a), ds[0]);
+      if (d) return via(d.x, d.z, 'stairs up');
+    }
+    return { x: t.x, y: ty, z: t.z, hint: '', far: bd };
+  }
+
+  // on the map: where the job is, each flag named (and where it is: down in a car park, up on a
+  // roof), and the way in to it marked
   markers() {
     if (!this.on || this.state === 'break' || this.state === 'done') return [];
-    const s = this.s || {}, out = [];
-    const add = (p) => p && out.push({ x: p.x, z: p.z, color: '#ffd23f', icon: 'goal', station: true });
-    if (s.zone) add(s.zone);
-    if (s.crate) add(s.crate.held ? s.to : s.crate);
-    for (const j of s.jobs || []) if (!j.done) add(j);
-    if (s.giant && s.giant.state !== 'dead') add(s.giant.pos);
+    const s = this.s || {}, out = [], g = this.g;
+    const where = (p) => (g.underground?.at(p.x, p.z, (p.y ?? 0) + 0.1) ? ' · car park' : (p.y ?? 0) > 2 ? ' · on the roof' : '');
+    const add = (p, label) => p && out.push({ x: p.x, z: p.z, color: '#ffd23f', icon: 'goal', goal: true, label: label + where(p) });
+    if (s.zone) add(s.zone, 'Hold here');
+    if (s.crate) { if (s.crate.held) add(s.to, 'Pool house'); else add(s.crate, 'Medical crate'); }
+    for (const j of s.jobs || []) if (!j.done) add(j, 'Generator');
+    if (s.giant && s.giant.state !== 'dead') add(s.giant.pos, 'The giant');
+    for (const n of this.npcList || []) if (!n.dead) add(n, n.name);
+    for (const c of s.cans || []) if (!c.done && !c.held) add(c, 'Fuel can');
+    if ((s.cans || []).some((c) => c.held)) add(s.to, 'The van');
+    if (s.nino && s.nino.following) add(s.to, 'Pool house');
+    if (s.tamar) add(s.to, 'Pool house');
+    if (s.horde) {
+      const left = s.horde.filter((z) => z.state !== 'dead'), p = g.player.pos;
+      for (const z of left) out.push({ x: z.pos.x, z: z.pos.z, color: '#ffd23f', size: 0.6 });
+      // (and a flag on the nearest)
+      add(left.reduce((a, z) => (!a || Math.hypot(z.pos.x - p.x, z.pos.z - p.z) < Math.hypot(a.x - p.x, a.z - p.z) ? z.pos : a), null), `${left.length} left`);
+    }
+    if (s.fix) { if (s.fix.done) add(s.out, 'Gate 1: drive out'); else add(s.fix, 'The van'); }
+    // (the way in: the ramp down, the stairs up)
+    const w = this.waypoint();
+    if (w && w.hint) out.push({ x: w.x, z: w.z, color: '#ffd23f', via: true, label: w.hint });
     return out;
+  }
+
+  // for the big map: which mission, its goal now, and the brief (in the break: the next one)
+  info() {
+    if (!this.on || !this.mission || this.state === 'done') return null;
+    const next = this.state === 'break' && MISSIONS[this.i + 1];
+    const m = next || this.mission, n = next ? this.level + 1 : this.level;
+    return { title: `Mission ${n} of ${MISSIONS.length} · ${m.title}`, goal: this.objective(), brief: m.brief };
   }
 }

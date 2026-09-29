@@ -197,6 +197,7 @@ body.touch #bigmap { pointer-events: auto; }
 #bigmap .pname { font-size: 3.8px; font-weight: 700; text-anchor: middle; stroke: rgba(0,0,0,.8); stroke-width: .7px; paint-order: stroke; }
 #bigmap .pname.foe { stroke: #7a0000; }
 #bigmap .alabel { font-size: 3.4px; font-weight: 700; text-anchor: middle; stroke: rgba(0,0,0,.8); stroke-width: .7px; paint-order: stroke; }
+#bigmap .alabel.glabel { font-size: 3.9px; stroke: rgba(8,10,12,.92); stroke-width: 1.6px; stroke-linejoin: round; }
 #bigmap .dyn path.foe { stroke: #ff2b2b; stroke-width: .9px; }
 #bigmap .dyn .pring { fill: none; stroke: inherit; stroke-width: 1.5px; }
 #bigmap .dyn circle { stroke: rgba(0, 0, 0, .55); stroke-width: .35; }
@@ -215,7 +216,14 @@ body.touch #bigmap { pointer-events: auto; }
 #bigmap .legend i.arrow { width: 0; height: 0; border-radius: 0; box-shadow: none; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 11px solid #fff; }
 #bigmap .legend b { background: #2f6db3; color: #fff; font-size: 10px; padding: 0 4px; border-radius: 2px; }
 #bigmap .legend em { margin-top: 4px; font-style: normal; color: #8f897f; font-size: 12px; }
-@media (max-height: 560px) { #bigmap .wrap { gap: 10px; } #bigmap .legend { gap: 3px; padding: 8px 10px; font-size: 11px; } #bigmap .legend em { font-size: 10px; } }
+#bigmap .legend .mis { max-width: 250px; padding-bottom: 9px; margin-bottom: 2px; border-bottom: 1px solid rgba(255,255,255,.12); }
+#bigmap .legend .mis.hidden { display: none; }
+#bigmap .legend .mis h4 { margin: 0 0 5px; font: 700 14px var(--body); color: #ffd23f; }
+#bigmap .legend .mis .g { margin: 0 0 5px; font-weight: 600; color: #ffe9a8; }
+#bigmap .legend .mis .b { margin: 0; font-size: 12px; line-height: 1.35; color: #c9c2b4; }
+#bigmap .legend i.via { width: 9px; height: 9px; border-radius: 0; background: #ffd23f; transform: rotate(45deg); }
+#bigmap .dyn rect.via { stroke: rgba(0,0,0,.75); stroke-width: .5; }
+@media (max-height: 560px) { #bigmap .legend .mis .b { display: none; } #bigmap .legend .mis h4 { font-size: 12px; } #bigmap .wrap { gap: 10px; } #bigmap .legend { gap: 3px; padding: 8px 10px; font-size: 11px; } #bigmap .legend em { font-size: 10px; } }
 #keys {
   position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); display: flex; flex-wrap: wrap; justify-content: center;
   gap: 2px 12px; max-width: min(860px, 70vw); font: 12px/1.5 var(--body); color: rgba(255,255,255,.8);
@@ -284,6 +292,17 @@ body.touch #bigmap { pointer-events: auto; }
 #objective i.on { visibility: visible; }
 #objective b { display: block; height: 100%; width: 0; background: #ffd23f; }
 body.touch #objective { top: 40px; font-size: 13px; }
+#waypoint { position: absolute; left: 0; top: 0; width: 0; height: 0; pointer-events: none; }
+#waypoint b { position: absolute; left: -8px; top: -8px; width: 16px; height: 16px; background: #ffd23f; transform: rotate(45deg);
+  box-shadow: 0 0 0 2px rgba(0,0,0,.55), 0 0 12px rgba(255,210,63,.8); animation: wp 1.2s ease-in-out infinite; }
+#waypoint span { position: absolute; left: 0; top: 14px; transform: translateX(-50%); white-space: nowrap; font-size: 14px; font-weight: 600;
+  color: #ffe9a8; text-shadow: 0 1px 3px #000, 0 0 8px rgba(0,0,0,.8); }
+#waypoint u { display: none; position: absolute; left: -9px; top: -9px; width: 18px; height: 18px; }
+#waypoint u::before { content: ''; position: absolute; left: 3px; top: -16px; border-left: 6px solid transparent; border-right: 6px solid transparent;
+  border-bottom: 11px solid #ffd23f; filter: drop-shadow(0 0 2px rgba(0,0,0,.8)); }
+#waypoint.edge u { display: block; }
+@keyframes wp { 50% { box-shadow: 0 0 0 2px rgba(0,0,0,.55), 0 0 22px 4px rgba(255,210,63,.9); } }
+body.touch #waypoint span { font-size: 12px; }
 #mclock { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); font-family: var(--head); font-size: 30px; letter-spacing: .06em;
   color: #f2efe9; text-shadow: 0 2px 6px rgba(0,0,0,.8); }
 #mclock.late { color: #ff6b5b; }

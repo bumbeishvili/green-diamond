@@ -185,6 +185,34 @@ export class HUD {
     if (pct !== this.objPct) { this.objPct = pct; el.lastChild.classList.toggle('on', pct > 0); el.lastChild.firstChild.style.width = `${pct}%`; }
   }
 
+  // A mission's marker in your view, over the next thing to head for, with how far; off the screen
+  // (or behind you) it sits on the edge, its arrow pointing the way to turn.
+  waypoint(w, camera) {
+    const el = this.el.waypoint || (this.el.waypoint = document.getElementById('waypoint'));
+    if (!el) return;
+    const show = !!w && (w.far > 3 || !!w.hint);
+    if (show !== this.wpOn) { this.wpOn = show; el.classList.toggle('hidden', !show); }
+    if (!show) return;
+    camera.updateMatrixWorld();   // (where it's looking this frame, not the last)
+    const v = this.wpV || (this.wpV = camera.position.clone());
+    v.set(w.x, w.y + 1.8, w.z).applyMatrix4(camera.matrixWorldInverse);   // (in the camera's frame: -z ahead)
+    const behind = v.z > -0.1, side = v.x >= 0 ? 1 : -1;
+    v.applyMatrix4(camera.projectionMatrix);
+    let x = v.x, y = v.y;
+    const EX = 0.9, EY = 0.8;
+    if (behind) { x = side; y = 0; }   // (behind you: on the side you'd turn to)
+    const edge = behind || Math.abs(x) > EX || Math.abs(y) > EY;
+    if (edge) { const k = Math.max(Math.abs(x) / EX, Math.abs(y) / EY, 1e-6); x /= k; y /= k; }
+    const W = innerWidth, H = innerHeight;
+    el.style.transform = `translate(${((x + 1) / 2 * W).toFixed(0)}px, ${((1 - y) / 2 * H).toFixed(0)}px)`;
+    el.classList.toggle('edge', edge);
+    if (edge) el.firstChild.style.transform = `rotate(${Math.atan2(x, y).toFixed(2)}rad)`;
+    // (the words under it lean in off the screen's edges)
+    el.lastChild.style.transform = `translateX(${(-50 - 50 * Math.max(-1, Math.min(1, x))).toFixed(0)}%)`;
+    const txt = `${w.hint ? `${w.hint} · ` : ''}${Math.round(w.far)} m`;
+    if (txt !== this.wpTxt) { this.wpTxt = txt; el.lastChild.textContent = txt; }
+  }
+
   // the sprint: shown while it's short of full (orange when winded)
   stamina(v, winded) {
     const el = this.el.stamina || (this.el.stamina = document.getElementById('stamina'));
@@ -300,13 +328,33 @@ export class HUD {
     const toMap = (x, z) => [(x - px) * scale, (z + py) * scale];
     const bpx = Math.round(11 * u);
     if (this.badgePx !== bpx) { this.badgePx = bpx; this.badges = badgeImages(bpx); }
+    const rim0 = W / 2 - 9 * u, t0 = performance.now() / 1000;
     for (const m of markers) {
       if (m.bigOnly) continue;
-      const [mx, mz] = toMap(m.x, m.z);
+      let [mx, mz] = toMap(m.x, m.z);
+      if (m.goal) {
+        // (a mission's goal: never off the map, and a ring pulsing out from it)
+        const d = Math.hypot(mx, mz);
+        if (d > rim0) { mx *= rim0 / d; mz *= rim0 / d; }
+        const ph = t0 / 1.2 % 1;
+        ctx.globalAlpha = 0.95 * (1 - ph); ctx.strokeStyle = '#ffd23f'; ctx.lineWidth = 2 * u;
+        ctx.beginPath(); ctx.arc(mx, mz, (6 + 11 * ph) * u, 0, Math.PI * 2); ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+      if (m.via) {
+        const d = Math.hypot(mx, mz);
+        if (d > rim0) { mx *= rim0 / d; mz *= rim0 / d; }
+        const r = 7.5 * u;
+        ctx.save(); ctx.translate(mx, mz); ctx.rotate(-yaw + Math.PI / 4);
+        ctx.fillStyle = m.color; ctx.strokeStyle = 'rgba(0,0,0,.75)'; ctx.lineWidth = 1.6 * u;
+        ctx.fillRect(-r / 2, -r / 2, r, r); ctx.strokeRect(-r / 2, -r / 2, r, r);
+        ctx.restore();
+        continue;
+      }
       const img = m.icon && this.badges[m.icon];
       if (img && img.complete && img.naturalWidth) {
         // (the badge stays upright while the map turns)
-        const s = bpx * (m.station ? 1.08 : 0.92);
+        const s = bpx * (m.goal ? 1.35 : m.station ? 1.08 : 0.92);
         ctx.save(); ctx.translate(mx, mz); ctx.rotate(-yaw); ctx.drawImage(img, -s / 2, -s / 2, s, s); ctx.restore();
         continue;
       }
@@ -476,12 +524,15 @@ export class HUD {
     legend.className = 'legend';
     const item = (swatch, text) => `<span>${swatch}${text}</span>`;
     const ic = (kind) => `<svg class="ic" viewBox="0 0 24 24">${badge(kind)}</svg>`;
-    legend.innerHTML = [
+    legend.innerHTML = '<div class="mis hidden"><h4></h4><p class="g"></p><p class="b"></p></div>' + [
       item('<i class="arrow"></i>', 'you'), item('<i style="background:#ff3b30"></i>', 'zombies'), item(ic('giant'), 'a giant'),
-      item(ic('shop-gun'), 'shops and weapons'), item(ic('ammo'), 'ammo'), item(ic('health'), 'first aid'), item(ic('cash'), 'lari'),
+      `<span class="goal-l">${ic('goal')}the mission</span>`, '<span class="via-l"><i class="via"></i>the way in to it</span>', item(ic('shop-gun'), 'shops and weapons'), item(ic('ammo'), 'ammo'), item(ic('health'), 'first aid'), item(ic('cash'), 'lari'),
       item(ic('gun'), 'a gun'), item(ic('word'), 'puzzle crate'), item(ic('powerup'), 'power-up'), item(ic('stairs'), 'stairs'), item('<b>P</b>', 'car park'),
     ].join('') + `<em>${'ontouchstart' in window ? 'tap to close' : 'M to close'}</em>`;
     wrap.appendChild(legend);
+    this.goalLegend = legend.querySelector('.goal-l');
+    this.viaLegend = legend.querySelector('.via-l');
+    this.misEl = legend.querySelector('.mis');
     const close = (e) => { e.preventDefault(); e.stopPropagation(); if (this.big) this.toggleMap(); };
     el.addEventListener('click', close);
     el.addEventListener('touchstart', close, { passive: false });
@@ -541,7 +592,7 @@ export class HUD {
       if (!name || (p.kind === 'payment_terminal' && !st)) continue;
       if (st) used.add(st);
       const lines = [{ text: p.kind === 'payment_terminal' ? 'TBC' : name, size: 3.7, cls: 'shop' }];
-      if (st) lines.push({ text: st.tag, size: 3.1, cls: 'tagl' });
+      if (st && st.tag) lines.push({ text: st.tag, size: 3.1, cls: 'tagl' });
       place(p.x, -p.y, lines, beside(5.5));
     }
     // the stations away from the shops (crates, roofs, the car park, the booths)
@@ -550,10 +601,13 @@ export class HUD {
 
   // the big map's moving parts (pooled SVG elements)
   drawBigMap(player, zombies, markers, mates) {
-    if (!this.big2Placed) { this.big2Placed = true; this.placeLabels(markers.filter((m) => m.station)); }
-    const { g, pool } = this.big2, used = { dot: 0, sq: 0, tag: 0, arrow: 0, icon: 0, pulse: 0 };
+    if (!this.big2Placed) { this.big2Placed = true; this.placeLabels(markers.filter((m) => m.station && !m.goal)); }
+    const { g, pool } = this.big2, used = { dot: 0, sq: 0, tag: 0, arrow: 0, icon: 0, pulse: 0, goalic: 0 };
     if (!pool.icon) pool.icon = [];
     if (!pool.pulse) pool.pulse = [];
+    if (!pool.goalic) pool.goalic = [];
+    if (this.goalLegend) this.goalLegend.style.display = markers.some((m) => m.goal) ? '' : 'none';
+    if (this.viaLegend) this.viaLegend.style.display = markers.some((m) => m.via) ? '' : 'none';
     const get = (kind, tag, parent) => { let e = pool[kind][used[kind]++]; if (!e) { e = svg(tag, {}, parent); pool[kind].push(e); } e.style.display = ''; return e; };
     const f = (v) => v.toFixed(1);
     const dot = (x, z, r, fill, cls = '') => { const e = get('dot', 'circle', g.dot); e.setAttribute('cx', f(x)); e.setAttribute('cy', f(z)); e.setAttribute('r', r); e.setAttribute('fill', fill); e.setAttribute('class', cls); };
@@ -565,17 +619,33 @@ export class HUD {
       e.setAttribute('class', foe ? 'foe' : '');
     };
     for (const m of markers) {
+      if (m.goal) {
+        const p = get('pulse', 'g', g.dot);
+        if (!p.firstChild) {
+          for (const off of [0, 0.6]) {
+            const ring = svg('circle', { r: 3, class: 'pring' }, p), begin = `${off}s`;
+            svg('animate', { attributeName: 'r', values: '3;16', dur: '1.2s', begin, repeatCount: 'indefinite' }, ring);
+            svg('animate', { attributeName: 'opacity', values: '1;0', dur: '1.2s', begin, repeatCount: 'indefinite' }, ring);
+          }
+        }
+        p.setAttribute('transform', `translate(${f(m.x)} ${f(m.z)})`);
+        p.setAttribute('stroke', '#ffd23f');
+      }
       if (m.icon && ICONS[m.icon]) {
-        const e = get('icon', 'use', g.dot), s = m.station ? 5.2 : m.icon === 'stairs' ? 3.4 : 4.2;
+        const e = get(m.goal ? 'goalic' : 'icon', 'use', m.goal ? g.arrow : g.dot), s = m.goal ? 8 : m.station ? 5.2 : m.icon === 'stairs' ? 3.4 : 4.2;
         const href = `#ic-${m.icon}`;
         if (e.getAttribute('href') !== href) e.setAttribute('href', href);
         e.setAttribute('x', f(m.x - s / 2)); e.setAttribute('y', f(m.z - s / 2)); e.setAttribute('width', s); e.setAttribute('height', s);
+      } else if (m.via) {
+        const e = get('sq', 'rect', g.arrow);
+        e.setAttribute('x', f(m.x - 1.8)); e.setAttribute('y', f(m.z - 1.8)); e.setAttribute('width', 3.6); e.setAttribute('height', 3.6);
+        e.setAttribute('transform', `rotate(45 ${f(m.x)} ${f(m.z)})`); e.setAttribute('fill', m.color); e.setAttribute('class', 'via');
       } else dot(m.x, m.z, m.station ? 1.8 : 1.35 * (m.size || 1), m.color, m.station ? 'st' : 'pk');
-      if (m.label) {   // (a PvP armory: named)
+      if (m.label) {   // (a PvP armory, a mission's goal and the way in to it: named)
         const t = get('tag', 'text', g.tag);
         if (t.textContent !== m.label) t.textContent = m.label;
-        t.setAttribute('x', f(m.x)); t.setAttribute('y', f(m.z - 4.4));
-        t.setAttribute('class', 'alabel'); t.setAttribute('fill', m.color);
+        t.setAttribute('x', f(m.x)); t.setAttribute('y', f(m.z - (m.goal ? 5.6 : m.via ? 3 : 4.4)));
+        t.setAttribute('class', m.goal || m.via ? 'alabel glabel' : 'alabel'); t.setAttribute('fill', m.color);
       }
     }
     const zc = { human: '#ff3b30', dog: '#ff9a3a', crow: '#c77dff' };
@@ -614,6 +684,18 @@ export class HUD {
     this.big2.me.setAttribute('transform', `translate(${f(player.pos.x)} ${f(player.pos.z)})`);
     arrow(player.pos.x, player.pos.z, player.mapYaw ?? player.yaw, '#ffffff', 1.6);
     for (const kind of Object.keys(pool)) for (let i = used[kind]; i < pool[kind].length; i++) pool[kind][i].style.display = 'none';
+  }
+
+  // the big map's mission: which it is, the goal now, the brief
+  missionInfo(m) {
+    const el = this.misEl;
+    if (!el) return;
+    const key = m ? `${m.title}|${m.goal}|${m.brief}` : '';
+    if (key === this.misKey) return;
+    this.misKey = key;
+    el.classList.toggle('hidden', !m);
+    if (!m) return;
+    el.children[0].textContent = m.title; el.children[1].textContent = m.goal; el.children[2].textContent = m.brief;
   }
 
   setStats(text) { this.el.stats.textContent = text; }

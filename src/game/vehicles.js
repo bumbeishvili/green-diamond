@@ -650,7 +650,7 @@ export class Vehicles {
     const client = g.mode === 'client';
     if (!this.active) {
       const near = !p.dead && this.nearest();
-      if (near && !g.director.nearestStation() && !g.stairs?.near() && !g.missions?.hasF && !p.carrying) {
+      if (near && !g.director.nearestStation() && !g.stairs?.near() && !g.missions?.hasF && !p.carrying && !g.missions?.lockedCar(near)) {
         const label = near.type === 'bike' ? 'ride the motorbike' : near.type === 'drone' ? 'fly the drone' : 'get in the car';
         g.hud.prompt(`Press <b>F</b> — ${label}`);
         if (input.hit('KeyF')) {

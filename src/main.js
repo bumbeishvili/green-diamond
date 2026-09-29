@@ -586,6 +586,7 @@ class Game {
         else if (pU) goals.push(...pU.doors.map((d) => d.out));
         else goals.push({ x: p.pos.x, z: p.pos.z });
       }
+      goals.push(...this.missions.navGoals());   // (a mission's survivor: they go for her too)
       this.nav.request(goals[0].x, goals[0].z, goals.slice(1));
       this.navT = 0.3;
     }
@@ -754,7 +755,9 @@ class Game {
       const people = this.net && this.net.inMatch ? this.net.teamStates().map((q) => Object.assign(q, { foe: !q.me && this.pvp.foes(me, q.slot) })) : [];
       this.hud.drawMap(this.player, this.zombies.list, [...this.stairs.markers(), ...this.pickups.markers(), ...this.director.markers(), ...this.missions.markers()], people);
       this.hud.objective(this.missions.objective(), this.missions.progress);
+      if (this.hud.big) this.hud.missionInfo(this.missions.info());
     }
+    this.hud.waypoint(playing && !this.hud.big ? this.missions.waypoint() : null, this.camera);
     this.atmo.follow(debugCam ? (this.camera.position.y > 30 ? new THREE.Vector3(0, 0, 0) : this.camera.position) : this.player.pos);
     if (this.audio.ctx) this.audio.setListener(this.camera.position, this.player.forward(new THREE.Vector3()));
 
