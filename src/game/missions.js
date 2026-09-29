@@ -97,7 +97,12 @@ export class Missions {
   open(p) {
     const g = this.g, nav = g.nav;
     const inside = (x, z) => g.level.buildings.some((b) => pointInPoly(x, -z, b.poly.outer));
+    // (and clear of everything else F does something at: the shops, the cars, the stairwell doors)
+    const busy = (x, z) => g.director.stations.some((q) => Math.hypot(q.x - x, q.z - z) < 4.5 && (q.y ?? 0) > -1)
+      || g.vehicles.list.some((v) => Math.hypot(v.pos.x - x, v.pos.z - z) < 4.5)
+      || (g.stairs?.list || []).some((st) => st.doors.some((d) => Math.hypot(d.x - x, d.z - z) < 4));
     const ok = (x, z) => {
+      if (busy(x, z)) return false;
       for (const [dx, dz] of [[0, 0], [1.3, 0], [-1.3, 0], [0, 1.3], [0, -1.3]]) if (inside(x + dx, z + dz) || !nav.walkable(x + dx, z + dz)) return false;
       const y = g.hm.atWorld(x, z);
       if (y < -0.5 || g.colliders.resolve({ x, z }, 0.6, y + 0.2, y + 1.7, 1)) return false;
@@ -160,6 +165,7 @@ export class Missions {
       if (pl.dead) this.put(c);
       else g.hud.prompt('Press <b>F</b> — put the crate down', 4);
     } else if (near && !pl.dead) g.hud.prompt(`Press <b>F</b> — pick up ${c.name} (you can’t run or shoot carrying it)`, 4);
+    if (c.held || near) this.hasF = true;
     if (g.input.hit('KeyF') && (c.held || near) && !pl.dead) { g.input.pressed.delete('KeyF'); if (c.held) this.put(c); else { c.held = true; c.moved = true; pl.carrying = true; g.audio.play('pickup', { vol: 0.8 }); } }
     c.beam.m.position.set(c.x, c.y, c.z); c.beam.r.position.set(c.x, c.y + 0.05, c.z);
     // (to it: the beam over the crate while it's not with you, over where it goes while it is)
@@ -193,6 +199,7 @@ export class Missions {
     if (j.done) return;
     const near = !pl.dead && Math.hypot(pl.pos.x - j.x, pl.pos.z - j.z) < 2.3 && Math.abs(pl.pos.y - j.y) < 2;
     if (!near) { if (pl.workingOn === j) pl.working = false; return; }
+    this.hasF = true;
     const holding = g.input.down('KeyF');
     if (holding) {
       if (pl.health < (j.hp ?? pl.health) - 0.5 && j.have > 0) { j.have = 0; g.hud.notice('Hit! Start that one again'); g.audio.play('empty'); }
@@ -277,6 +284,7 @@ export class Missions {
     const g = this.g, m = this.mission, s = this.s;
     this.t += dt;
     this.progress = 0;
+    this.hasF = false;
     if (this.state === 'brief') { if ((this.stateT -= dt) <= 0) this.state = 'active'; }
     else if (this.state === 'failed') { if ((this.stateT -= dt) <= 0) this.begin(this.i); return; }
     else if (this.state === 'break') { if ((this.stateT -= dt) <= 0) this.begin(this.i + 1); return; }

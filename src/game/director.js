@@ -643,7 +643,7 @@ export class Director {
   shops(dt) {
     const g = this.g;
     const s = this.nearestStation();
-    if (s && !g.player.dead) {
+    if (s && !g.player.dead && !g.missions?.hasF) {   // (at a mission's thing, F is the mission's)
       const cost = this.cost(s), what = this.offer(s);
       if (cost == null) g.hud.prompt(what, 3);
       else {

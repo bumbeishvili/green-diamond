@@ -76,7 +76,7 @@ export class Stairs {
     }
     if (!playing) return;
     const n = this.near();
-    if (!n || this.g.director.nearestStation()) return;
+    if (!n || this.g.director.nearestStation() || this.g.missions?.hasF) return;
     this.g.hud.prompt(n.down ? 'Press <b>F</b> — take the stairs down' : `Press <b>F</b> — take the stairs up to the roof (${n.s.levels} floors)`, 2);
     if (input.hit('KeyF')) { input.pressed.delete('KeyF'); this.go(n); }
   }
