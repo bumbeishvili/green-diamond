@@ -1,6 +1,10 @@
 // Global tunables and URL flags.
 const params = new URLSearchParams(location.search);
 
+// The game's version. Bump the major (2.0.0) when a change makes old saves wrong (the missions
+// reshuffled): saved progress from another major version is cleared.
+export const GAME_VERSION = '1.3.4';
+
 export const URLFLAGS = {
   debug: params.has('debug'),
   autostart: params.has('autostart'),
@@ -20,6 +24,7 @@ export const URLFLAGS = {
   nolock: params.has('nolock'),
   missions: params.has('missions'),   // solo: the missions (mission=N: from that one)
   mission: params.has('mission') ? parseInt(params.get('mission'), 10) : null,
+  carryon: params.has('carryon'),    // (tests: with missions, carry on from the saved one)
   mptime: params.has('mptime') ? parseFloat(params.get('mptime')) : null,   // match length (s)
   relay: params.has('relay'),   // co-op: through the server's relay from the start (Cloudflare), no direct attempt
   // (testing PvP: the host's rules, ?pvp=ffa|teams&pvpz=0&pvpkills=N)

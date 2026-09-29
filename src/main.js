@@ -18,7 +18,8 @@ import { Zombies } from './game/zombies.js';
 import { Weapons } from './game/weapons.js';
 import { HUD } from './game/hud.js';
 import { Director } from './game/director.js';
-import { Missions } from './game/missions.js';
+import { Missions, MISSION_COUNT, missionTitle } from './game/missions.js';
+import { loadProgress } from './game/progress.js';
 import { Vehicles } from './game/vehicles.js';
 import { Stairs } from './game/stairs.js';
 import { Pickups } from './game/pickups.js';
@@ -260,7 +261,7 @@ class Game {
         });
       } else if (!document.hidden && this.bgTick) { ticker.stop(this.bgTick); this.bgTick = null; this.timer.update(); }
     });
-    if (URLFLAGS.autostart) { $('loading').classList.add('hidden'); if (URLFLAGS.missions) this.beginMissions(); else this.beginPlay(); }
+    if (URLFLAGS.autostart) { $('loading').classList.add('hidden'); if (URLFLAGS.missions) this.beginMissions(URLFLAGS.carryon); else this.beginPlay(); }
     // (to the menu once the title's done; unless a match started meanwhile: a friend's invite link,
     // the room already playing)
     else this.intro(() => { if (this.state !== 'loading') return; $('menu').classList.remove('hidden'); this.state = 'menu'; });
@@ -284,6 +285,14 @@ class Game {
     q.onchange = () => { settings.quality = q.value; if (this.touch) settings.touchChosen = true; saveSettings(); this.reload(); };
     $('play').onclick = () => this.beginPlay();
     $('missions').onclick = () => this.beginMissions();
+    // missions you'd got into before: carry on from there (the other button starts them over)
+    const saved = loadProgress(MISSION_COUNT);
+    if (saved && saved.mission > 0) {
+      $('continue').textContent = `Continue: mission ${saved.mission + 1} · ${missionTitle(saved.mission)}`;
+      $('continue').classList.remove('hidden');
+      $('missions').textContent = 'Missions from the start';
+    }
+    $('continue').onclick = () => this.beginMissions(true);
     $('resume').onclick = () => { $('pause').classList.add('hidden'); $('settings').classList.add('hidden'); this.input.lock(); this.state = 'playing'; };
     // the settings: a screen of their own, from the menu or the pause screen (Done or Esc closes it)
     for (const id of ['settings-open', 'settings-open2']) $(id).onclick = () => $('settings').classList.remove('hidden');
@@ -332,9 +341,11 @@ class Game {
   }
 
   // alone, the missions instead of the waves
-  beginMissions() {
+  // (carry on: from the mission you'd got to, with what you had going in)
+  beginMissions(carryOn = false) {
+    const saved = carryOn ? loadProgress(MISSION_COUNT) : null;
     this.beginPlay();
-    this.missions.start(URLFLAGS.mission ? URLFLAGS.mission - 1 : 0);
+    this.missions.start(URLFLAGS.mission ? URLFLAGS.mission - 1 : saved ? saved.mission : 0, saved);
   }
 
   async beginPlay() {

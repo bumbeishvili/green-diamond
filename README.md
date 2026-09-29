@@ -199,6 +199,14 @@ beam of light over where it is, and a flag on the map. None of them can be done 
 Die, or fail the job (some are against the clock), and the mission starts over from its beginning.
 Between them, a few seconds with the shops open, and each pays a bonus.
 
+**Continue**: the browser keeps how far you've got. After a refresh, or after quitting, the menu
+offers **Continue: mission 7 · Escort**. It starts that mission with the points, guns, upgrades,
+armour and grenades you had going in; refresh during a break and it's the next one.
+**Missions from the start** starts over, and winning all ten clears the save. The save records
+the game's version (`GAME_VERSION` in `src/config.js`). Bump the major version (2.0.0) when a change
+makes old saves wrong, such as reordering the missions: saves from another major version are
+dropped.
+
 You never have to guess where to go:
 - **In your view**, a gold marker sits over the next thing to head for, with how far it is. When it's
   behind you or off the screen it sits on the edge, pointing the way to turn.

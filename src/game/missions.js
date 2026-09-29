@@ -6,6 +6,8 @@ import * as THREE from 'three';
 import { pointInPoly } from '../world/geom.js';
 import { NavGrid } from './navgrid.js';
 import { Avatars } from '../net/avatars.js';
+import { DEFS } from './weapons.js';
+import { saveProgress, clearProgress } from './progress.js';
 
 const GOLD = 0xffd23f;
 const BREAK_S = 12;          // between missions: the shops are open
@@ -167,6 +169,7 @@ const MISSIONS = [
   },
 ];
 export const MISSION_COUNT = MISSIONS.length;
+export const missionTitle = (i) => MISSIONS[i]?.title || '';
 
 export class Missions {
   constructor(game) {
@@ -499,7 +502,37 @@ export class Missions {
 
   // ---- the flow ----
 
-  start(i = 0) { this.on = true; this.begin(Math.max(0, Math.min(MISSIONS.length - 1, i))); }
+  // (saved: carrying on from a refresh, with what you had going in)
+  start(i = 0, saved = null) {
+    this.on = true;
+    if (saved) this.restore(saved);
+    this.begin(Math.max(0, Math.min(MISSIONS.length - 1, i)));
+  }
+
+  // what you've got going in to mission i, kept for a refresh
+  save(i) {
+    const g = this.g, w = g.weapons, p = g.player, d = g.director;
+    saveProgress({
+      mission: i, points: d.points, kills: d.kills, headshots: d.headshots,
+      owned: JSON.parse(JSON.stringify(w.owned)), current: w.current, grenades: w.grenades, levels: { ...w.levels },
+      armour: p.armour, speedMul: p.speedMul,
+    });
+  }
+  restore(s) {
+    const g = this.g, w = g.weapons, p = g.player, d = g.director;
+    const num = (v, or) => (Number.isFinite(v) ? v : or);
+    d.points = num(s.points, d.points); d.kills = num(s.kills, d.kills); d.headshots = num(s.headshots, d.headshots);
+    const owned = {};
+    for (const [k, a] of Object.entries(s.owned || {})) if (DEFS[k] && a) owned[k] = { mag: num(a.mag, DEFS[k].mag), reserve: num(a.reserve, DEFS[k].reserve) };
+    if (Object.keys(owned).length) w.owned = owned;
+    w.grenades = num(s.grenades, w.grenades);
+    w.levels = {};
+    for (const [k, l] of Object.entries(s.levels || {})) if (DEFS[k] && Number.isFinite(l)) w.levels[k] = l;
+    if (s.armour) p.setArmour(s.armour);
+    if (Number.isFinite(s.speedMul)) p.speedMul = s.speedMul;
+    w.equip(w.owned[s.current] ? s.current : w.owned.pistol ? 'pistol' : w.order[0], true);
+    g.hud.points(d.points); g.hud.slots(w.owned, w.current); g.hud.grenades(w.grenades);
+  }
 
   clearUp() {
     const g = this.g;
@@ -534,6 +567,7 @@ export class Missions {
     g.pickups.replenish(25);
     this.state = 'brief'; this.stateT = 4;
     g.hud.banner(`Mission ${this.level}: ${m.title}`, m.brief);
+    this.save(i);
   }
 
   // (main: we died) the attempt's over
@@ -554,7 +588,8 @@ export class Missions {
     for (const o of this.things) o.visible = false;
     g.zombies.killAll();
     g.audio.play('waveEnd', { vol: 0.6 });
-    if (this.i + 1 >= MISSIONS.length) { this.state = 'done'; g.hud.banner('Missions done', `All ${MISSIONS.length} of them. +${bonus} points`); g.onVictory?.(); return; }
+    if (this.i + 1 >= MISSIONS.length) { this.state = 'done'; clearProgress(); g.hud.banner('Missions done', `All ${MISSIONS.length} of them. +${bonus} points`); g.onVictory?.(); return; }
+    this.save(this.i + 1);   // (refreshed in the break: on to the next one)
     this.state = 'break'; this.stateT = BREAK_S;
     g.hud.banner('Mission complete', `+${bonus} points. Next: ${MISSIONS[this.i + 1].title}. The shops are open`);
   }
