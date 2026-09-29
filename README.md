@@ -50,8 +50,9 @@ match that's already running (in co-op they turn up next to the team; in teams, 
 Co-op:
 - **The match**: no clock. The ten waves, as alone, but grown for the team: clear the tenth and
   Green Diamond is yours. If the whole team is down at once, it's over.
-- **Going down**: you come back after 4 seconds, next to a teammate. If the whole team is down at
-  once, it's over.
+- **Going down**: you come back after 4 seconds, next to a teammate, with the guns you started with:
+  the ones you'd bought or found lie where you fell, for anyone to pick up (for two minutes). If the
+  whole team is down at once, it's over.
 - **Points and shops**: everyone has their own points, weapons and ammo. Power-ups (max ammo,
   insta-kill, double points, nuke) work for the whole team.
 
@@ -59,12 +60,14 @@ PvP:
 - Guns, the knife, the chainsaw, grenades, missiles and cars hurt the other side
   (in teams, never your own side; your own grenade still can). Against a player a gun does half what
   it does to a zombie, and upgrades count for less.
+- **Guns everywhere**: about 18 lie about the complex, spread over all of it (the AK to the RPG and
+  the laser), topped up a few seconds after one's taken, and everyone starts with 10,000 points.
 - **Dying**: you're back 4 seconds later, somewhere away from whoever wants you dead, and nothing can
-  hurt you for 2 seconds. The kill goes to whoever hurt you last (within a few seconds); the
+  hurt you for 2 seconds. Your bought and found guns drop where you fell: whoever gets there first has them. The kill goes to whoever hurt you last (within a few seconds); the
   zombies' kills go to nobody.
 - The board on the left shows everyone's kills and deaths (and the teams' totals); who killed whom
-  shows on the right. Foes aren't on your map, their name tags don't show through walls, and you
-  can't see their health.
+  shows on the right. Everyone's on the map (foes edged in red, pulsing), but their name tags don't
+  show through walls, and you can't see their health.
 - Zombie kills still pay (buy guns, armour, upgrades); a player kill pays 250 (a knife kill 400).
 
 Both:

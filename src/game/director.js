@@ -303,7 +303,7 @@ export class Director {
   tally(slot) {
     if (slot === (this.g.localSlot ?? 0)) return this;
     let t = this.team.get(slot);
-    if (!t) this.team.set(slot, t = { points: 500, kills: 0, headshots: 0, deaths: 0, frags: 0 });
+    if (!t) this.team.set(slot, t = { points: this.startPoints, kills: 0, headshots: 0, deaths: 0, frags: 0 });
     return t;
   }
 
@@ -321,6 +321,7 @@ export class Director {
   focus() { const l = this.living(); return l[Math.floor(Math.random() * l.length)]; }
   get teamSize() { return Math.max(1, this.players.length); }
   get finalWave() { return this.g.pvp && this.g.pvp.on ? 0 : FINAL_WAVE; }
+  get startPoints() { return this.g.pvp && this.g.pvp.on ? 10000 : 500; }
 
   // ---- waves ----
   // bigger teams face more of them, a little tougher (co-op)

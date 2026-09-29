@@ -1,20 +1,30 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { pointInPoly } from '../world/geom.js';
-import { DEFS } from './weapons.js';
+import { DEFS, groundGun } from './weapons.js';
 
 // Loot lying around the complex: ammo cans, first-aid kits, bundles of lari and now and then a gun.
 // They float over a glowing ring; walk (or drive) over one to take it. More turn up away from you
 // every wave, and every half a minute or so during one, a few of them on the roofs (take the
-// stairs). A gun you don't have is yours; one you have, its ammo.
+// stairs). A gun you don't have is yours; one you have, its ammo. Each new one goes where it's
+// furthest from the rest, so they spread over the whole complex. A player who dies drops the guns
+// they'd bought or found, for anyone to take. In PvP there are guns everywhere, kept topped up.
 const MAX = { ammo: 7, health: 6, cash: 10, gun: 3, word: 3 };
+const PVP_MAX = { ammo: 10, health: 8, cash: 5, gun: 18, word: 0 };
 export const PICKUP_COLORS = { ammo: '#9bd35a', health: '#ff6b6b', cash: '#ffe066', gun: '#ff9f43', word: '#b98cff' };
 const RING = { ammo: 0x7fd13a, health: 0xff4a4a, cash: 0xffc93a, gun: 0xff8a2a, word: 0x9d6bff };
 // (puzzle crates only where the brain training is on: the host's, or yours alone)
 // the guns that lie around (the cheaper ones more often) and their models
-const GUNS = [['deagle', 0.2], ['shotgun', 0.18], ['m4', 0.16], ['autosniper', 0.08], ['mg', 0.08], ['bow', 0.12], ['aug', 0.1], ['msr', 0.05], ['chainsaw', 0.03]];
-const GUN_MODEL = { deagle: 'deagle', shotgun: 'shotgun_mossberg', m4: 'm4', autosniper: 'autosniper', mg: 'mg', bow: 'bow', aug: 'aug', msr: 'msr', chainsaw: 'chainsaw' };
-const pickGun = () => { let r = Math.random(); for (const [k, p] of GUNS) { if (r < p) return k; r -= p; } return 'deagle'; };
+// (the rest only turn up dropped by a player, or in PvP; the order is the wire format: add at the end)
+const GUNS = [['deagle', 0.2], ['shotgun', 0.18], ['m4', 0.16], ['autosniper', 0.08], ['mg', 0.08], ['bow', 0.12], ['aug', 0.1], ['msr', 0.05], ['chainsaw', 0.03],
+  ['rifle', 0], ['sniper', 0], ['launcher', 0], ['laser', 0], ['pistol', 0]];
+// PvP: anything, the big guns a little rarer
+const PVP_GUNS = [['rifle', 0.13], ['m4', 0.12], ['aug', 0.1], ['shotgun', 0.12], ['deagle', 0.08], ['sniper', 0.08], ['msr', 0.06], ['autosniper', 0.06], ['mg', 0.08],
+  ['bow', 0.04], ['launcher', 0.05], ['chainsaw', 0.04], ['laser', 0.04]];
+const GUN_MODEL = { deagle: 'deagle', shotgun: 'shotgun_mossberg', m4: 'm4', autosniper: 'autosniper', mg: 'mg', bow: 'bow', aug: 'aug', msr: 'msr', chainsaw: 'chainsaw', launcher: 'launcher' };
+const pick = (table) => { let r = Math.random(); for (const [k, p] of table) { if (r < p) return k; r -= p; } return table[0][0]; };
+const pickGun = () => pick(GUNS);
+const gunIndex = (key) => Math.max(0, GUNS.findIndex(([k]) => k === key));
 
 function normalize(g, size) {
   g.computeBoundingBox();
@@ -137,16 +147,18 @@ export class Pickups {
     this.meshes = { ammo: make(ammo, MAX.ammo + 4), health: make(health, MAX.health + 4), cash: make(bundle, (MAX.cash + 4) * 3), word: make(word, MAX.word + 4) };
     this.weaponModels = (models && models.weapons) || {};
     const ring = new THREE.RingGeometry(0.42, 0.58, 40).rotateX(-Math.PI / 2);
-    this.rings = new THREE.InstancedMesh(ring, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }), MAX.ammo + MAX.health + MAX.cash + MAX.gun + MAX.word + 20);
+    this.rings = new THREE.InstancedMesh(ring, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }), 200);
     this.rings.count = 0; this.rings.frustumCulled = false;
     this.rings.setColorAt(0, this.c.set(0xffffff));
     this.g.scene.add(this.rings);
   }
 
-  count(kind) { let n = 0; for (const it of this.list) if (it.kind === kind) n++; return n; }
+  count(kind) { let n = 0; for (const it of this.list) if (it.kind === kind && !it.dropped) n++; return n; }
+  get pvp() { return !!(this.g.pvp && this.g.pvp.on); }
+  max(kind) { return (this.pvp ? PVP_MAX : MAX)[kind] || 0; }
 
   // A free spot on the ground inside the complex (or, sometimes, on a roof with stairs).
-  randomSpot(minFromPlayer, roofChance = 0.18) {
+  randomSpot(minFromPlayer, roofChance = 0.18, kind = null) {
     const g = this.g, p = g.player.pos, [x0, y0, x1, y1] = this.bounds;
     const far = (x, z) => (g.players || [g.player]).every((q) => Math.hypot(x - q.pos.x, z - q.pos.z) >= minFromPlayer);
     if (Math.random() < roofChance && g.stairs && g.stairs.list.length) {
@@ -158,37 +170,76 @@ export class Pickups {
         if (!r || r.stair !== s) continue;
         const q = { x, z };
         if (g.colliders.resolve(q, 0.9, s.top + 0.1, s.top + 1.2, 1)) continue;
-        if (this.list.some((it) => Math.hypot(it.x - x, it.z - z) < 6)) continue;
+        if (this.list.some((it) => Math.hypot(it.x - x, it.z - z) < (it.kind === kind ? 20 : 6))) continue;
         return { x, z, y: s.top };
       }
     }
     if (Math.random() < 0.12 && g.underground) {
       const spot = g.underground.randomSpot(this.list);
-      if (spot && Math.hypot(spot.x - p.x, spot.z - p.z) >= minFromPlayer && far(spot.x, spot.z)) return spot;
+      if (spot && Math.hypot(spot.x - p.x, spot.z - p.z) >= minFromPlayer && far(spot.x, spot.z)
+        && !this.list.some((it) => it.kind === kind && Math.hypot(it.x - spot.x, it.z - spot.z) < 20)) return spot;
     }
-    for (let k = 0; k < 300; k++) {
+    // (the best of a dozen good spots: the one furthest from what's lying about already, those of
+    // its own kind most, so they spread evenly over the complex instead of bunching up)
+    let best = null, bestScore = -1, found = 0;
+    for (let k = 0; k < 400 && found < 14; k++) {
       const mx = x0 + Math.random() * (x1 - x0), my = y0 + Math.random() * (y1 - y0);
       if (!pointInPoly(mx, my, g.level.play.outer)) continue;
       const x = mx, z = -my;
       const nav = g.nav;
       if (!nav.walkable(x, z) || !nav.walkable(x + 1, z) || !nav.walkable(x - 1, z) || !nav.walkable(x, z + 1) || !nav.walkable(x, z - 1)) continue;
       if (Math.hypot(x - p.x, z - p.z) < minFromPlayer || !far(x, z)) continue;
-      if (this.list.some((it) => Math.hypot(it.x - x, it.z - z) < 14)) continue;
+      if (this.list.some((it) => Math.hypot(it.x - x, it.z - z) < 8)) continue;
       if (g.director && g.director.stations.some((st) => Math.hypot(st.x - x, st.z - z) < 5)) continue;
       const y = g.hm.atWorld(x, z);
       if (y < -0.5) continue; // ramps, pools
-      return { x, z, y };
+      found++;
+      let mine = 200, any = 200;
+      for (const it of this.list) {
+        const d = Math.hypot(it.x - x, it.z - z);
+        any = Math.min(any, d);
+        if (it.kind === kind) mine = Math.min(mine, d);
+      }
+      const score = mine + any * 0.5;
+      if (score > bestScore) { bestScore = score; best = { x, z, y }; }
     }
-    return null;
+    return best;
   }
 
-  spawn(kind, spot) {
+  spawn(kind, spot, gun = null) {
     const tough = this.g.director ? this.g.director.toughness() : 1;
     const amount = kind === 'cash' ? 50 * Math.round((2 + Math.floor(Math.random() * Math.random() * 5)) * tough)
-      : kind === 'gun' ? GUNS.findIndex(([k]) => k === pickGun()) : 0;
+      : kind === 'gun' ? gunIndex(gun || (this.pvp ? pick(PVP_GUNS) : pickGun())) : 0;
     const it = { id: this.seq = (this.seq || 0) + 1, kind, x: spot.x, y: spot.y, z: spot.z, phase: Math.random() * 6.28, amount, t: 0 };
     this.list.push(it);
     if (this.g.mode === 'host') this.g.net.pickupAdd(it);
+    return it;
+  }
+
+  // a player died here: the guns they'd bought or found, in a ring round the spot, for anyone
+  // (for two minutes; the host's, or told of a client's)
+  drop(pos, keys) {
+    const g = this.g;
+    keys.forEach((key, i) => {
+      const a = (i / keys.length) * Math.PI * 2 + Math.random() * 0.5, r = keys.length > 1 ? 1.3 : 0.4;
+      const q = { x: pos.x + Math.cos(a) * r, z: pos.z + Math.sin(a) * r };
+      g.colliders.resolve(q, 0.4, pos.y + 0.1, pos.y + 1.2, 2);
+      const it = this.spawn('gun', { x: q.x, y: pos.y, z: q.z }, key);
+      it.dropped = true; it.ttl = 120;
+    });
+  }
+
+  // PvP: guns all over, topped up a few seconds after one's taken (away from everyone)
+  stock(dt) {
+    if (!this.pvp || this.g.mode === 'client') return;
+    this.stockT = (this.stockT ?? 0) - dt;
+    if (this.stockT > 0) return;
+    this.stockT = 4;
+    for (const kind of ['gun', 'ammo', 'health']) {
+      if (this.count(kind) >= this.max(kind)) continue;
+      const spot = this.randomSpot(18, 0.18, kind);
+      if (spot) this.spawn(kind, spot);
+    }
   }
 
   // co-op client: the host's loot, [id, kind, x, y, z, amount]
@@ -203,8 +254,9 @@ export class Pickups {
     const key = GUNS[it.amount] ? GUNS[it.amount][0] : 'deagle';
     const src = this.weaponModels[GUN_MODEL[key]];
     const holder = new THREE.Group();
-    if (src) {
-      const m = src.scene.clone(true);
+    const built = !src && groundGun(key);   // (the ones made in code: the AK, the Makarov, the SVD, the laser)
+    if (src || built) {
+      const m = src ? src.scene.clone(true) : built;
       m.traverse((o) => { if (o.isMesh) { o.castShadow = true; if (o.isSkinnedMesh) o.frustumCulled = false; } });
       // laid on its side: its thinnest way up
       const lay = new THREE.Group();
@@ -214,7 +266,7 @@ export class Pickups {
       else if (s0.z <= s0.y) lay.rotation.x = Math.PI / 2;
       lay.updateMatrixWorld(true);
       const box = new THREE.Box3().setFromObject(lay), size = box.getSize(new THREE.Vector3()), c = box.getCenter(new THREE.Vector3());
-      const k = (key === 'mg' || key === 'autosniper' || key === 'msr' ? 1.05 : key === 'bow' ? 1.0 : key === 'deagle' ? 0.42 : 0.85) / Math.max(size.x, size.y, size.z);
+      const k = (key === 'mg' || key === 'autosniper' || key === 'msr' || key === 'sniper' || key === 'launcher' ? 1.05 : key === 'bow' ? 1.0 : key === 'deagle' || key === 'pistol' ? 0.42 : 0.85) / Math.max(size.x, size.y, size.z);
       lay.scale.setScalar(k);
       lay.position.copy(c).multiplyScalar(-k);
       holder.add(lay);
@@ -266,8 +318,8 @@ export class Pickups {
   replenish(minFromPlayer = 25) {
     for (const kind of Object.keys(MAX)) {
       if (kind === 'word' && !(this.g.training && this.g.training.on && !this.g.pvp?.on)) continue;
-      for (let n = this.count(kind); n < MAX[kind]; n++) {
-        const spot = this.randomSpot(minFromPlayer);
+      for (let n = this.count(kind); n < this.max(kind); n++) {
+        const spot = this.randomSpot(minFromPlayer, 0.18, kind);
         if (!spot) break;
         this.spawn(kind, spot);
       }
@@ -287,7 +339,7 @@ export class Pickups {
     let r = Math.random(), kind = null;
     if (this.g.training && this.g.training.on && !this.g.pvp?.on) { if (r < 0.2) kind = 'word'; else r = (r - 0.2) / 0.8; }
     kind = kind || (r < 0.35 ? 'cash' : r < 0.65 ? 'ammo' : r < 0.8 ? 'health' : 'gun');
-    const spot = this.count(kind) < MAX[kind] + 3 && this.randomSpot(20);
+    const spot = this.count(kind) < this.max(kind) + 3 && this.randomSpot(20, 0.18, kind);
     if (!spot) return;
     this.spawn(kind, spot);
     if (kind === 'gun') { g.hud.notice('A gun turned up somewhere: check the map (M)'); g.net?.notice?.('A gun turned up somewhere: check the map (M)'); }
@@ -327,11 +379,18 @@ export class Pickups {
     const counts = { ammo: 0, health: 0, cash: 0, word: 0 };
     let rings = 0;
     this.trickle(dt);
+    this.stock(dt);
     // (a co-op client only draws them: the host says who took what)
     const players = g.mode === 'client' ? [] : g.players || [g.player];
     for (let i = this.list.length - 1; i >= 0; i--) {
       const it = this.list[i];
       it.t += dt;
+      // (a dropped gun nobody took goes after a while)
+      if (it.ttl && it.t > it.ttl && g.mode !== 'client') {
+        this.list.splice(i, 1); this.dropMesh(it);
+        if (g.mode === 'host') g.net.pickupGone(it, -1);
+        continue;
+      }
       for (const p of players) {
         if (p.dead || Math.abs(it.x - p.pos.x) >= 1.25 || Math.abs(it.z - p.pos.z) >= 1.25 || Math.abs(it.y - p.pos.y) >= 1.7) continue;
         if (!(p === g.player ? this.collect(it) : this.collectRemote(it, p))) continue;

@@ -391,6 +391,8 @@ class Game {
     const rules = this.rules, pvp = isPvp(rules);
     this.hud.pvpMode(rules);
     this.killedBy = null;
+    // (PvP: everyone starts with 10,000 to spend; the host keeps the others' tally the same way)
+    if (pvp) { this.director.points = this.director.startPoints; this.hud.points(this.director.points); }
     if (mode === 'host') {
       this.players = this.players && this.players[0] === this.player ? this.players : [this.player];
       this.zombies.targets = this.players;
@@ -515,6 +517,14 @@ class Game {
     }
     const d = this.player.pos.distanceTo(p);
     if (d < m.r * 4) this.player.shake = Math.min(1, this.player.shake + 0.6 * (1 - d / (m.r * 4)));
+  }
+
+  // (the host, or alone never: we went down; our bought and found guns stay where we fell)
+  dropMine() {
+    if (this.mode === 'solo') return;
+    const keys = this.weapons.dropList();
+    if (keys.length) this.pickups.drop(this.player.pos.clone(), keys);
+    this.weapons.resetLoadout();
   }
 
   onTeamDown(slot) {

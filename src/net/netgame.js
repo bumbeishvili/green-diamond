@@ -365,6 +365,7 @@ export class Host {
       case 'learn': this.learnReward(r, m); break;
       // (at a puzzle: no harm to them for a while; the client says so again every minute, else it lapses)
       case 'ans': p.answering = m.on ? performance.now() / 1000 + 100 : 0; break;
+      case 'drop': if (p.dead) g.pickups.drop(p.pos.clone(), (m.g || []).filter((k) => DEFS[k] && !DEFS[k].melee).slice(0, 14)); break;   // (a client's guns, where it fell)
       case 'enter': this.vehicleEnter(r, m.vid); break;
       case 'exit': this.vehicleExit(r); break;
       default: break;
@@ -513,6 +514,7 @@ export class Host {
       const was = e.local ? this.localWasDead : e.r.wasDead;
       if (e.p.dead && !was) {
         if (e.p.vehicle) this.forceOut(e.p, e.slot, !!e.local);
+        if (e.local) g.dropMine?.();   // (our guns where we fell; a client sends its own: 'drop')
         d.tally(e.slot).deaths++;
         const wait = pvp ? PVP_RESPAWN : RESPAWN_S;
         if (e.local) this.localRespawn = wait; else e.r.respawn = wait;
@@ -900,7 +902,8 @@ export class Client {
     const wasDead = p.dead;
     p.dead = !!(me.flags & PF.dead);
     this.respawn = me.respawn;
-    if (!wasDead && p.dead) { g.weapons.adsToggle = false; }
+    // (down: our guns drop where we fell, for anyone; we come back with the ones we started with)
+    if (!wasDead && p.dead) { g.weapons.adsToggle = false; this.s.sendTo(this.s.hostId, 'rel', { t: 'drop', g: g.weapons.dropList() }); g.weapons.resetLoadout(); }
     // respawned or taken somewhere: jump there
     if (me.teleport !== this.teleport) {
       const first = this.teleport < 0;

@@ -387,6 +387,18 @@ function proceduralChainsaw() {
   return g;
 }
 
+// A gun to lie on the ground (a pickup), for the ones with no model of their own: made in code
+export function groundGun(key) {
+  const make = { pistol: () => proceduralGun('pistol'), rifle: () => proceduralGun('rifle'), shotgun: () => proceduralGun('shotgun'), deagle: proceduralDeagle, m4: proceduralM4,
+    autosniper: proceduralSCAR, aug: proceduralAUG, msr: proceduralMSR, launcher: proceduralLauncher, chainsaw: proceduralChainsaw, laser: proceduralLaser, sniper: proceduralSVD, mg: proceduralPKM }[key];
+  if (!make) return null;
+  // (without the first-person arms that come with some of them)
+  const g = make(), skin = armMats ? new Set(Object.values(armMats)) : new Set(), gone = [];
+  g.traverse((o) => { if (o.isMesh && skin.has(o.material)) gone.push(o); });
+  for (const o of gone) o.removeFromParent();
+  return g;
+}
+
 // Helios laser rifle: a white shell over a graphite frame, cooling fins down the barrel, a glowing
 // emitter at the tip, cyan light strips, and on the right the battery, its bar showing the charge.
 function proceduralLaser() {
@@ -995,6 +1007,15 @@ export class Weapons {
     const a = this.owned[kind];
     if (!a || DEFS[kind].melee) return;
     a.mag = DEFS[kind].mag; a.reserve = this.reserveCap(kind);
+    this.hudWeapon();
+  }
+
+  // what you start with (and come back with after dying: the rest is dropped where you fell)
+  static start() { return { pistol: { mag: DEFS.pistol.mag, reserve: DEFS.pistol.reserve }, rifle: { mag: DEFS.rifle.mag, reserve: 90 }, knife: { mag: 0, reserve: 0 } }; }
+  dropList() { return Object.keys(this.owned).filter((k) => DEFS[k] && !DEFS[k].melee && !(k in Weapons.start())); }
+  resetLoadout() {
+    this.owned = Weapons.start();
+    this.equip('pistol', true);
     this.hudWeapon();
   }
 
