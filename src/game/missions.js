@@ -3,6 +3,7 @@
 // running, no shooting, both hands), or stand and work at something while they come for you. Die,
 // or fail the job, and the mission starts over from its beginning: nobody comes back to carry on.
 import * as THREE from 'three';
+import { pointInPoly } from '../world/geom.js';
 
 const GOLD = 0xffd23f;
 const BREAK_S = 12;          // between missions: the shops are open
@@ -24,7 +25,7 @@ const MISSIONS = [
     brief: 'The medical crate is at Spar. Bring it back to the pool house: you can’t run or shoot while you carry it. Put it down (F) to fight.',
     start: { at: 'pool', off: [0, -6] },
     limit: 240,
-    setup(M, s) { s.crate = M.crate(M.at('spar', [1.8, 1.8]), 'the medical crate'); s.to = M.zone(M.at('pool'), 5, 0); s.pressure = { every: 1.4, max: 14 }; },
+    setup(M, s) { s.crate = M.crate(M.open(M.at('spar', [1.8, 1.8])), 'the medical crate'); s.to = M.zone(M.at('pool'), 5, 0); s.pressure = { every: 1.4, max: 14 }; },
     update(M, s) { return M.delivered(s.crate, s.to) ? 'won' : null; },
     goal: (M, s) => (s.crate.held ? 'Carry the crate to the pool house' : s.crate.moved ? 'Pick the crate back up (F)' : 'Get the medical crate from Spar'),
   },
@@ -88,6 +89,27 @@ export class Missions {
     }
     if (!p) return null;
     return { x: p.x + off[0], y: p.y ?? g.hm.atWorld(p.x, p.z), z: p.z + off[1] };
+  }
+
+  // Somewhere you can stand and walk away from, as near p as there is: out of every building (a
+  // metre and more clear of its walls), on walkable ground, nothing solid there, and a clear way
+  // off it for 8 m at least one way. (Where a mission puts you, and what it puts out for you.)
+  open(p) {
+    const g = this.g, nav = g.nav;
+    const inside = (x, z) => g.level.buildings.some((b) => pointInPoly(x, -z, b.poly.outer));
+    const ok = (x, z) => {
+      for (const [dx, dz] of [[0, 0], [1.3, 0], [-1.3, 0], [0, 1.3], [0, -1.3]]) if (inside(x + dx, z + dz) || !nav.walkable(x + dx, z + dz)) return false;
+      const y = g.hm.atWorld(x, z);
+      if (y < -0.5 || g.colliders.resolve({ x, z }, 0.6, y + 0.2, y + 1.7, 1)) return false;
+      for (let k = 0; k < 8; k++) { const a = (k / 8) * Math.PI * 2; if (nav.lineWalkable(x, z, x + Math.cos(a) * 8, z + Math.sin(a) * 8) && !inside(x + Math.cos(a) * 8, z + Math.sin(a) * 8)) return true; }
+      return false;
+    };
+    for (let k = 0; k < 600; k++) {
+      const r = k === 0 ? 0 : 0.8 + Math.sqrt(k) * 1.1, a = k * 2.399;
+      const x = p.x + Math.cos(a) * r, z = p.z + Math.sin(a) * r;
+      if (ok(x, z)) return { x, z, y: g.hm.atWorld(x, z) };
+    }
+    return p;
   }
 
   beam(p, tall = true) {
@@ -216,8 +238,8 @@ export class Missions {
     g.onWave?.(this.level);
     if (m.hour != null) g.targetHour = m.hour;
     if (g.targetHour != null) { g.hour = g.targetHour; g.atmo.setHour(g.hour); }
-    // you: at the start, well again
-    const p = this.at(m.start.at, m.start.off) || { x: g.player.pos.x, z: g.player.pos.z };
+    // you: at the start (out in the open), well again
+    const p = this.open(this.at(m.start.at, m.start.off) || { x: g.player.pos.x, y: g.player.pos.y, z: g.player.pos.z });
     const to = this.at(m.start.at) || p;
     g.player.spawn(p.x, p.z, Math.atan2(-(to.x - p.x), -(to.z - p.z)));
     g.player.health = g.player.maxHealth;
